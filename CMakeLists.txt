@@ -8,8 +8,8 @@ set(SRCS topomesh/data/mmesht.h
 		 topomesh/alg/letter.cpp
 		 )
 		 
-set(LIBS trimesh2 eigen clipper)
+set(ILIBS trimesh2 eigen mmesh clipper)
 __add_real_target(topomesh lib SOURCE ${SRCS}
-							   LIB ${LIBS}
+							   ILIB ${ILIBS}
 							   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
 							   )
