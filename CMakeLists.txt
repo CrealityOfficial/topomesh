@@ -4,6 +4,10 @@ __cc_find(Clipper)
 
 set(SRCS topomesh/data/mmesht.h
 		 topomesh/data/mmesht.cpp
+		 topomesh/data/mmeshFace.h
+		 topomesh/data/mmeshFace.cpp
+		 topomesh/data/mmeshVertex.h
+		 topomesh/data/mmeshVertex.cpp
 		 topomesh/alg/letter.h
 		 topomesh/alg/letter.cpp
 		 )
