@@ -20,9 +20,21 @@ namespace topomesh
 		std::vector<MMeshFace> faces;
 
 	public:
-		static inline double det(trimesh::point& p0, trimesh::point& p1, trimesh::point& p2);
-		inline double det(int faceIndex);
-		inline double det(int VertexIndex1, int VertexIndex2, int VertexIndex3);		
+		static inline double det(trimesh::point& p0, trimesh::point& p1, trimesh::point& p2)
+		{
+			trimesh::vec3 a = p0 - p1;
+			trimesh::vec3 b = p1 - p2;
+			return sqrt(pow((a.y * b.z - a.z * b.y), 2) + pow((a.z * b.x - a.x * b.z), 2)
+				+ pow((a.x * b.y - a.y * b.x), 2)) / 2.0f;
+		}
+		inline double det(int faceIndex)
+		{
+			return det(this->faces[faceIndex].V0(0)->index, this->faces[faceIndex].V0(1)->index, this->faces[faceIndex].V0(2)->index);
+		}
+		inline double det(int VertexIndex1, int VertexIndex2, int VertexIndex3)
+		{
+			return det(this->vertices[VertexIndex1].p, this->vertices[VertexIndex2].p, this->vertices[VertexIndex3].p);
+		}
 		void mmesh2trimesh(trimesh::TriMesh* currentMesh);
 
 		void appendVertex(MMeshVertex& v);

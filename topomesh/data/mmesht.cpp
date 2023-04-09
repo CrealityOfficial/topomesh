@@ -319,6 +319,7 @@ namespace topomesh
 
 	void MMeshT::appendFace(MMeshVertex& v0, MMeshVertex& v1, MMeshVertex& v2)
 	{
+		bool invert = false;
 		this->faces.push_back(MMeshFace(&this->vertices[v0.index], &this->vertices[v1.index], &this->vertices[v2.index]));
 		this->faces.back().index = this->fn;
 
@@ -330,36 +331,43 @@ namespace topomesh
 				v1.connected_face[i]->SetA();
 			for (int i = 0; i < v2.connected_face.size(); i++)
 				v2.connected_face[i]->SetA();
-
+			//---可能重复添加connect_face
 			for (int i = 0; i < v0.connected_face.size(); i++)
-				if (v0.connected_face[i]->IsA(2) && !v0.connected_face[i]->IsS())
+				if (v0.connected_face[i]->IsA(2) && !v0.connected_face[i]->IsL())
 				{
-					v0.connected_face[i]->SetS();
+					v0.connected_face[i]->SetL();
 					this->faces.back().connect_face.push_back(v0.connected_face[i]);
 					v0.connected_face[i]->connect_face.push_back(&this->faces.back());
+					if (v0.connected_face[i]->V1(&v0) == &v1 || v0.connected_face[i]->V2(&v0) == &v2)
+						invert = true;
 				}
 			for (int i = 0; i < v1.connected_face.size(); i++)
-				if (v1.connected_face[i]->IsA(2) && !v1.connected_face[i]->IsS())
+				if (v1.connected_face[i]->IsA(2) && !v1.connected_face[i]->IsL())
 				{
-					v1.connected_face[i]->SetS();
+					v1.connected_face[i]->SetL();
 					this->faces.back().connect_face.push_back(v1.connected_face[i]);
 					v1.connected_face[i]->connect_face.push_back(&this->faces.back());
+					if (v1.connected_face[i]->V1(&v1) == &v2 && v1.connected_face[i]->V2(&v1) == &v0)
+						invert = true;
+					
 				}
 			for (int i = 0; i < v2.connected_face.size(); i++)
-				if (v2.connected_face[i]->IsA(2) && !v2.connected_face[i]->IsS())
+				if (v2.connected_face[i]->IsA(2) && !v2.connected_face[i]->IsL())
 				{
-					v2.connected_face[i]->SetS();
+					v2.connected_face[i]->SetL();
 					this->faces.back().connect_face.push_back(v2.connected_face[i]);
 					v2.connected_face[i]->connect_face.push_back(&this->faces.back());
+					if (v2.connected_face[i]->V1(&v2) != &v0 && v2.connected_face[i]->V2(&v2) != &v1)
+						invert = true;
 				}
 			for (int i = 0; i < v0.connected_face.size(); i++) {
-				v0.connected_face[i]->ClearS(); v0.connected_face[i]->ClearA();
+				v0.connected_face[i]->ClearL(); v0.connected_face[i]->ClearA();
 			}
 			for (int i = 0; i < v1.connected_face.size(); i++) {
-				v1.connected_face[i]->ClearS(); v1.connected_face[i]->ClearA();
+				v1.connected_face[i]->ClearL(); v1.connected_face[i]->ClearA();
 			}
 			for (int i = 0; i < v2.connected_face.size(); i++) {
-				v2.connected_face[i]->ClearS(); v2.connected_face[i]->ClearA();
+				v2.connected_face[i]->ClearL(); v2.connected_face[i]->ClearA();
 			}
 		}
 		if (this->is_VFadjacent())
@@ -394,6 +402,9 @@ namespace topomesh
 				v1.connected_vertex.push_back(&v2); v2.connected_vertex.push_back(&v1);
 			}
 		}
+		if (invert)
+			std::swap(this->faces.back().connect_vertex[1], this->faces.back().connect_vertex[2]);
+
 		this->fn++;
 	}
 
