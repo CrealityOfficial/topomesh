@@ -8,6 +8,8 @@ set(SRCS topomesh/data/mmesht.h
 		 topomesh/data/mmeshFace.cpp
 		 topomesh/data/mmeshVertex.h
 		 topomesh/data/mmeshVertex.cpp
+		 topomesh/data/convert.h
+		 topomesh/data/convert.cpp
 		 topomesh/alg/letter.h
 		 topomesh/alg/letter.cpp
 		 )
