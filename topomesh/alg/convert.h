@@ -1,3 +1,4 @@
+#pragma once
 #include "trimesh2/TriMesh.h"
 #include "topomesh/data/mmesht.h"
 #include "clipperxyz/clipper.hpp"
@@ -12,9 +13,7 @@ namespace topomesh
 	};
 
 	struct CameraParam
-	{
-		int w,h;
-
+	{	
 		trimesh::ivec2 p1;		
 		trimesh::ivec2 p2;
 		//内参
@@ -25,7 +24,7 @@ namespace topomesh
 		float l;
 		float r;
 
-		float dx, dy;
+		float fov,aspect;
 
 		//外参
 		trimesh::point pos;

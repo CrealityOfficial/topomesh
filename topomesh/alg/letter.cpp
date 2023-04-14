@@ -91,26 +91,21 @@ namespace topomesh
 
 	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths, const CameraParam& camera, const LetterParam& param, std::vector<int>* faceindex)
 	{
-		int n_path = paths.size();
-		trimesh::ivec2 k_wh = camera.p2 - camera.p1;
-		trimesh::vec2 s_wh = trimesh::vec2((n_path * param.height)/(k_wh.x*1.0f), param.height/ k_wh.y * 1.0f );
-		std::vector<trimesh::ivec2> screenPoint;
-		for (unsigned i=0;i<paths.size();i++)
-			for (unsigned j = 0; j < paths[i].size(); j++)
-				for (unsigned k = 0; k < paths[i][j].size(); j++)
-					screenPoint.push_back(camera.p1 +trimesh::ivec2((paths[i][j][k].X + i * param.height) / s_wh.x, paths[i][j][k].Y / s_wh.y));
-		
-		trimesh::point screen_begin = camera.pos + camera.n * camera.look + (camera.t - camera.b) * camera.up + (camera.r - camera.l) * -camera.right;
-		for (trimesh::ivec2 p : screenPoint)
+		std::vector<trimesh::point> worldPointOfScreen;
+		std::vector<int> embeding_vertex;
+		wordToWorldPoint(camera,param,paths,worldPointOfScreen);
+		for (trimesh::point& p : worldPointOfScreen)
 		{
-			trimesh::point world_point = screen_begin + p.x * camera.right * camera.dx + p.y * -camera.up * camera.dy;
-			//if(intersectionTriangle(mesh, world_point, camera.look))
+			trimesh::point orient = p - camera.pos;
+			if (intersectionTriangle(mesh, p, orient))
+			{
+				embeding_vertex.push_back(mesh->vertices.back().index);
+			}
 		}
-
 	}
 
 
-	void screenToWorldPoint(MMeshT* mesh, const CameraParam& camera)
+	void WorldPointToscreen(MMeshT* mesh, const CameraParam& camera)
 	{
 		Eigen::Matrix4f c;
 		c << camera.right.x, camera.right.y, camera.right.z, -camera.pos DOT camera.right,
@@ -122,8 +117,28 @@ namespace topomesh
 			0, 2.0 * camera.n / (camera.t - camera.b), -(camera.t+ camera.b) * 1.0 / (camera.t - camera.b), 0,
 			0, 0, 2.0 * (camera.n + camera.f) / (camera.f - camera.n), -2.0 * camera.n * camera.f / (camera.f - camera.n),
 			0, 0, 1, 0;
-		Eigen::Matrix4f s;
-
+		/*Eigen::Matrix4f s;
+		s << camera.w / 2.0f, 0, 0, camera.w / 2.0f,
+			-camera.h / 2.0f, 0, 0, camera.h,
+			0, 0, 1, 0,
+			0, 0, 0, 0;*/
+		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		for (MMeshFace& f : mesh->faces)
+		{
+			float a = f.normal ^ camera.look;
+			if (a > 0) continue;
+			for (int i = 0; i < 3; i++)
+			{
+				Eigen::Vector4f v4(f.V0(0)->p.x, f.V0(0)->p.y, f.V0(0)->p.z, 1);
+				Eigen::Vector4f s4 = m*c * v4;
+				if (s4.x() < camera.p2.x && s4.x() > camera.p1.x && s4.y() < camera.p1.y && s4.y() > camera.p1.y)
+				{
+					f.SetS();
+					std::cout << " f index: " << f.index << "\n";
+					break;
+				}
+			}
+		}
 	}
 
 	bool intersectionTriangle(MMeshT* mt, trimesh::point p, trimesh::point normal)
@@ -150,5 +165,45 @@ namespace topomesh
 			}
 		}
 		return false;
+	}
+
+	void wordToWorldPoint(const CameraParam& camera, const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths, std::vector<trimesh::point>& points)
+	{
+		int len = paths.size();
+		trimesh::point m1 = getWorldPoint(camera, camera.p1);
+		trimesh::point m2 = getWorldPoint(camera, trimesh::ivec2(camera.p2.x,camera.p1.y));
+		trimesh::point m3 = getWorldPoint(camera, trimesh::ivec2(camera.p1.x, camera.p2.y));
+		trimesh::point m4 = getWorldPoint(camera, camera.p2);
+		trimesh::point ori_x = trimesh::normalized(m2 - m1);
+		trimesh::point ori_y = trimesh::normalized(m3 - m1);
+		float w = trimesh::distance(m1, m2);
+		float h = trimesh::distance(m1, m3);
+		float wordSize = w / (len * 1.0f);
+		float pointLen = wordSize / (letter.height * 1.0f);
+		float span = (h - wordSize) / 2.0f;
+		for (unsigned i = 0; i < len; i++)
+		{
+			trimesh::point begin = m1 + span * ori_y + i * wordSize * ori_x;
+			for (unsigned j = 0; j < paths[i].size(); j++)
+			{
+				for (unsigned k = 0; k < paths[i][j].size(); k++)
+				{
+					trimesh::point point = begin + paths[i][j][k].X * pointLen * ori_x + (letter.height - paths[i][j][k].Y) * pointLen * ori_y;
+					points.push_back(point);
+				}
+			}
+
+		}
+	}
+
+	trimesh::point getWorldPoint(const CameraParam& camera,trimesh::ivec2 p)
+	{
+		trimesh::point dir = trimesh::normalized(camera.look);
+		trimesh::point screenCenter = camera.pos + camera.n * dir;
+		trimesh::point left = dir % camera.up;
+		trimesh::normalize(left);
+		float h = 2.0f * camera.n * std::tanf(camera.fov * M_PI / 2.0f / 180.0f);
+		float w = h * camera.aspect;
+		return trimesh::point(screenCenter + camera.up * p.y * h + left * p.x * w);
 	}
 }
