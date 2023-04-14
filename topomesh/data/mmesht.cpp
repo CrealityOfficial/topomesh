@@ -422,4 +422,18 @@ namespace topomesh
 		}
 		return abs(sum);
 	}
+
+	void MMeshT::getFacesNormals()
+	{
+		for (MMeshFace& f : this->faces)
+		{
+			trimesh::point ave_normal;
+			ave_normal += f.V0(0)->normal;
+			ave_normal += f.V0(1)->normal;
+			ave_normal += f.V0(2)->normal;
+			ave_normal /= 3.0f;
+			f.normal = ave_normal;
+		}
+		this->FacesNormals = true;
+	}
 }

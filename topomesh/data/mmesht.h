@@ -54,11 +54,12 @@ namespace topomesh
 		void getMeshBoundary();
 		void getEdge(std::vector<trimesh::ivec2>& edge, bool is_select = false);
 		void calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::vector<trimesh::point>& line, std::vector<trimesh::vec3>& tc);
-	
+		void getFacesNormals();
 
 		inline bool is_VVadjacent() { return VVadjacent; }
 		inline bool is_VFadjacent() { return VFadjacent; }
 		inline bool is_FFadjacent() { return FFadjacent; }
+		inline bool is_FaceNormals() { return FacesNormals; }
 
 		inline int VN() const { return vn; }
 		inline int FN() const { return fn; }
@@ -69,6 +70,7 @@ namespace topomesh
 		bool VVadjacent = false;
 		bool VFadjacent = false;
 		bool FFadjacent = false;
+		bool FacesNormals = false;
 	};
 
 	double  getTotalArea(std::vector<trimesh::point>& inVertices);

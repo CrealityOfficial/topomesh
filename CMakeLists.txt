@@ -12,6 +12,8 @@ set(SRCS topomesh/data/mmesht.h
 		 topomesh/data/convert.cpp
 		 topomesh/alg/letter.h
 		 topomesh/alg/letter.cpp
+		 topomesh/alg/convert.h
+		 topomesh/alg/convert.cpp
 		 )
 		 
 set(ILIBS trimesh2 eigen mmesh clipper)
