@@ -194,29 +194,26 @@ namespace topomesh
 		}
 	}
 
-	void MMeshT::calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::vector<trimesh::point>& line, std::vector<trimesh::vec3>& tc)
-	{
+	void MMeshT::calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc)
+	{		
 		for (trimesh::ivec2& e : edge)
 		{
-			int size = line.size();
-			for (int i = 0; i < line.size(); i++)
+			trimesh::point b1 = trimesh::point(this->vertices[e.x].p.x, this->vertices[e.x].p.y, 0);
+			trimesh::point b2 = trimesh::point(this->vertices[e.y].p.x, this->vertices[e.y].p.y, 0);
+			trimesh::point a = line.first - line.second;//a2->a1
+			trimesh::point b = b1 - b2;//b2->b1
+			trimesh::point n1 = line.first - b1;//b1->a1
+			trimesh::point n2 = line.first - b2;//b2->a1
+			trimesh::point n3 = line.second - b1;//b1->a2
+			if (((-a % -n2) ^ (-a % -n1)) >= 0 || ((-b % n1) ^ (-b % n3)) >= 0) continue;
+			trimesh::point m = a % b;
+			trimesh::point n = n1 % a;
+			float t = (m.x != 0 && n.x != 0) ? n.x / m.x : (m.y != 0 && n.y != 0) ? n.y / m.y : (m.z != 0 && n.z != 0) ? n.z / m.z : -1;
+			if (t > 0 && t < 1)//b1-t*b							
 			{
-				trimesh::point b1 = trimesh::point(this->vertices[e.x].p.x, this->vertices[e.x].p.y, 0);
-				trimesh::point b2 = trimesh::point(this->vertices[e.y].p.x, this->vertices[e.y].p.y, 0);
-				trimesh::point a = line[i] - line[(i + 1) % size];//a2->a1
-				trimesh::point b = b1 - b2;//b2->b1
-				trimesh::point n1 = line[i] - b1;//b1->a1
-				trimesh::point n2 = line[i] - b2;//b2->a1
-				trimesh::point n3 = line[(i + 1) % size] - b1;//b1->a2
-				if (((-a % -n2) ^ (-a % -n1)) >= 0 || ((-b % n1) ^ (-b % n3)) >= 0) continue;
-				trimesh::point m = a % b;
-				trimesh::point n = n1 % a;
-				float t = (m.x != 0 && n.x != 0) ? n.x / m.x : (m.y != 0 && n.y != 0) ? n.y / m.y : (m.z != 0 && n.z != 0) ? n.z / m.z : -1;
-				if (t > 0 && t < 1)//b1-t*b			
-					tc.push_back(trimesh::vec3(t, e.x, e.y));
+				tc.push_back(std::make_pair(t, trimesh::ivec2(e.x, e.y)));				
 			}
-
-		}
+		}		
 	}
 
 	void MMeshT::deleteVertex(MMeshVertex& v)

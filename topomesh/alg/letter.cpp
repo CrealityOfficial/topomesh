@@ -114,7 +114,7 @@ namespace topomesh
 
 	}
 
-
+	//lines 字体点在屏幕上坐标
 	void WorldPointToscreen(MMeshT* mesh, const CameraParam& camera, std::vector<trimesh::point>& lines)
 	{
 		Eigen::Matrix4f c;
@@ -132,12 +132,16 @@ namespace topomesh
 			-camera.h / 2.0f, 0, 0, camera.h,
 			0, 0, 1, 0,
 			0, 0, 0, 0;*/
-		std::vector<trimesh::point > line;
+		std::vector<std::pair<int,trimesh::point>> line;
 		for (trimesh::point& l : lines)
 		{
 			Eigen::Vector4f l4(l.x, l.y, l.z, 1);
 			Eigen::Vector4f sl4 = m * c * l4;
-			line.push_back(trimesh::point(sl4.x(), sl4.y(), 0));
+			trimesh::point normal = l - camera.pos;
+			if (intersectionTriangle(mesh, l, normal))
+				line.push_back(std::make_pair(mesh->VN(), trimesh::point(sl4.x(), sl4.y(), 0)));
+			else
+				line.push_back(std::make_pair(-1, trimesh::point(sl4.x(), sl4.y(), 0)));
 		}
 		for (MMeshFace& f : mesh->faces)if (!f.IsD())
 		{
@@ -156,9 +160,28 @@ namespace topomesh
 			v.p = trimesh::point(s4.x(), s4.y(), s4.z());
 			v.ClearS();
 		}
-		std::vector<trimesh::vec3> corsspoints;
-		mesh->calculateCrossPoint(edge, line, corsspoints);
-		
+		for (int i = 0; i < line.size(); i++)
+		{
+			std::vector<std::pair<float, trimesh::ivec2>> corsspoint;
+			mesh->calculateCrossPoint(edge, std::make_pair(line[i].second,line[(i+1)%line.size()].second), corsspoint);
+			for(std::pair<float, trimesh::ivec2>& cp:corsspoint)
+			{
+				//-------顶点细分
+				//if(line[i].first!=-1)
+				//------边点细分
+				for (MMeshFace* f : mesh->vertices[cp.second.x].connected_face)if(!f->IsD())
+					f->SetA();
+				for (MMeshFace* f : mesh->vertices[cp.second.y].connected_face)if (!f->IsD())
+					f->SetA();
+				for (MMeshFace* f : mesh->vertices[cp.second.x].connected_face)if (f->IsA(2)&&!f->IsD())
+				{
+					mesh->deleteFace(f->index);
+					mesh->appendFace(f->V0(0)->index, line[i].first, line[(i + 1) % line.size()].first);
+					mesh->appendFace(f->V0(1)->index, line[i].first, line[(i + 1) % line.size()].first);
+					mesh->appendFace(f->V0(2)->index, line[i].first, line[(i + 1) % line.size()].first);					
+				}
+			}
+		}		
 		/*if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		for (MMeshFace& f : mesh->faces)if(!f.IsD())
 		{
@@ -181,7 +204,7 @@ namespace topomesh
 	bool intersectionTriangle(MMeshT* mt, trimesh::point p, trimesh::point normal)
 	{
 		if (!mt->is_FaceNormals()) mt->getFacesNormals();
-		for (MMeshFace& f : mt->faces)if(!f.IsD())
+		for (MMeshFace& f : mt->faces)
 		{
 			float a = f.normal ^ normal;
 			if (a > 0) continue;
@@ -197,8 +220,9 @@ namespace topomesh
 			float v = pq * (pd ^ normal);
 			if (u > 0 && v > 0 && (u + v) < 1)
 			{
-				//mt->appendVertex(trimesh::point(f.V0(0)->p + u * v01 + v * v02));
-				mt->deleteFace(f.index);
+				mt->appendVertex(trimesh::point(f.V0(0)->p + u * v01 + v * v02));
+				if(!f.IsD())
+					mt->deleteFace(f.index);
 				return true;
 			}
 		}

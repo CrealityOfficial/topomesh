@@ -53,7 +53,7 @@ namespace topomesh
 		void shrinkMesh();
 		void getMeshBoundary();
 		void getEdge(std::vector<trimesh::ivec2>& edge, bool is_select = false);
-		void calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::vector<trimesh::point>& line, std::vector<trimesh::vec3>& tc);
+		void calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::pair<trimesh::point,trimesh::point>& line, std::vector<std::pair<float,trimesh::ivec2>>& tc);
 		void getFacesNormals();
 
 		inline bool is_VVadjacent() { return VVadjacent; }
