@@ -5,7 +5,7 @@ namespace topomesh
 	void concaveOrConvexOfFaces(MMeshT* mt, std::vector<int>& faces, bool concave)
 	{
 		trimesh::point ave_normal;
-		for (int i = 0; i < faces.size(); i++)
+		for (int i = 0; i < faces.size(); i++)if(!mt->faces[faces[i]].IsD())
 		{
 			ave_normal += trimesh::trinorm(mt->faces[faces[i]].connect_vertex[0]->p, mt->faces[faces[i]].connect_vertex[1]->p, mt->faces[faces[i]].connect_vertex[2]->p);
 			mt->faces[faces[i]].SetS();
@@ -14,7 +14,7 @@ namespace topomesh
 			mt->faces[faces[i]].V0(2)->SetS();
 		}
 		ave_normal /= faces.size();
-		for (MMeshVertex& v : mt->vertices)
+		for (MMeshVertex& v : mt->vertices)if(!v.IsD())
 		{
 			if (v.IsS())
 				for (MMeshVertex* vv : v.connected_vertex)
@@ -23,7 +23,7 @@ namespace topomesh
 						v.SetB(); break;
 					}
 		}
-		for (MMeshVertex& v : mt->vertices)
+		for (MMeshVertex& v : mt->vertices)if(!v.IsD())
 		{
 			if (v.IsS())
 			{
@@ -99,13 +99,23 @@ namespace topomesh
 			trimesh::point orient = p - camera.pos;
 			if (intersectionTriangle(mesh, p, orient))
 			{
+				//得到映射到mesh的字体点
 				embeding_vertex.push_back(mesh->vertices.back().index);
 			}
 		}
+		std::vector<trimesh::ivec2> e;
+		mesh->getEdge(e);
+		trimesh::quaternion q = q.rotationTo(trimesh::vec3(0, 0, 1.0f), camera.look);
+		trimesh::fxform fx = mmesh::fromQuaterian(q);
+		for (MMeshVertex& v : mesh->vertices)
+		{
+			v.p = fx * v.p;
+		}
+
 	}
 
 
-	void WorldPointToscreen(MMeshT* mesh, const CameraParam& camera)
+	void WorldPointToscreen(MMeshT* mesh, const CameraParam& camera, std::vector<trimesh::point>& lines)
 	{
 		Eigen::Matrix4f c;
 		c << camera.right.x, camera.right.y, camera.right.z, -camera.pos DOT camera.right,
@@ -122,8 +132,35 @@ namespace topomesh
 			-camera.h / 2.0f, 0, 0, camera.h,
 			0, 0, 1, 0,
 			0, 0, 0, 0;*/
-		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
-		for (MMeshFace& f : mesh->faces)
+		std::vector<trimesh::point > line;
+		for (trimesh::point& l : lines)
+		{
+			Eigen::Vector4f l4(l.x, l.y, l.z, 1);
+			Eigen::Vector4f sl4 = m * c * l4;
+			line.push_back(trimesh::point(sl4.x(), sl4.y(), 0));
+		}
+		for (MMeshFace& f : mesh->faces)if (!f.IsD())
+		{
+			float a = f.normal ^ camera.look;
+			if (a < 0)
+			{
+				f.V0(0)->SetS(); f.V1(0)->SetS(); f.V2(0)->SetS();
+			}
+		}
+		std::vector<trimesh::ivec2> edge;
+		mesh->getEdge(edge,true);
+		for (MMeshVertex& v : mesh->vertices)if (!v.IsD())
+		{
+			Eigen::Vector4f v4(v.p.x, v.p.y, v.p.z, 1);
+			Eigen::Vector4f s4 = m * c * v4;
+			v.p = trimesh::point(s4.x(), s4.y(), s4.z());
+			v.ClearS();
+		}
+		std::vector<trimesh::vec3> corsspoints;
+		mesh->calculateCrossPoint(edge, line, corsspoints);
+		
+		/*if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		for (MMeshFace& f : mesh->faces)if(!f.IsD())
 		{
 			float a = f.normal ^ camera.look;
 			if (a > 0) continue;
@@ -138,13 +175,13 @@ namespace topomesh
 					break;
 				}
 			}
-		}
+		}*/
 	}
 
 	bool intersectionTriangle(MMeshT* mt, trimesh::point p, trimesh::point normal)
 	{
 		if (!mt->is_FaceNormals()) mt->getFacesNormals();
-		for (MMeshFace& f : mt->faces)
+		for (MMeshFace& f : mt->faces)if(!f.IsD())
 		{
 			float a = f.normal ^ normal;
 			if (a > 0) continue;
@@ -160,7 +197,8 @@ namespace topomesh
 			float v = pq * (pd ^ normal);
 			if (u > 0 && v > 0 && (u + v) < 1)
 			{
-				mt->appendVertex(trimesh::point(f.V0(0)->p + u * v01 + v * v02));
+				//mt->appendVertex(trimesh::point(f.V0(0)->p + u * v01 + v * v02));
+				mt->deleteFace(f.index);
 				return true;
 			}
 		}
@@ -204,6 +242,8 @@ namespace topomesh
 		trimesh::normalize(left);
 		float h = 2.0f * camera.n * std::tanf(camera.fov * M_PI / 2.0f / 180.0f);
 		float w = h * camera.aspect;
-		return trimesh::point(screenCenter + camera.up * p.y * h + left * p.x * w);
+		float x_ratio = (float)p.x / (float)camera.w - 0.5f;
+		float y_ratio = (float)p.y / (float)camera.h - 0.5f;
+		return trimesh::point(screenCenter - camera.up * y_ratio * h + left * x_ratio * w);
 	}
 }

@@ -14,6 +14,7 @@ namespace topomesh
 
 	struct CameraParam
 	{	
+		int w, h;
 		trimesh::ivec2 p1;		
 		trimesh::ivec2 p2;
 		//ÄÚ²Î
