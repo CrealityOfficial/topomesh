@@ -26,7 +26,8 @@ namespace topomesh
 		std::vector<MMeshVertex*> connect_vertex;
 		std::vector<MMeshFace*> connect_face;
 
-		std::vector<trimesh::vec2> uv_coord;
+		std::vector<trimesh::vec3> uv_coord;
+		std::vector<int>  inner_vertex;
 	private:
 		enum faceflag
 		{
