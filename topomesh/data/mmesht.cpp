@@ -174,6 +174,8 @@ namespace topomesh
 				}
 			}
 		}
+		for (MMeshVertex& v : this->vertices)
+			v.ClearA();
 	}
 
 	void MMeshT::getEdge(std::vector<trimesh::ivec2>& edge, bool is_select)
@@ -303,14 +305,14 @@ namespace topomesh
 	void MMeshT::appendVertex(MMeshVertex& v)
 	{
 		this->vertices.push_back(v);
-		this->vertices.back().index = this->vn;
+		this->vertices.back().index = this->vertices.size()-1;
 		this->vn++;
 	}
 
 	void MMeshT::appendVertex(trimesh::point& v)
 	{
 		this->vertices.push_back(v);
-		this->vertices.back().index = this->vn;
+		this->vertices.back().index = this->vertices.size()-1;
 		this->vn++;
 	}
 
@@ -318,7 +320,7 @@ namespace topomesh
 	{
 		bool invert = false;
 		this->faces.push_back(MMeshFace(&this->vertices[v0.index], &this->vertices[v1.index], &this->vertices[v2.index]));
-		this->faces.back().index = this->fn;
+		this->faces.back().index = this->faces.size()-1;
 
 		if (this->is_FFadjacent())
 		{

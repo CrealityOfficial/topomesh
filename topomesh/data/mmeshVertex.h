@@ -12,7 +12,7 @@ namespace topomesh
 	{
 	public:
 		MMeshVertex() {};
-		MMeshVertex(trimesh::point p) :p(p) { connected_faces.reserve(8); connected_vertex.reserve(8); connected_face.reserve(8); };
+		MMeshVertex(trimesh::point p) :p(p) {  connected_vertex.reserve(8); connected_face.reserve(8); };
 		virtual ~MMeshVertex() {};
 		MMeshFace* mf;
 
@@ -20,7 +20,7 @@ namespace topomesh
 
 		int index = -1;
 		trimesh::point p;
-		std::vector<uint32_t> connected_faces;
+		std::vector<int> inner;
 		trimesh::point normal;
 		std::vector<MMeshVertex*> connected_vertex;
 		std::vector<MMeshFace*> connected_face;
@@ -55,5 +55,6 @@ namespace topomesh
 		inline bool SetA() { int copy = flag & MV_ACCUMULATE; copy = copy >> 4;	copy += 1; if (copy > 255) return false; copy = copy << 4; flag&=~MV_ACCUMULATE; flag |= copy; return true; }
 		inline bool IsA(int i) { int copy = flag & MV_ACCUMULATE; copy = copy >> 4; if (i == copy) return true; return false; }
 		inline void ClearA() { flag &= ~MV_ACCUMULATE; }
+		inline int getA() { int copy = flag & MV_ACCUMULATE; copy = copy >> 4; return copy; }
 	};
 }

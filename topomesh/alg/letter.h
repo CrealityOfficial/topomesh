@@ -21,7 +21,7 @@ namespace topomesh
 	void wordToWorldPoint(const CameraParam& camera,const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths,std::vector<trimesh::point>& points);
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);
-	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::point>& poly);
+	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::vec2>& poly,std::vector<int>& faceIndex);
 }
 
 #endif // TOPOMESH_LETTER_1680853426716_H

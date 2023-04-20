@@ -60,6 +60,7 @@ namespace topomesh
 		inline bool SetA() { int copy = flag & MF_ACCUMULATE; copy = copy >> 4; copy += 1; if (copy > 255) return false; copy = copy << 4;flag&=~MF_ACCUMULATE ; flag |= copy; return true; }
 		inline bool IsA(int i) { int copy = flag & MF_ACCUMULATE; copy = copy >> 4; if (i == copy) return true; return false; }
 		inline void ClearA() { flag &= ~MF_ACCUMULATE; }
+		inline int getA() { int copy = flag & MF_ACCUMULATE; copy = copy >> 4; return copy; }
 
 		inline void SetL() { flag |= MF_LIMITING; }
 		inline bool IsL() { return (MF_LIMITING & flag) != 0 ? 1 : 0; }
