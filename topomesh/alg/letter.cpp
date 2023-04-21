@@ -121,16 +121,17 @@ namespace topomesh
 		Eigen::Matrix4f viewMatrix;
 		Eigen::Matrix4f projectionMatrix;
 		getViewMatrixAndProjectionMatrix(camera,viewMatrix,projectionMatrix);
-		std::vector<trimesh::point> wordScrennPos;
+		std::vector<trimesh::vec2> wordScrennPos;
 		getEmbedingPoint(wordPos,viewMatrix,projectionMatrix,wordScrennPos);
 		embedingAndCutting(mesh, wordScrennPos, viewMatrix, projectionMatrix);
 		std::vector<int> facesIndex;
 		polygonInnerFaces(mesh, wordScrennPos, facesIndex);
-		topomesh::concaveOrConvexOfFaces(mesh, facesIndex);
+		concaveOrConvexOfFaces(mesh, facesIndex);
+		unTransformationMesh(mesh, viewMatrix, projectionMatrix);
 	}	
-	void embedingAndCutting(MMeshT* mesh, std::vector<trimesh::point>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
+	void embedingAndCutting(MMeshT* mesh, std::vector<trimesh::vec2>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
 	{		
-		std::vector<std::pair<int,trimesh::point>> line;
+		//std::vector<std::pair<int,trimesh::point>> line;
 		/*for (trimesh::point& l : lines)
 		{
 			Eigen::Vector4f l4(l.x, l.y, l.z, 1);
@@ -160,11 +161,11 @@ namespace topomesh
 			v.ClearS();
 		}*/
 		mesh->getEdge(edge);
-		line.push_back(std::make_pair(1, lines[0]));
+		/*line.push_back(std::make_pair(1, lines[0]));
 		line.push_back(std::make_pair(1, lines[1]));
 		line.push_back(std::make_pair(1, lines[2]));
 		line.push_back(std::make_pair(1, lines[3]));
-		line.push_back(std::make_pair(1, lines[4]));
+		line.push_back(std::make_pair(1, lines[4]));*/
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		trimesh::point ave_normal;
 		for (MMeshFace& f : mesh->faces)
@@ -173,23 +174,29 @@ namespace topomesh
 		}
 		ave_normal /= mesh->FN();
 		ave_normal = -ave_normal;
-		trimesh::quaternion q = q.rotationTo(trimesh::point(0, 0, 1), ave_normal);
+		/*trimesh::quaternion q = q.rotationTo(trimesh::point(0, 0, 1), ave_normal);
 		trimesh::fxform xf = trimesh::fromQuaterian(q);
 		for (MMeshVertex& v : mesh->vertices)
 		{
 			v.p = xf * v.p;
+		}*/
+		for (MMeshVertex& v : mesh->vertices)if (!v.IsD())
+		{
+			Eigen::Vector4f vPoint = { v.p.x,v.p.y,v.p.z,1.0 };
+			Eigen::Vector4f point = ProjectionMatrix* ViewMatrix *vPoint;
+			v.p = trimesh::point(point.x(), point.y(), point.z());
 		}
-		std::vector<trimesh::point> l = lines;
+		//std::vector<trimesh::point> l = lines;
 		auto crossProduct = [=](trimesh::vec2 p1, trimesh::vec2 p2) ->float {
 			return p1.x * p2.y - p1.y * p2.x;
 		};		
 		for (MMeshFace& f : mesh->faces)
 		{
-			for (int i = 0; i < l.size(); i++)
+			for (int i = 0; i < lines.size(); i++)
 			{
-				trimesh::vec2 v10 = trimesh::vec2(f.V0(0)->p.x, f.V0(0)->p.y) - trimesh::vec2(l[i].x, l[i].y);
-				trimesh::vec2 v20 = trimesh::vec2(f.V0(1)->p.x, f.V0(1)->p.y) - trimesh::vec2(l[i].x, l[i].y);
-				trimesh::vec2 v30 = trimesh::vec2(f.V0(2)->p.x, f.V0(2)->p.y) - trimesh::vec2(l[i].x, l[i].y);
+				trimesh::vec2 v10 = trimesh::vec2(f.V0(0)->p.x, f.V0(0)->p.y) - trimesh::vec2(lines[i].x, lines[i].y);
+				trimesh::vec2 v20 = trimesh::vec2(f.V0(1)->p.x, f.V0(1)->p.y) - trimesh::vec2(lines[i].x, lines[i].y);
+				trimesh::vec2 v30 = trimesh::vec2(f.V0(2)->p.x, f.V0(2)->p.y) - trimesh::vec2(lines[i].x, lines[i].y);
 				trimesh::vec2 v12 = trimesh::vec2(f.V0(1)->p.x, f.V0(1)->p.y) - trimesh::vec2(f.V0(0)->p.x, f.V0(0)->p.y);//0->1
 				trimesh::vec2 v13 = trimesh::vec2(f.V0(2)->p.x, f.V0(2)->p.y) - trimesh::vec2(f.V0(0)->p.x, f.V0(0)->p.y);//0->2
 				trimesh::point vv01 = f.V1(0)->p - f.V0(0)->p;
@@ -200,17 +207,17 @@ namespace topomesh
 					f.SetV();
 					Eigen::Matrix2f e;
 					e << v12.x, v13.x, v12.y, v13.y;
-					Eigen::Vector2f b = { l[i].x - f.V0(0)->p.x ,l[i].y - f.V0(0)->p.y };				
+					Eigen::Vector2f b = { lines[i].x - f.V0(0)->p.x ,lines[i].y - f.V0(0)->p.y };
 					Eigen::Vector2f x = e.fullPivLu().solve(b);
 					mesh->appendVertex(trimesh::point(f.V0(0)->p + x.x() * vv01 + x.y() * vv02));
 					f.inner_vertex.push_back(mesh->VN() - 1);
 				}
 			}
 		}
-		for (int i = 0; i < line.size(); i++)
+		for (int i = 0; i < lines.size(); i++)
 		{
 			std::vector<std::pair<float, trimesh::ivec2>> corsspoint;
-			mesh->calculateCrossPoint(edge, std::make_pair(line[i].second,line[(i+1)%line.size()].second), corsspoint);
+			mesh->calculateCrossPoint(edge, std::make_pair(trimesh::point(lines[i],0),trimesh::point(lines[(i+1)%lines.size()],0)), corsspoint);
 			for(std::pair<float, trimesh::ivec2>& cp:corsspoint)
 			{	
 				bool cover = false;
@@ -440,7 +447,7 @@ namespace topomesh
 		return trimesh::point(screenCenter - camera.up * y_ratio * screenhw.first + left * x_ratio * screenhw.second);
 	}
 
-	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::vec3>& poly, std::vector<int>& faceIndex)
+	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::vec2>& poly, std::vector<int>& faceIndex)
 	{
 		for (MMeshFace& f : mt->faces)if(!f.IsD())
 		{
@@ -482,6 +489,7 @@ namespace topomesh
 			0, 2.0f * camera.n / (1.0f * ScreenSize.first), 0, 0,
 			0, 0, -1.0f * (camera.n + camera.f) / (1.0f * (camera.f - camera.n)), -2.0f * camera.n * camera.f / (1.0f * (camera.f - camera.n)),
 			0, 0, -1, 0;
+		
 	}
 
 	void loadCameraParam(CameraParam& camera)
@@ -492,13 +500,13 @@ namespace topomesh
 		trimesh::normalize(camera.up);
 	}
 
-	void getEmbedingPoint(std::vector<trimesh::point>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, std::vector<trimesh::vec3>& poly)
+	void getEmbedingPoint(std::vector<trimesh::point>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, std::vector<trimesh::vec2>& poly)
 	{
 		for (trimesh::point& p : lines)
 		{
 			Eigen::Vector4f linePoint = {p.x,p.y,p.z,1.0};
 			Eigen::Vector4f point = ProjectionMatrix * ViewMatrix * linePoint;
-			poly.push_back(trimesh::vec3(point.x(), point.y(), point.w()));
+			poly.push_back(trimesh::vec2(point.x()*(point.w()/100.0f), point.y()*(point.w() / 100.0f)));
 		}
 	}
 

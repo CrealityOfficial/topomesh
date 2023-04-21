@@ -14,7 +14,7 @@ namespace topomesh
 
 	struct CameraParam
 	{	
-		trimesh::vec2 ScreenSize;  // hw
+		trimesh::ivec2 ScreenSize;  // hw
 		trimesh::ivec2 p1;		
 		trimesh::ivec2 p2;
 		//ÄÚ²Î
