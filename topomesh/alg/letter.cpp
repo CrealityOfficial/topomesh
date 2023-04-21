@@ -92,48 +92,44 @@ namespace topomesh
 		}
 	}
 
-	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths, const CameraParam& camera, const LetterParam& param, std::vector<int>* faceindex)
+	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths,  CameraParam& camera, const LetterParam& Letter, std::vector<int>* faceindex)
 	{
-		std::vector<trimesh::point> worldPointOfScreen;
-		std::vector<int> embeding_vertex;
-		wordToWorldPoint(camera,param,paths,worldPointOfScreen);
-		for (trimesh::point& p : worldPointOfScreen)
-		{
-			trimesh::point orient = p - camera.pos;
-			if (intersectionTriangle(mesh, p, orient))
-			{
-				//得到映射到mesh的字体点
-				embeding_vertex.push_back(mesh->vertices.back().index);
-			}
-		}
-		std::vector<trimesh::ivec2> e;
-		mesh->getEdge(e);
-		trimesh::quaternion q = q.rotationTo(trimesh::vec3(0, 0, 1.0f), camera.look);
-		trimesh::fxform fx = mmesh::fromQuaterian(q);
-		for (MMeshVertex& v : mesh->vertices)
-		{
-			v.p = fx * v.p;
-		}
+		//std::vector<trimesh::point> worldPointOfScreen;
+		//std::vector<int> embeding_vertex;
+		//wordToWorldPoint(camera,param,paths,worldPointOfScreen);
+		//for (trimesh::point& p : worldPointOfScreen)
+		//{
+		//	trimesh::point orient = p - camera.pos;
+		//	if (intersectionTriangle(mesh, p, orient))
+		//	{
+		//		//得到映射到mesh的字体点
+		//		embeding_vertex.push_back(mesh->vertices.back().index);
+		//	}
+		//}
+		//std::vector<trimesh::ivec2> e;
+		//mesh->getEdge(e);
+		//trimesh::quaternion q = q.rotationTo(trimesh::vec3(0, 0, 1.0f), camera.lookAt);
+		//trimesh::fxform fx = mmesh::fromQuaterian(q);
+		//for (MMeshVertex& v : mesh->vertices)
+		//{
+		//	v.p = fx * v.p;
+		//}
 
-	}
-	//void embedingAndCutting(MMeshT* mesh, const CameraParam& camera, std::vector<trimesh::point>& lines)
-	void embedingAndCutting(MMeshT* mesh, std::vector<trimesh::point>& lines)
-	{
-		/*Eigen::Matrix4f c;
-		c << camera.right.x, camera.right.y, camera.right.z, -camera.pos DOT camera.right,
-			camera.up.x, camera.up.y, camera.up.z, -camera.pos DOT camera.up,
-			camera.look.x, camera.look.y, camera.look.z, -camera.pos DOT camera.look,
-			0, 0, 0, 1;
-		Eigen::Matrix4f m;
-		m << 2.0 * camera.n / (camera.r - camera.l), 0, -(camera.l + camera.r) * 1.0 / (camera.r - camera.l), 0,
-			0, 2.0 * camera.n / (camera.t - camera.b), -(camera.t+ camera.b) * 1.0 / (camera.t - camera.b), 0,
-			0, 0, 2.0 * (camera.n + camera.f) / (camera.f - camera.n), -2.0 * camera.n * camera.f / (camera.f - camera.n),
-			0, 0, 1, 0;*/
-		/*Eigen::Matrix4f s;
-		s << camera.w / 2.0f, 0, 0, camera.w / 2.0f,
-			-camera.h / 2.0f, 0, 0, camera.h,
-			0, 0, 1, 0,
-			0, 0, 0, 0;*/
+		loadCameraParam(camera);
+		std::vector<trimesh::point> wordPos;
+		wordToWorldPoint(camera, Letter, paths, wordPos);
+		Eigen::Matrix4f viewMatrix;
+		Eigen::Matrix4f projectionMatrix;
+		getViewMatrixAndProjectionMatrix(camera,viewMatrix,projectionMatrix);
+		std::vector<trimesh::point> wordScrennPos;
+		getEmbedingPoint(wordPos,viewMatrix,projectionMatrix,wordScrennPos);
+		embedingAndCutting(mesh, wordScrennPos, viewMatrix, projectionMatrix);
+		std::vector<int> facesIndex;
+		polygonInnerFaces(mesh, wordScrennPos, facesIndex);
+		topomesh::concaveOrConvexOfFaces(mesh, facesIndex);
+	}	
+	void embedingAndCutting(MMeshT* mesh, std::vector<trimesh::point>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
+	{		
 		std::vector<std::pair<int,trimesh::point>> line;
 		/*for (trimesh::point& l : lines)
 		{
@@ -164,10 +160,11 @@ namespace topomesh
 			v.ClearS();
 		}*/
 		mesh->getEdge(edge);
-		line.push_back(std::make_pair(1, trimesh::point(0.15f, 0.05f, 0)));
-		line.push_back(std::make_pair(1, trimesh::point(-0.15f, 0.05f, 0)));
-		line.push_back(std::make_pair(1, trimesh::point(-0.1f, -0.15f, 0)));
-		line.push_back(std::make_pair(1, trimesh::point(0.2f, -0.15f, 0)));
+		line.push_back(std::make_pair(1, lines[0]));
+		line.push_back(std::make_pair(1, lines[1]));
+		line.push_back(std::make_pair(1, lines[2]));
+		line.push_back(std::make_pair(1, lines[3]));
+		line.push_back(std::make_pair(1, lines[4]));
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		trimesh::point ave_normal;
 		for (MMeshFace& f : mesh->faces)
@@ -182,7 +179,7 @@ namespace topomesh
 		{
 			v.p = xf * v.p;
 		}
-		std::vector<trimesh::point> l = { trimesh::point(0.15f,0.05f,0),trimesh::point(-0.15f,0.05f,0), trimesh::point(-0.1f, -0.15f, 0) ,trimesh::point(0.2f, -0.15f, 0) };
+		std::vector<trimesh::point> l = lines;
 		auto crossProduct = [=](trimesh::vec2 p1, trimesh::vec2 p2) ->float {
 			return p1.x * p2.y - p1.y * p2.x;
 		};		
@@ -432,19 +429,18 @@ namespace topomesh
 	}
 
 	trimesh::point getWorldPoint(const CameraParam& camera,trimesh::ivec2 p)
-	{
-		trimesh::point dir = trimesh::normalized(camera.look);
-		trimesh::point screenCenter = camera.pos + camera.n * dir;
-		trimesh::point left = dir % camera.up;
+	{		
+		trimesh::point screenCenter = camera.pos + camera.n * camera.dir;
+		trimesh::point left = camera.dir % camera.up;
 		trimesh::normalize(left);
-		float h = 2.0f * camera.n * std::tanf(camera.fov * M_PI / 2.0f / 180.0f);
-		float w = h * camera.aspect;
-		float x_ratio = (float)p.x / (float)camera.w - 0.5f;
-		float y_ratio = (float)p.y / (float)camera.h - 0.5f;
-		return trimesh::point(screenCenter - camera.up * y_ratio * h + left * x_ratio * w);
+		std::pair<float, float> screenhw;
+		getScreenWidthAndHeight(camera, screenhw);
+		float x_ratio = (float)p.x / (float)camera.ScreenSize.y - 0.5f;
+		float y_ratio = (float)p.y / (float)camera.ScreenSize.x - 0.5f;
+		return trimesh::point(screenCenter - camera.up * y_ratio * screenhw.first + left * x_ratio * screenhw.second);
 	}
 
-	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::vec2>& poly, std::vector<int>& faceIndex)
+	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::vec3>& poly, std::vector<int>& faceIndex)
 	{
 		for (MMeshFace& f : mt->faces)if(!f.IsD())
 		{
@@ -452,21 +448,67 @@ namespace topomesh
 			int rayCorssPoint = 0;
 			for (int i = 0; i < poly.size(); i++)//左射线
 			{
-				if (std::abs(poly[(i + 1) % poly.size()].y - poly[i].y) < FLOATERR) continue;	
-				if (std::min(poly[i].y, poly[(i + 1) % poly.size()].y) < c.y && std::max(poly[i].y, poly[(i + 1) % poly.size()].y) > c.y)
-					if (std::min(poly[i].x, poly[(i + 1) % poly.size()].x) < c.x)					
-					{
-						float k = (poly[(i + 1) % poly.size()].y - poly[i].y) / (poly[(i + 1) % poly.size()].x - poly[i].x);
-						if (c.y > k * (c.x - poly[i].x) + poly[i].y)
-							rayCorssPoint++;
-					}
-			}
+				if (std::abs(poly[(i + 1) % poly.size()].y - poly[i].y) < FLOATERR) continue;
+				if (c.y < std::min(poly[i].y, poly[(i + 1) % poly.size()].y)) continue;
+				if (c.y > std::max(poly[i].y, poly[(i + 1) % poly.size()].y)) continue;
+				double x = (c.y - poly[i].y) * (poly[(i + 1) % poly.size()].x - poly[i].x) / (poly[(i + 1) % poly.size()].y - poly[i].y) + poly[i].x;
+				if (x > c.x)
+					rayCorssPoint++;				
+			}			
 			if ((rayCorssPoint % 2) != 0)
 			{
-				faceIndex.push_back(f.index);
-				//mt->deleteFace(f);
+				faceIndex.push_back(f.index);									
 			}
 			
+		}
+	}
+
+	void getScreenWidthAndHeight(const CameraParam& camera, std::pair<float, float>& wh)
+	{
+		wh.first = 2.0f * camera.n * std::tanf(camera.fov * M_PIf / 2.0f / 180.0f);
+		wh.second = wh.first * camera.aspect;
+	}
+
+	void getViewMatrixAndProjectionMatrix(const CameraParam& camera, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
+	{		
+		trimesh::point undir = -1.0f * camera.dir;		
+		ViewMatrix << camera.right.x, camera.right.y, camera.right.z, -1.0f * camera.pos DOT camera.right,
+			camera.up.x, camera.up.y, camera.up.z, -1.0f * camera.pos DOT camera.up,
+			undir.x, undir.y, undir.z, -1.0f * camera.pos DOT undir,
+			0, 0, 0, 1;
+		std::pair<float, float> ScreenSize;// h w
+		getScreenWidthAndHeight(camera, ScreenSize);
+		ProjectionMatrix << 2.0f * camera.n / (1.0f * ScreenSize.second), 0, 0, 0,
+			0, 2.0f * camera.n / (1.0f * ScreenSize.first), 0, 0,
+			0, 0, -1.0f * (camera.n + camera.f) / (1.0f * (camera.f - camera.n)), -2.0f * camera.n * camera.f / (1.0f * (camera.f - camera.n)),
+			0, 0, -1, 0;
+	}
+
+	void loadCameraParam(CameraParam& camera)
+	{		
+		camera.dir = trimesh::normalized(camera.lookAt - camera.pos);
+		trimesh::point undir = -1.0f * camera.dir;
+		camera.right= trimesh::normalized(camera.dir % camera.up);
+		trimesh::normalize(camera.up);
+	}
+
+	void getEmbedingPoint(std::vector<trimesh::point>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, std::vector<trimesh::vec3>& poly)
+	{
+		for (trimesh::point& p : lines)
+		{
+			Eigen::Vector4f linePoint = {p.x,p.y,p.z,1.0};
+			Eigen::Vector4f point = ProjectionMatrix * ViewMatrix * linePoint;
+			poly.push_back(trimesh::vec3(point.x(), point.y(), point.w()));
+		}
+	}
+
+	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
+	{
+		for (MMeshVertex& v : mesh->vertices)if(!v.IsD())
+		{
+			Eigen::Vector4f vPoint = { v.p.x,v.p.y,v.p.z,1.0 };
+			Eigen::Vector4f point = ViewMatrix.inverse() * ProjectionMatrix.inverse() * vPoint;
+			v.p = trimesh::point(point.x(), point.y(), point.z());
 		}
 	}
 }

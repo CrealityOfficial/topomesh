@@ -13,15 +13,19 @@
 
 namespace topomesh
 {	
-	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths, const CameraParam& camera, const LetterParam& param, std::vector<int>* faceindex = nullptr);
+	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths,  CameraParam& camera, const LetterParam& Letter, std::vector<int>* faceindex = nullptr);
 	void concaveOrConvexOfFaces(MMeshT* mt,std::vector<int>& faces, bool concave=false);
-	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori);
-	//void embedingAndCutting(MMeshT* mesh,struct CameraParam& camera, std::vector<trimesh::point>& lines);
-	void embedingAndCutting(MMeshT* mesh, std::vector<trimesh::point>& lines);
+	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori);	
+	void embedingAndCutting(MMeshT* mesh, std::vector<trimesh::point>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void wordToWorldPoint(const CameraParam& camera,const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths,std::vector<trimesh::point>& points);
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);
-	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::vec2>& poly,std::vector<int>& faceIndex);
+	void polygonInnerFaces(MMeshT* mt, std::vector<trimesh::vec3>& poly, std::vector<int>& faceIndex);
+	void getScreenWidthAndHeight(const CameraParam& camera,std::pair<float,float>&wh);
+	void getViewMatrixAndProjectionMatrix(const CameraParam& camera,Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
+	void loadCameraParam(CameraParam& camera);
+	void getEmbedingPoint(std::vector<trimesh::point>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, std::vector<trimesh::vec3>& poly);
+	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 }
 
 #endif // TOPOMESH_LETTER_1680853426716_H

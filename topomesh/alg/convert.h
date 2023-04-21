@@ -14,7 +14,7 @@ namespace topomesh
 
 	struct CameraParam
 	{	
-		int w, h;
+		trimesh::vec2 ScreenSize;  // hw
 		trimesh::ivec2 p1;		
 		trimesh::ivec2 p2;
 		//内参
@@ -29,9 +29,10 @@ namespace topomesh
 
 		//外参
 		trimesh::point pos;
-		trimesh::point look;
+		trimesh::point lookAt;
 		trimesh::point right;
 		trimesh::point up;
+		trimesh::point dir;
 	};
 
 	class LetterInput
