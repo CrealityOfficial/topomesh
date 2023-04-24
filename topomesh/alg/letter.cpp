@@ -1,7 +1,7 @@
 #include "letter.h"
 
 
-#define FLOATERR 0.00001f
+#define FLOATERR 0.0001f
 
 namespace topomesh
 {
@@ -17,24 +17,26 @@ namespace topomesh
 			mt->faces[faces[i]].V0(2)->SetS();				
 		}	
 		ave_normal /= faces.size();
-		for (MMeshVertex& v : mt->vertices)if(!v.IsD())
+		
+		for (int i = 0; i < faces.size(); i++)if (!mt->faces[faces[i]].IsD())
 		{
-			if (v.IsS())
-				for (MMeshVertex* vv : v.connected_vertex)
+			for (int j = 0; j < 3; j++)
+			{			
+				for (MMeshFace* vv : mt->faces[faces[i]].V0(j)->connected_face)
 					if (!vv->IsS())
 					{
-						v.SetB();break;
+						mt->faces[faces[i]].V0(j)->SetV(); break;
 					}
+			}
 		}
 		for (MMeshVertex& v : mt->vertices)if(!v.IsD())
 		{
 			if (v.IsS())
-			{
-				mt->appendVertex(trimesh::point(v.p + 20 * ave_normal));
-				if (!v.IsB())
-					v.p -= 50 * ave_normal;					
+			{				
+				if (!v.IsV())
+					v.p -= ave_normal;					
 				else
-					splitPoint(mt, &v, ave_normal);					
+					splitPoint(mt, &v, ave_normal);				
 			}
 		}
 
@@ -42,7 +44,7 @@ namespace topomesh
 
 	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori)
 	{
-		mt->appendVertex(trimesh::point(v->p - 50*ori));		
+		mt->appendVertex(trimesh::point(v->p - ori));		
 		for (MMeshFace* f : v->connected_face)if(!f->IsD())
 		{
 			f->SetV();
@@ -78,7 +80,9 @@ namespace topomesh
 		for (MMeshVertex* vc : v->connected_vertex)if (!vc->IsD())
 		{			
 			if (vc->IsA(1))
+			{				
 				mt->appendFace(vc->index, v->index, mt->vertices.size() - 1);
+			}
 			if (vc->IsA(1) || vc->IsA(2))
 				mt->vertices.back().connected_vertex.push_back(vc);			
 		}
@@ -166,14 +170,14 @@ namespace topomesh
 		line.push_back(std::make_pair(1, lines[2]));
 		line.push_back(std::make_pair(1, lines[3]));
 		line.push_back(std::make_pair(1, lines[4]));*/
-		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		/*if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		trimesh::point ave_normal;
 		for (MMeshFace& f : mesh->faces)
 		{
 			ave_normal += trimesh::normalized(f.normal);
 		}
 		ave_normal /= mesh->FN();
-		ave_normal = -ave_normal;
+		ave_normal = -ave_normal;*/
 		/*trimesh::quaternion q = q.rotationTo(trimesh::point(0, 0, 1), ave_normal);
 		trimesh::fxform xf = trimesh::fromQuaterian(q);
 		for (MMeshVertex& v : mesh->vertices)
@@ -183,13 +187,14 @@ namespace topomesh
 		for (MMeshVertex& v : mesh->vertices)if (!v.IsD())
 		{
 			Eigen::Vector4f vPoint = { v.p.x,v.p.y,v.p.z,1.0 };
-			Eigen::Vector4f point = ProjectionMatrix* ViewMatrix *vPoint;
-			v.p = trimesh::point(point.x(), point.y(), point.z());
-		}
+			Eigen::Vector4f point = ProjectionMatrix*ViewMatrix *vPoint;
+			v.p = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
+		}		
 		//std::vector<trimesh::point> l = lines;
 		auto crossProduct = [=](trimesh::vec2 p1, trimesh::vec2 p2) ->float {
 			return p1.x * p2.y - p1.y * p2.x;
 		};		
+		//std::vector<trimesh::vec2> newlines;
 		for (MMeshFace& f : mesh->faces)
 		{
 			for (int i = 0; i < lines.size(); i++)
@@ -206,20 +211,21 @@ namespace topomesh
 				{
 					f.SetV();
 					Eigen::Matrix2f e;
-					e << v12.x, v13.x, v12.y, v13.y;
+					e << v12.x, v13.x, v12.y, v13.y;					
 					Eigen::Vector2f b = { lines[i].x - f.V0(0)->p.x ,lines[i].y - f.V0(0)->p.y };
 					Eigen::Vector2f x = e.fullPivLu().solve(b);
 					mesh->appendVertex(trimesh::point(f.V0(0)->p + x.x() * vv01 + x.y() * vv02));
-					f.inner_vertex.push_back(mesh->VN() - 1);
+					f.inner_vertex.push_back(mesh->vertices.size() - 1);
+					//newlines.push_back(trimesh::vec2(mesh->vertices.back().p.x,mesh->vertices.back().p.y));
 				}
 			}
-		}
+		}		
 		for (int i = 0; i < lines.size(); i++)
 		{
-			std::vector<std::pair<float, trimesh::ivec2>> corsspoint;
-			mesh->calculateCrossPoint(edge, std::make_pair(trimesh::point(lines[i],0),trimesh::point(lines[(i+1)%lines.size()],0)), corsspoint);
+			std::vector<std::pair<float, trimesh::ivec2>> corsspoint;			
+			mesh->calculateCrossPoint(edge, std::make_pair(trimesh::point(lines[i].x, lines[i].y,0),trimesh::point(lines[(i+1)% lines.size()].x, lines[(i + 1) % lines.size()].y,0)), corsspoint);
 			for(std::pair<float, trimesh::ivec2>& cp:corsspoint)
-			{	
+			{					
 				bool cover = false;
 				for (MMeshFace* f : mesh->vertices[cp.second.x].connected_face)if(!f->IsD())
 					f->SetA();
@@ -271,7 +277,7 @@ namespace topomesh
 					}
 				}
 				else//----一个三角面被多条线切割			
-				{										
+				{								
 					std::vector<std::pair<int,float>> faceVertexSque;					
 					for (int j = 0; j < 3; j++)
 					{					
@@ -301,7 +307,9 @@ namespace topomesh
 						{
 							if (f.uv_coord[i].z == f.uv_coord[j].z)
 								lines.push_back(std::make_pair(f.uv_coord[i].y, f.uv_coord[j].y));
-						}					
+						}
+					for (int i = 0; i < faceVertexSque.size(); i++)
+						mesh->vertices[faceVertexSque[i].first].inner.clear();
 					for (int i = 0; i < lines.size(); i++)
 					{
 						for (int j = 0; j < faceVertexSque.size(); j++)
@@ -340,18 +348,25 @@ namespace topomesh
 						mesh->appendFace(last_face[0], last_face[1], last_face[2]);
 				}
 			else//顶点			
-			{
+			{				
 				if (f.inner_vertex.size() == 1)//只有一个点 直接剖分
 				{
 					std::vector<int> faceVertexSque ;
 					for (int i = 0; i < f.connect_vertex.size(); i++)
 					{
 						faceVertexSque.push_back(f.V0(i)->index);
+						std::vector<int> verVertexSque;
 						for (int j = 0; j < f.uv_coord.size(); j++)
 						{
 							if (f.uv_coord[j].x == i)
-								faceVertexSque.push_back(f.uv_coord[j].y);
+								verVertexSque.push_back(f.uv_coord[j].y);
 						}
+						std::sort(verVertexSque.begin(), verVertexSque.end(), [&](int a, int b)->bool {
+							float ad = trimesh::distance2(mesh->vertices[a].p, f.V0(i)->p);
+							float bd = trimesh::distance2(mesh->vertices[b].p, f.V0(i)->p);
+							return ad < bd;
+							});
+						faceVertexSque.insert(faceVertexSque.end(), verVertexSque.begin(), verVertexSque.end());
 					}
 
 					for (int i = 0; i < faceVertexSque.size(); i++)
@@ -366,13 +381,7 @@ namespace topomesh
 			}
 			f.ClearV();
 		}		
-		/*for (MMeshVertex& v : mesh->vertices)if (!v.IsD())
-		{
-			Eigen::Vector4f v4(v.p.x, v.p.y, v.p.z, 1);
-			Eigen::Vector4f s4 = c.inverse() * m.inverse() * v4;
-			v.p = trimesh::point(s4.x(), s4.y(), s4.z());
-			v.ClearS();
-		}*/
+		
 	}
 
 	bool intersectionTriangle(MMeshT* mt, trimesh::point p, trimesh::point normal)
@@ -464,7 +473,8 @@ namespace topomesh
 			}			
 			if ((rayCorssPoint % 2) != 0)
 			{
-				faceIndex.push_back(f.index);									
+				faceIndex.push_back(f.index);	
+				//mt->deleteFace(f);
 			}
 			
 		}
@@ -506,7 +516,8 @@ namespace topomesh
 		{
 			Eigen::Vector4f linePoint = {p.x,p.y,p.z,1.0};
 			Eigen::Vector4f point = ProjectionMatrix * ViewMatrix * linePoint;
-			poly.push_back(trimesh::vec2(point.x()*(point.w()/100.0f), point.y()*(point.w() / 100.0f)));
+			std::cout << "poly :" << point.x() << " " << point.y() << " " << point.z() << " " << point.w() << "\n";
+			poly.push_back(trimesh::vec2(point.x()*(1.0f/point.w()), point.y()*(1.0f/point.w())));
 		}
 	}
 
@@ -516,7 +527,7 @@ namespace topomesh
 		{
 			Eigen::Vector4f vPoint = { v.p.x,v.p.y,v.p.z,1.0 };
 			Eigen::Vector4f point = ViewMatrix.inverse() * ProjectionMatrix.inverse() * vPoint;
-			v.p = trimesh::point(point.x(), point.y(), point.z());
+			v.p = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 		}
 	}
 }

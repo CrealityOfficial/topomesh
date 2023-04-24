@@ -4,8 +4,8 @@ namespace topomesh
 {
 	MMeshT::MMeshT(trimesh::TriMesh* currentMesh)
 	{
-		if (currentMesh->vertices.size() < 3000)	this->vertices.reserve(3000);
-		if (currentMesh->faces.size() < 1024)	this->faces.reserve(1024);
+		if (currentMesh->vertices.size() < 3000)	this->vertices.reserve(2*3000);
+		if (currentMesh->faces.size() < 1024)	this->faces.reserve(2*1024);
 		int vn = 0;
 		for (trimesh::point apoint : currentMesh->vertices)
 		{
@@ -201,12 +201,12 @@ namespace topomesh
 		for (trimesh::ivec2& e : edge)
 		{
 			trimesh::point b1 = trimesh::point(this->vertices[e.x].p.x, this->vertices[e.x].p.y, 0);
-			trimesh::point b2 = trimesh::point(this->vertices[e.y].p.x, this->vertices[e.y].p.y, 0);
+			trimesh::point b2 = trimesh::point(this->vertices[e.y].p.x, this->vertices[e.y].p.y, 0);			
 			trimesh::point a = line.first - line.second;//a2->a1
 			trimesh::point b = b1 - b2;//b2->b1
 			trimesh::point n1 = line.first - b1;//b1->a1
 			trimesh::point n2 = line.first - b2;//b2->a1
-			trimesh::point n3 = line.second - b1;//b1->a2
+			trimesh::point n3 = line.second - b1;//b1->a2								
 			if (((-a % -n2) ^ (-a % -n1)) >= 0 || ((-b % n1) ^ (-b % n3)) >= 0) continue;
 			trimesh::point m = a % b;
 			trimesh::point n = n1 % a;
@@ -254,7 +254,17 @@ namespace topomesh
 		}
 		if (this->is_VVadjacent())
 		{
-			for (int i = 0; i < f.connect_vertex.size(); i++)
+			for (MMeshVertex* v : f.connect_vertex)
+				v->connected_vertex.clear();
+			for (MMeshVertex* v : f.connect_vertex)
+			{
+				for (MMeshFace* vf : v->connected_face)
+				{
+					v->connected_vertex.push_back(vf->V1(v));
+					v->connected_vertex.push_back(vf->V2(v));
+				}
+			}
+			/*for (int i = 0; i < f.connect_vertex.size(); i++)
 			{
 				if (f.V0(i)->IsB() && f.V1(i)->IsB())
 				{
@@ -278,7 +288,7 @@ namespace topomesh
 						}
 					}
 				}
-			}
+			}*/
 		}
 		if (this->is_FFadjacent())
 		{
@@ -317,9 +327,9 @@ namespace topomesh
 	}
 
 	void MMeshT::appendFace(MMeshVertex& v0, MMeshVertex& v1, MMeshVertex& v2)
-	{
+	{		
 		bool invert = false;
-		this->faces.push_back(MMeshFace(&this->vertices[v0.index], &this->vertices[v1.index], &this->vertices[v2.index]));
+		this->faces.push_back(MMeshFace(&this->vertices[v0.index], &this->vertices[v1.index], &this->vertices[v2.index]));		
 		this->faces.back().index = this->faces.size()-1;
 
 		if (this->is_FFadjacent())
