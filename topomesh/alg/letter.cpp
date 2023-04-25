@@ -644,4 +644,10 @@ namespace topomesh
 			v.p = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 		}
 	}
+
+	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const TriPolygons& polygons,
+		LetterDebugger* debugger, ccglobal::Tracer* tracer)
+	{
+		return nullptr;
+	}
 }

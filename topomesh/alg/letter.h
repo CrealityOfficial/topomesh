@@ -12,6 +12,8 @@
 #include <queue>
 #include <numeric>
 
+#include "ccglobal/tracer.h"
+
 namespace topomesh
 {	
 	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths,  CameraParam& camera, const LetterParam& Letter, std::vector<int>* faceindex = nullptr);
@@ -27,6 +29,9 @@ namespace topomesh
 	void loadCameraParam(CameraParam& camera);
 	void getEmbedingPoint(std::vector<std::vector<trimesh::point>>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, std::vector<std::vector<trimesh::vec2>>& poly);
 	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
+
+	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const TriPolygons& polygons,
+		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 }
 
 #endif // TOPOMESH_LETTER_1680853426716_H

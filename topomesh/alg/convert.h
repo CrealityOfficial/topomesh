@@ -47,4 +47,27 @@ namespace topomesh
 		void save(trimesh::TriMesh* mesh, LetterParam& letterparam, CameraParam& cameraparam, ClipperLibXYZ::Paths& paths);
 		void load(const std::string& fileName);
 	};
+
+	typedef std::vector<trimesh::vec3> TriPolygon;
+	typedef std::vector<TriPolygon> TriPolygons;
+
+	struct SimpleCamera
+	{
+		float f;
+		float n;
+		float fov;
+		float aspect;
+
+		trimesh::point pos;
+		trimesh::point center;
+		trimesh::point up;
+	};
+
+	class LetterDebugger
+	{
+	public:
+		virtual ~LetterDebugger() {}
+
+		virtual void onMeshProjected(const std::vector<trimesh::vec3>& triangles) = 0;
+	};
 }
