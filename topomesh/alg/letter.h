@@ -9,6 +9,7 @@
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
 #include <vector>
+#include <queue>
 #include <numeric>
 
 namespace topomesh
