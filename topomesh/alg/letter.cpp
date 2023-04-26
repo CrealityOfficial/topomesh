@@ -33,10 +33,13 @@ namespace topomesh
 		{
 			if (v.IsS())
 			{
-				if (!v.IsV() || v.IsB())
-					v.p -= ave_normal;
+				if (!v.IsV())
+					v.p -= 120*ave_normal;
+					//continue;
 				else
-					splitPoint(mt, &v, ave_normal);
+					splitPoint(mt, &v, 120*ave_normal);
+					//continue;
+					//v.p -= 120*ave_normal;
 			}
 		}
 
@@ -77,14 +80,15 @@ namespace topomesh
 						it++;
 				}
 		}
-		for (MMeshVertex* vc : v->connected_vertex)if (!vc->IsD())
+		//for (MMeshVertex* vc : v->connected_vertex)if (!vc->IsD())
+		for(unsigned i=0;i<v->connected_vertex.size();i++)if(!v->connected_vertex[i]->IsD())
 		{
-			if (vc->IsA(1))
+			if (v->connected_vertex[i]->IsA(1))
 			{
-				mt->appendFace(vc->index, v->index, mt->vertices.size() - 1);
+				mt->appendFace(v->connected_vertex[i]->index, v->index, mt->vertices.size() - 1);
 			}
-			if (vc->IsA(1) || vc->IsA(2))
-				mt->vertices.back().connected_vertex.push_back(vc);
+			if (v->connected_vertex[i]->IsA(1) || v->connected_vertex[i]->IsA(2))
+				mt->vertices.back().connected_vertex.push_back(v->connected_vertex[i]);
 		}
 
 		for (MMeshFace* f : v->connected_face)if (!f->IsD())
@@ -150,8 +154,8 @@ namespace topomesh
 
 		for (MMeshFace& f : mesh->faces)
 		{
-			float a = f.normal ^ camera.dir;
-			if (a > 0) continue;
+			/*float a = f.normal ^ camera.dir;
+			if (a > 0) continue;*/
 			for (int i = 0; i < lines.size(); i++)
 			{
 				for (int j = 0; j < lines[i].size(); j++)
@@ -172,8 +176,8 @@ namespace topomesh
 						Eigen::Vector2f b = { lines[i][j].x - f.V0(0)->p.x ,lines[i][j].y - f.V0(0)->p.y };
 						Eigen::Vector2f x = e.fullPivLu().solve(b);
 						mesh->appendVertex(trimesh::point(f.V0(0)->p + x.x() * vv01 + x.y() * vv02));
-						//f.inner_vertex.push_back(mesh->vertices.size() - 1);	
-						f.uv_coord.push_back(trimesh::vec4(-1, mesh->vertices.back().index, j, i));
+						f.inner_vertex.push_back(mesh->vertices.size() - 1);	
+						//f.uv_coord.push_back(trimesh::vec4(-1, mesh->vertices.back().index, j, i));
 					}
 				}
 			}
@@ -217,8 +221,8 @@ namespace topomesh
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		for (MMeshFace& f : mesh->faces)if (!f.IsD() && f.IsS())
 		{
-			float a = f.normal ^ camera.dir;
-			if (a > 0) continue;
+			/*float a = f.normal ^ camera.dir;
+			if (a > 0) continue;*/			
 			mesh->deleteFace(f);
 			f.ClearS();
 			if(!f.IsV())
@@ -310,7 +314,7 @@ namespace topomesh
 				}
 			else//顶点			
 			{				
-				if (f.inner_vertex.size() == 1)//只有一个点 直接剖分
+				//if (f.inner_vertex.size() == 1)//只有一个点 直接剖分
 				{				
 					std::vector<int> faceVertexSque ;
 					for (int i = 0; i < f.connect_vertex.size(); i++)
@@ -335,10 +339,10 @@ namespace topomesh
 						mesh->appendFace(faceVertexSque[i], faceVertexSque[(i + 1) % faceVertexSque.size()], f.inner_vertex[0]);
 					}
 				}
-				else//内部多个点
-				{
+				//else//内部多个点
+				//{
 
-				}
+				//}
 			}
 			f.ClearV();
 						
@@ -429,6 +433,11 @@ namespace topomesh
 			//			//----fill triangle
 			//			if(subpoly1.size()==3)
 			//				mesh->appendFace(subpoly1[0], subpoly1[1], subpoly1[2]);
+			//			else if (subpoly1.size() == 4)
+			//			{
+			//				mesh->appendFace(subpoly1[0], subpoly1[1], subpoly1[2]);
+			//				mesh->appendFace(subpoly1[2], subpoly1[3], subpoly1[0]);
+			//			}
 			//			else
 			//			{
 			//				trimesh::point ave;
@@ -462,6 +471,11 @@ namespace topomesh
 			//		else {
 			//			if (subpoly2.size() == 3)
 			//				mesh->appendFace(subpoly2[0], subpoly2[1], subpoly2[2]);
+			//			else if (subpoly2.size() == 4)
+			//			{
+			//				mesh->appendFace(subpoly2[0], subpoly2[1], subpoly2[2]);
+			//				mesh->appendFace(subpoly2[2], subpoly2[3], subpoly2[0]);
+			//			}
 			//			else
 			//			{
 			//				trimesh::point ave;
@@ -568,8 +582,8 @@ namespace topomesh
 	{
 		for (MMeshFace& f : mt->faces)if (!f.IsD())
 		{
-			float a = f.normal ^ camera.dir;
-			if (a > 0) continue;
+			/*float a = f.normal ^ camera.dir;
+			if (a > 0) continue;*/
 			trimesh::point c = (f.V0(0)->p + f.V0(1)->p + f.V0(2)->p) / 3.0;
 			int rayCorssPoint = 0;
 			for (int i = 0; i < poly.size(); i++)//左射线
@@ -586,8 +600,8 @@ namespace topomesh
 			}
 			if ((rayCorssPoint % 2) != 0)
 			{
-				//faceIndex.push_back(f.index);
-				mt->deleteFace(f);
+				faceIndex.push_back(f.index);
+				//mt->deleteFace(f);
 			}
 
 		}
@@ -650,6 +664,9 @@ namespace topomesh
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const TriPolygons& polygons,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{
+		mesh->need_adjacentfaces();
+		mesh->need_neighbors();
+		mesh->need_normals();
 		MMeshT mt(mesh);
 		CameraParam cp;
 		cp.lookAt = camera.center;
@@ -661,6 +678,10 @@ namespace topomesh
 		Eigen::Matrix4f viewMatrix;
 		Eigen::Matrix4f projectionMatrix;
 		getViewMatrixAndProjectionMatrix(cp, viewMatrix, projectionMatrix);		
+		std::cout << "ViewMatrix : " << std::endl;
+		std::cout << viewMatrix << std::endl;
+		std::cout << "ProjectionMatrix : " << std::endl;
+		std::cout << projectionMatrix << std::endl;
 		std::vector<std::vector<trimesh::vec2>> poly;
 		poly.resize(polygons.size());		
 		for(int i=0;i<polygons.size();i++)
@@ -674,7 +695,7 @@ namespace topomesh
 		concaveOrConvexOfFaces(&mt, facesIndex);
 		unTransformationMesh(&mt, viewMatrix, projectionMatrix);
 		mt.mmesh2trimesh(mesh);
-		//mesh->write("visualizationmesh.ply");
+		mesh->write("visualizationmesh.ply");
 		return mesh;
 	}
 }
