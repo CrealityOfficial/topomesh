@@ -31,7 +31,7 @@ namespace topomesh
 	private:
 		enum faceflag
 		{
-			MF_DELETE = 0x00000001,
+			MF_DELETED = 0x00000001,
 			MF_SELECT = 0x00000002,
 			MF_BORDER = 0x00000004,
 			MF_VISITED= 0x00000008,
@@ -40,9 +40,9 @@ namespace topomesh
 		};
 		int flag=0;
 	public:
-		inline void SetD() { flag |= MF_DELETE; }
-		inline bool IsD() { return (MF_DELETE & flag)!=0 ? 1 : 0; }
-		inline void ClearD() { flag &= ~MF_DELETE; }
+		inline void SetD() { flag |= MF_DELETED; }
+		inline bool IsD() { return (MF_DELETED & flag)!=0 ? 1 : 0; }
+		inline void ClearD() { flag &= ~MF_DELETED; }
 
 		inline void SetS() { flag |= MF_SELECT; }
 		inline bool IsS() { return (MF_SELECT & flag) != 0 ? 1 : 0; }
