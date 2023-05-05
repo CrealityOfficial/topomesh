@@ -1,5 +1,5 @@
 #include "letter.h"
-
+#include "vcg/math/camera.h"
 
 #define FLOATERR 0.0001f
 
