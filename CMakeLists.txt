@@ -1,6 +1,7 @@
 __cc_find(TriMesh2)
 __cc_find(Eigen)
 __cc_find(Clipper)
+__cc_find(VCG)
 
 set(SRCS topomesh/data/mmesht.h
 		 topomesh/data/mmesht.cpp
@@ -15,7 +16,10 @@ set(SRCS topomesh/data/mmesht.h
 		 )
 		 
 set(ILIBS trimesh2 eigen mmesh clipper)
+set(LIBS vcg)
+
 __add_real_target(topomesh lib SOURCE ${SRCS}
 							   ILIB ${ILIBS}
+							   LIB ${LIBS}
 							   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
 							   )
