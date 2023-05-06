@@ -3,9 +3,16 @@
 namespace topomesh
 {
 	MMeshT::MMeshT(trimesh::TriMesh* currentMesh)
-	{
-		if (currentMesh->vertices.size() < 3000)	this->vertices.reserve(2*3000);
-		if (currentMesh->faces.size() < 1024)	this->faces.reserve(2*1024);
+	{		
+		if(currentMesh->faces.size()<4096)
+			this->faces.reserve(8192);
+		else
+			this->faces.reserve((unsigned)(currentMesh->faces.size() * 1.5));
+		if (currentMesh->vertices.size() < 4096)
+			this->vertices.reserve(8192);
+		else
+			this->vertices.reserve((unsigned)(currentMesh->vertices.size() * 1.5));		
+		
 		int vn = 0;
 		for (trimesh::point apoint : currentMesh->vertices)
 		{
@@ -327,11 +334,11 @@ namespace topomesh
 	}
 
 	void MMeshT::appendFace(MMeshVertex& v0, MMeshVertex& v1, MMeshVertex& v2)
-	{		
-		bool invert = false;
+	{				
+		bool invert = false;		
 		this->faces.push_back(MMeshFace(&this->vertices[v0.index], &this->vertices[v1.index], &this->vertices[v2.index]));		
-		this->faces.back().index = this->faces.size()-1;
-
+		this->faces.back().index = this->faces.size()-1;	
+		
 		if (this->is_FFadjacent())
 		{
 			for (int i = 0; i < v0.connected_face.size(); i++)
@@ -379,12 +386,14 @@ namespace topomesh
 				v2.connected_face[i]->ClearL(); v2.connected_face[i]->ClearA();
 			}
 		}
+		
 		if (this->is_VFadjacent())
 		{
 			v0.connected_face.push_back(&this->faces.back());
 			v1.connected_face.push_back(&this->faces.back());
 			v2.connected_face.push_back(&this->faces.back());
 		}
+		
 		if (this->is_VVadjacent())
 		{
 			bool edge1 = false, edge2 = false, edge3 = false;
@@ -413,7 +422,7 @@ namespace topomesh
 		}
 		if (invert)
 			std::swap(this->faces.back().connect_vertex[1], this->faces.back().connect_vertex[2]);
-
+		
 		this->fn++;
 	}
 
