@@ -222,7 +222,7 @@ namespace topomesh
 		}
 		
 #else
-		//---------new-----
+		//---------new-----		
 		for(int i = 0; i < lines.size(); i++)
 		{
 			for (int j = 0; j < lines[i].size(); j++)
@@ -243,7 +243,7 @@ namespace topomesh
 						(crossProduct(v12, v10) < 0 && crossProduct(v23, v20) < 0 && crossProduct(v31, v30) < 0))
 					{
 						if(j==0)
-							f.SetV();
+							f.SetV();					
 						Eigen::Matrix2f e;
 						e << v12.x, v13.x, v12.y, v13.y;
 						Eigen::Vector2f b = { lines[i][j].x - f.V0(0)->p.x ,lines[i][j].y - f.V0(0)->p.y };
@@ -295,6 +295,7 @@ namespace topomesh
 			}
 		}
 #endif
+		
 		for (MMeshFace& f : mesh->faces)if (!f.IsD() && f.IsS())
 		{				
 #if 0
@@ -421,9 +422,9 @@ namespace topomesh
 			}
 			f.ClearV();
 
-#else
+#else			
 			mesh->deleteFace(f);
-			if (f.V0(0)->index == 277)
+			if (f.V0(0)->index == 273)
 				std::cout << "277" << std::endl;
 			if (f.uv_coord.size() == 2)
 			{
@@ -441,7 +442,7 @@ namespace topomesh
 				}
 				continue;
 			}
-						
+				
 			std::vector<int> faceVertexSque;
 			for (int i = 0; i < f.connect_vertex.size(); i++)
 			{
@@ -486,7 +487,7 @@ namespace topomesh
 			}
 			else
 			{				
-				bool pass = false;
+				/*bool pass = false;
 				int n=0;
 				for (int i = 0; i < f.uv_coord.size(); i++)
 				{
@@ -521,11 +522,92 @@ namespace topomesh
 						break;
 					innerPoint[l].push_back(f.uv_coord[i].y);
 				}
-				l++;
+				l++;*/
+				int ln = -1;
+				int n = 0;
+				bool innerOrCorss = false;
+				std::vector<std::vector<trimesh::ivec2>> mark_lines;
+				for (int i = 0; i < f.uv_coord.size(); i++)
+				{
+					if (f.uv_coord[i].w == ln)
+					{
+						if (innerOrCorss)
+						{
+							mark_lines.back().push_back(trimesh::ivec2(f.uv_coord[i].x, f.uv_coord[i].y));
+						}
+						else
+						{
+							mesh->vertices[f.uv_coord[i].y].SetU(l);
+							lastIndex[l] = f.uv_coord[i].y;
+							if (f.uv_coord[i].x != -1)
+								n++;
+							else
+							{
+								curve[l] = true;
+								innerPoint[l].push_back(f.uv_coord[i].y);
+							}
+							if (n == 2)
+							{
+								n = 0; l++;
+							}
+						}
+					}
+					else
+					{
+						ln = f.uv_coord[i].w;
+						if (f.uv_coord[i].x == -1)
+						{
+							innerOrCorss = true;
+							std::vector<trimesh::ivec2> line;
+							mark_lines.push_back(line);
+						}
+						else
+							innerOrCorss = false;
+						i--;						
+					}
+				}
+				bool pass = false;
+				n = 0;
+				for (int i = 0; i < mark_lines.size(); i++)
+				{
+					for (int j = 0; j < mark_lines[i].size(); j++)
+					{
+						if (mark_lines[i][j].x != -1 && pass == false)
+						{
+							pass = true;
+							continue;
+						}
+						if (pass)
+						{
+							mesh->vertices[mark_lines[i][j].y].SetU(l);
+							lastIndex[l] = mark_lines[i][j].y;
+							if (mark_lines[i][j].x != -1)
+								n++;
+							else
+							{
+								curve[l] = true;
+								innerPoint[l].push_back(mark_lines[i][j].y);
+							}
+							if (n == 2)
+							{
+								n = 0; l++;
+							}
+						}
+					}
+					for (int j = 0; j < mark_lines[i].size(); j++)
+					{
+						mesh->vertices[mark_lines[i][j].y].SetU(l);
+						lastIndex[l] = mark_lines[i][j].y;
+						curve[l] = true;
+						if (mark_lines[i][j].x != -1)
+							break;
+						innerPoint[l].push_back(mark_lines[i][j].y);
+					}
+					l++;
+				}
 			}			
 			std::vector<std::vector<int>> polygon;
-			polygon.push_back(faceVertexSque);
-
+			polygon.push_back(faceVertexSque);			
 			for (int u = 1; u < l; u++)
 			{
 				int polygon_size = polygon.size();
@@ -570,11 +652,11 @@ namespace topomesh
 						if (subpoly1.size() == 3)
 							mesh->appendFace(subpoly1[0], subpoly1[1], subpoly1[2]);						
 						else
-						{							
+						{											
 							fillTriangle(mesh, subpoly1);							
 						}
 					}
-
+					
 					std::vector<int> subpoly2;
 					bool push2 = false;
 					for (int j = end; j <= begin + polygon[i].size(); j++)
@@ -600,7 +682,7 @@ namespace topomesh
 						if (subpoly2.size() == 3)
 							mesh->appendFace(subpoly2[0], subpoly2[1], subpoly2[2]);						
 						else
-						{							
+						{										
 							fillTriangle(mesh, subpoly2);
 						}
 					}
@@ -781,10 +863,13 @@ namespace topomesh
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const TriPolygons& polygons,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{
+		mesh->clear_adjacentfaces();
+		mesh->clear_neighbors();
+		mesh->clear_normals();
 		mesh->need_adjacentfaces();
 		mesh->need_neighbors();
 		mesh->need_normals();
-		MMeshT mt(mesh);
+		MMeshT mt(mesh);				
 		CameraParam cp;
 		cp.lookAt = camera.center;
 		cp.pos = camera.pos;
@@ -795,11 +880,11 @@ namespace topomesh
 		Eigen::Matrix4f viewMatrix;
 		Eigen::Matrix4f projectionMatrix;
 		getViewMatrixAndProjectionMatrix(cp, viewMatrix, projectionMatrix);	
-		/*viewMatrix << 0.998806, -0.04885, 0, 4.65661e-10,
-			-0.0487726, -0.997224, 0.05627, -7.45058e-09,
-			-0.00274879, -0.0562028, -0.998416, -1.87256,
+		/*viewMatrix << 0.943223, 0.332161, -1.49012e-08, 4.96618e-09,
+			0.29565, -0.839544, 0.455804, -5.96046e-08,
+			0.1514, -0.429925, -0.89008, -1.87256,
 			0, 0, 0, 1;
-		projectionMatrix << 1.93406f, 0, 0, 0,
+		projectionMatrix << 1.93406, 0, 0, 0,
 			0, 3.73205, 0, 0,
 			0, 0, -1.00076, -2.29203,
 			0, 0, -1, 0;*/
@@ -807,13 +892,17 @@ namespace topomesh
 		std::cout << viewMatrix << std::endl;
 		std::cout << "ProjectionMatrix : " << std::endl;
 		std::cout << projectionMatrix << std::endl;
+			
 		std::vector<std::vector<trimesh::vec2>> poly;
 		poly.resize(polygons.size());		
-		for (int i = 0; i < polygons.size(); i++) {
-			
+		for (int i = 0; i < polygons.size(); i++) {				
 			for (int j = polygons[i].size() - 1; j > 0; j--)
 			{
-				poly[i].push_back(trimesh::vec2(polygons[i][j].x, polygons[i][j].y));
+				if (j != polygons[i].size() - 1&&polygons[i][j] != polygons[i][j + 1] )
+				{
+					//std::cout << "polygons : " << polygons[i][j].x << " " << polygons[i][j].y << "\n";
+					poly[i].push_back(trimesh::vec2(polygons[i][j].x, polygons[i][j].y));
+				}
 			}
 		}
 		embedingAndCutting(&mt, poly, viewMatrix, projectionMatrix,cp);
@@ -828,24 +917,22 @@ namespace topomesh
 	}
 
 	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex)
-	{
+	{	
 		int size = vindex.size();
 		if (size == 0) return;
 		if (size == 3)
 		{
-			mesh->appendFace(vindex[0], vindex[1], vindex[2]); return;
-		}
-		/*auto crossProduct = [=](trimesh::vec2 p1, trimesh::vec2 p2) ->float {
-			return p1.x * p2.y - p1.y * p2.x;
-		};*/
+			mesh->appendFace(vindex[0], vindex[1], vindex[2]); 
+			return;
+		}		
 		int index = -1;
 		for (int i = 0; i < size; i++)
 		{
-			trimesh::vec2 v1 = trimesh::vec2(mesh->vertices[vindex[(i + 1) % size]].p.x, mesh->vertices[vindex[(i + 1) % size]].p.y) - trimesh::vec2(mesh->vertices[vindex[i]].p.x, mesh->vertices[vindex[i]].p.y);
+			/*trimesh::vec2 v1 = trimesh::vec2(mesh->vertices[vindex[(i + 1) % size]].p.x, mesh->vertices[vindex[(i + 1) % size]].p.y) - trimesh::vec2(mesh->vertices[vindex[i]].p.x, mesh->vertices[vindex[i]].p.y);
 			trimesh::vec2 v2 = trimesh::vec2(mesh->vertices[vindex[(i + size - 1) % size]].p.x, mesh->vertices[vindex[(i + size - 1) % size]].p.y) - trimesh::vec2(mesh->vertices[vindex[i]].p.x, mesh->vertices[vindex[i]].p.y);			
 			float a = std::acosf(trimesh::normalized(v1) ^ trimesh::normalized(v2));
-			float b = trimesh::point((mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p)%(mesh->vertices[vindex[(i + size - 1) % size]].p- mesh->vertices[vindex[i]].p)).z;
-			//if (a >= M_PIf-FLOATERR)
+			if (a >= M_PIf - FLOATERR)*/
+			float b = trimesh::point((mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p)%(mesh->vertices[vindex[(i + size - 1) % size]].p- mesh->vertices[vindex[i]].p)).z;			
 			if(b<=0)
 				continue;
 			bool pass = false;
@@ -875,14 +962,14 @@ namespace topomesh
 			if (pass)
 				continue;
 			else
-			{
+			{			
 				mesh->appendFace(vindex[i], vindex[(i + 1) % size], vindex[(i + size - 1) % size]);
-				index = i;
+				index = i;				
 				break;
 			}
 		}
 		if (index != -1)
-		{
+		{			
 			vindex.erase(vindex.begin() + index);
 			fillTriangle(mesh, vindex);
 		}
