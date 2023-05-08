@@ -243,7 +243,7 @@ namespace topomesh
 						(crossProduct(v12, v10) < 0 && crossProduct(v23, v20) < 0 && crossProduct(v31, v30) < 0))
 					{
 						if(j==0)
-							f.SetV();					
+							f.SetV();								
 						Eigen::Matrix2f e;
 						e << v12.x, v13.x, v12.y, v13.y;
 						Eigen::Vector2f b = { lines[i][j].x - f.V0(0)->p.x ,lines[i][j].y - f.V0(0)->p.y };
@@ -257,7 +257,7 @@ namespace topomesh
 					std::vector<trimesh::vec4> dis;
 					for (std::pair<float, trimesh::ivec2>& cp : corsspoint)
 					{
-						f.SetS();
+						f.SetS();						
 						int index = f.getVFindex(&mesh->vertices[cp.second.x]);
 						bool pass = false;
 						for(trimesh::ivec3& lp: push_lines)
@@ -486,43 +486,7 @@ namespace topomesh
 				}			
 			}
 			else
-			{				
-				/*bool pass = false;
-				int n=0;
-				for (int i = 0; i < f.uv_coord.size(); i++)
-				{
-					if (f.uv_coord[i].x != -1&&pass==false)
-					{
-						pass = true;	
-						continue;
-					}
-					if (pass)
-					{
-						mesh->vertices[f.uv_coord[i].y].SetU(l);
-						lastIndex[l] = f.uv_coord[i].y;
-						if (f.uv_coord[i].x != -1)						
-							n++;						
-						else
-						{
-							curve[l] = true;
-							innerPoint[l].push_back(f.uv_coord[i].y);
-						}
-						if (n == 2)
-						{
-							n = 0; l++;
-						}
-					}
-				}
-				for (int i = 0; i < f.uv_coord.size(); i++)
-				{
-					mesh->vertices[f.uv_coord[i].y].SetU(l);
-					lastIndex[l] = f.uv_coord[i].y;
-					curve[l] = true;
-					if (f.uv_coord[i].x != -1)
-						break;
-					innerPoint[l].push_back(f.uv_coord[i].y);
-				}
-				l++;*/
+			{							
 				int ln = -1;
 				int n = 0;
 				bool innerOrCorss = false;
@@ -880,12 +844,12 @@ namespace topomesh
 		Eigen::Matrix4f viewMatrix;
 		Eigen::Matrix4f projectionMatrix;
 		getViewMatrixAndProjectionMatrix(cp, viewMatrix, projectionMatrix);	
-		/*viewMatrix << 0.943223, 0.332161, -1.49012e-08, 4.96618e-09,
-			0.29565, -0.839544, 0.455804, -5.96046e-08,
-			0.1514, -0.429925, -0.89008, -1.87256,
+		/*viewMatrix << 0.998971, -0.045363, 1.86265e-09, 0.18526,
+			-0.0430131, -0.947223, 0.317677, -0.147008,
+			-0.0144108, -0.317351, -0.948199, -1.87256,
 			0, 0, 0, 1;
-		projectionMatrix << 1.93406, 0, 0, 0,
-			0, 3.73205, 0, 0,
+		projectionMatrix << 2.60064, 0, 0, 0,
+			0, 5.01831, 0, 0,
 			0, 0, -1.00076, -2.29203,
 			0, 0, -1, 0;*/
 		std::cout << "ViewMatrix : " << std::endl;
@@ -896,14 +860,14 @@ namespace topomesh
 		std::vector<std::vector<trimesh::vec2>> poly;
 		poly.resize(polygons.size());		
 		for (int i = 0; i < polygons.size(); i++) {				
-			for (int j = polygons[i].size() - 1; j > 0; j--)
+			for (int j = polygons[i].size() - 1; j >= 0; j--)
 			{
 				if (j != polygons[i].size() - 1&&polygons[i][j] != polygons[i][j + 1] )
 				{
 					//std::cout << "polygons : " << polygons[i][j].x << " " << polygons[i][j].y << "\n";
 					poly[i].push_back(trimesh::vec2(polygons[i][j].x, polygons[i][j].y));
 				}
-			}
+			}			
 		}
 		embedingAndCutting(&mt, poly, viewMatrix, projectionMatrix,cp);
 		std::vector<int> facesIndex;
@@ -927,11 +891,7 @@ namespace topomesh
 		}		
 		int index = -1;
 		for (int i = 0; i < size; i++)
-		{
-			/*trimesh::vec2 v1 = trimesh::vec2(mesh->vertices[vindex[(i + 1) % size]].p.x, mesh->vertices[vindex[(i + 1) % size]].p.y) - trimesh::vec2(mesh->vertices[vindex[i]].p.x, mesh->vertices[vindex[i]].p.y);
-			trimesh::vec2 v2 = trimesh::vec2(mesh->vertices[vindex[(i + size - 1) % size]].p.x, mesh->vertices[vindex[(i + size - 1) % size]].p.y) - trimesh::vec2(mesh->vertices[vindex[i]].p.x, mesh->vertices[vindex[i]].p.y);			
-			float a = std::acosf(trimesh::normalized(v1) ^ trimesh::normalized(v2));
-			if (a >= M_PIf - FLOATERR)*/
+		{			
 			float b = trimesh::point((mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p)%(mesh->vertices[vindex[(i + size - 1) % size]].p- mesh->vertices[vindex[i]].p)).z;			
 			if(b<=0)
 				continue;
@@ -971,7 +931,7 @@ namespace topomesh
 		if (index != -1)
 		{			
 			vindex.erase(vindex.begin() + index);
-			fillTriangle(mesh, vindex);
+			return fillTriangle(mesh, vindex);
 		}
 		
 	}

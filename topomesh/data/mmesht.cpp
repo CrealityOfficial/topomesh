@@ -227,6 +227,7 @@ namespace topomesh
 
 	void MMeshT::deleteVertex(MMeshVertex& v)
 	{
+		if (v.IsD()) return;
 		v.SetD();
 		if (this->is_VFadjacent() && this->is_VVadjacent())
 		{
@@ -244,6 +245,7 @@ namespace topomesh
 
 	void MMeshT::deleteFace(MMeshFace& f)
 	{
+		if (f.IsD()) return;
 		f.SetD();
 		if (this->is_VFadjacent())
 		{
