@@ -5,7 +5,7 @@
 
 namespace topomesh
 {
-	void concaveOrConvexOfFaces(MMeshT* mt, std::vector<int>& faces, bool concave,int deep)
+	void concaveOrConvexOfFaces(MMeshT* mt, std::vector<int>& faces,Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, bool concave,float deep)
 	{
 
 		trimesh::point ave_normal;
@@ -18,7 +18,13 @@ namespace topomesh
 			mt->faces[faces[i]].V0(2)->SetS();			
 		}		
 		ave_normal /= faces.size();
-		trimesh::normalize(ave_normal);	
+		Eigen::Vector4f e_normal = { ave_normal.x,ave_normal.y,ave_normal.z,1.0 };
+		Eigen::Vector4f normal = ViewMatrix.inverse() * ProjectionMatrix.inverse() * e_normal;
+		trimesh::point trans_normal = trimesh::point(normal.x() * (1.0f / normal.w()), normal.y() * (1.0f / normal.w()), normal.z() * (1.0f / normal.w()));
+		std::cout << "trans_normal :" << trans_normal << "\n";
+		float distance = std::sqrt(trans_normal.sumsqr());
+		float div = deep / distance * 1.0f;		
+		std::cout << "distance :" << distance << " div :" << div << "\n";
 		for (int i = 0; i < faces.size(); i++)if (!mt->faces[faces[i]].IsD())
 		{
 			for (int j = 0; j < 3; j++)
@@ -31,16 +37,16 @@ namespace topomesh
 			}
 		}
 		if (concave)
-			deep = -deep;
+			div = -div;
 		for (MMeshVertex& v : mt->vertices)if (!v.IsD())
 		{
 			if (v.IsS())
 			{
 				if (!v.IsV())
-					v.p += ave_normal/200.0*deep;
+					v.p += ave_normal*200*div;
 					//continue;
 				else
-					splitPoint(mt, &v, ave_normal/200.0*deep);
+					splitPoint(mt, &v, ave_normal*200*div);
 					//continue;
 					//v.p -= 120*ave_normal;
 			}
@@ -118,7 +124,7 @@ namespace topomesh
 		embedingAndCutting(mesh, wordScrennPos,faceIndex);
 		std::vector<int> facesIndex;
 		polygonInnerFaces(mesh, wordScrennPos, facesIndex, camera);
-		concaveOrConvexOfFaces(mesh, facesIndex);
+		//concaveOrConvexOfFaces(mesh, facesIndex);
 		unTransformationMesh(mesh, viewMatrix, projectionMatrix);
 	}
 	void embedingAndCutting(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex)
@@ -733,7 +739,7 @@ namespace topomesh
 		float w = trimesh::distance(m1, m2);
 		float h = trimesh::distance(m1, m3);
 		float wordSize = w / (len * 1.0f);
-		float pointLen = wordSize / (letter.height * 1.0f);
+		//float pointLen = wordSize / (letter.height * 1.0f);
 		float span = (h - wordSize) / 2.0f;
 		for (unsigned i = 0; i < len; i++)
 		{
@@ -742,8 +748,8 @@ namespace topomesh
 			{
 				for (unsigned k = 0; k < paths[i][j].size(); k++)
 				{
-					trimesh::point point = begin + paths[i][j][k].X * pointLen * ori_x + (letter.height - paths[i][j][k].Y) * pointLen * ori_y;
-					points[j].push_back(point);
+					//trimesh::point point = begin + paths[i][j][k].X * pointLen * ori_x + (letter.height - paths[i][j][k].Y) * pointLen * ori_y;
+					//points[j].push_back(point);
 				}
 			}
 
@@ -855,7 +861,7 @@ namespace topomesh
 		}
 	}
 
-	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const TriPolygons& polygons,
+	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& letter, const TriPolygons& polygons,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{
 		mesh->clear_adjacentfaces();
@@ -908,7 +914,7 @@ namespace topomesh
 		embedingAndCutting(&mt, poly,faceindex);
 		std::vector<int> facesIndex;
 		polygonInnerFaces(&mt, poly, facesIndex,cp);
-		concaveOrConvexOfFaces(&mt, facesIndex,false,10);
+		concaveOrConvexOfFaces(&mt, facesIndex, viewMatrix, projectionMatrix, letter.concave, letter.deep);
 		unTransformationMesh(&mt, viewMatrix, projectionMatrix);
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
 		mt.mmesh2trimesh(newmesh);

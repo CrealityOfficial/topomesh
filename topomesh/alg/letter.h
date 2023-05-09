@@ -17,7 +17,7 @@
 namespace topomesh
 {	
 	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths,  CameraParam& camera, const LetterParam& Letter, std::vector<int>* faceindex = nullptr);
-	void concaveOrConvexOfFaces(MMeshT* mt,std::vector<int>& faces, bool concave=false,int deep=2);
+	void concaveOrConvexOfFaces(MMeshT* mt,std::vector<int>& faces, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix ,bool concave=false,float deep=1.0);
 	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori);	
 	void embedingAndCutting(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& lines,std::vector<int>& facesIndex);
 	void wordToWorldPoint(const CameraParam& camera,const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths,std::vector<std::vector<trimesh::point>>& points);
@@ -31,7 +31,7 @@ namespace topomesh
 	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void TransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex);
-	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera,const TriPolygons& polygons,
+	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera,const LetterParam& letter,const TriPolygons& polygons,
 		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 }
 

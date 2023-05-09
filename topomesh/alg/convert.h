@@ -6,8 +6,7 @@
 namespace topomesh
 {
 	struct LetterParam
-	{
-		int height = 20000;
+	{		
 		bool concave = true;
 		float deep = 2.0f;
 	};
