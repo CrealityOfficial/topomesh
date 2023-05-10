@@ -59,7 +59,14 @@ namespace topomesh
 		inline bool is_VVadjacent() { return VVadjacent; }
 		inline bool is_VFadjacent() { return VFadjacent; }
 		inline bool is_FFadjacent() { return FFadjacent; }
+		inline bool is_VertexNormals() { return VertexNormals; }
 		inline bool is_FaceNormals() { return FacesNormals; }
+
+		inline void set_VVadjacent(bool b) { VVadjacent = b; }
+		inline void set_VFadjacent(bool b) { VFadjacent = b; }
+		inline void set_FFadjacent(bool b) { FFadjacent = b; }
+		inline void set_VertexNormals(bool b) { VertexNormals = b; }
+		inline void set_FacesNormals(bool b) { FacesNormals = b; }
 
 		inline int VN() const { return vn; }
 		inline int FN() const { return fn; }
@@ -70,6 +77,7 @@ namespace topomesh
 		bool VVadjacent = false;
 		bool VFadjacent = false;
 		bool FFadjacent = false;
+		bool VertexNormals = false;
 		bool FacesNormals = false;
 	};
 
