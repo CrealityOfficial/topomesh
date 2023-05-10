@@ -23,7 +23,7 @@ namespace topomesh
 	void wordToWorldPoint(const CameraParam& camera,const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths,std::vector<std::vector<trimesh::point>>& points);
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);
-	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& faceIndex, const CameraParam& camera);
+	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex, const CameraParam& camera);
 	void getScreenWidthAndHeight(const CameraParam& camera,std::pair<float,float>&wh);
 	void getViewMatrixAndProjectionMatrix(const CameraParam& camera,Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void loadCameraParam(CameraParam& camera);
@@ -31,7 +31,8 @@ namespace topomesh
 	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void TransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex);
-	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera,const LetterParam& letter,const TriPolygons& polygons,
+	void getMeshFaces(MMeshT* mesh, const std::vector<std::vector<trimesh::vec2>>& polygons, const CameraParam& camera, std::vector<int>& faces);
+	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter,const TriPolygons& polygons,
 		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 }
 

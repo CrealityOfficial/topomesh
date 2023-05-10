@@ -14,12 +14,16 @@ namespace topomesh
 			this->vertices.reserve((unsigned)(currentMesh->vertices.size() * 1.5));		
 		
 		int vn = 0;
+		if (currentMesh->normals.size() > 0)
+			this->VertexNormals = true;
 		for (trimesh::point apoint : currentMesh->vertices)
 		{
 			this->vertices.push_back(apoint);
 			this->vertices.back().index = vn;
-			if (currentMesh->normals.size() > 0)
+			if (this->is_VertexNormals())
+			{
 				this->vertices.back().normal = currentMesh->normals.at(vn);
+			}
 			vn++;
 		}
 		this->vn = vn;
@@ -85,7 +89,8 @@ namespace topomesh
 		{
 			if (this->vertices[i].IsD()) continue;
 			currentMesh->vertices.push_back(this->vertices[i].p);
-			currentMesh->normals.push_back(this->vertices[i].normal);
+			if(this->is_VertexNormals())
+				currentMesh->normals.push_back(this->vertices[i].normal);
 			if (this->is_VVadjacent())
 			{
 				std::vector<int> vvadj;
@@ -134,20 +139,22 @@ namespace topomesh
 			}
 			f.index -= deleteFNum;
 		}
-		for (int i = 0; i < this->vertices.size(); i++)
-		{
-			for (int j = 0; j < this->vertices[i].connected_vertex.size(); j++)
-				this->vertices[i].connected_vertex[j] = &this->vertices[this->vertices[i].connected_vertex[j]->index];
-			for (int j = 0; j < this->vertices[i].connected_face.size(); j++)
-				this->vertices[i].connected_face[j] = &this->faces[this->vertices[i].connected_face[j]->index];
-		}
-		for (int i = 0; i < this->faces.size(); i++)
-		{
-			for (int j = 0; j < this->faces[i].connect_vertex.size(); j++)
-				this->faces[i].connect_vertex[j] = &this->vertices[this->faces[i].connect_vertex[j]->index];
-			for (int j = 0; j < this->faces[i].connect_face.size(); j++)
-				this->faces[i].connect_face[j] = &this->faces[this->faces[i].connect_face[j]->index];
-		}
+		if(this->is_VVadjacent())
+			for (int i = 0; i < this->vertices.size(); i++)
+			{
+				for (int j = 0; j < this->vertices[i].connected_vertex.size(); j++)
+					this->vertices[i].connected_vertex[j] = &this->vertices[this->vertices[i].connected_vertex[j]->index];
+				for (int j = 0; j < this->vertices[i].connected_face.size(); j++)
+					this->vertices[i].connected_face[j] = &this->faces[this->vertices[i].connected_face[j]->index];
+			}
+		if(this->is_VFadjacent())
+			for (int i = 0; i < this->faces.size(); i++)
+			{
+				for (int j = 0; j < this->faces[i].connect_vertex.size(); j++)
+					this->faces[i].connect_vertex[j] = &this->vertices[this->faces[i].connect_vertex[j]->index];
+				for (int j = 0; j < this->faces[i].connect_face.size(); j++)
+					this->faces[i].connect_face[j] = &this->faces[this->faces[i].connect_face[j]->index];
+			}
 		for (int i = 0; i < this->vertices.size(); i++)
 			if (this->vertices[i].IsD())
 			{
