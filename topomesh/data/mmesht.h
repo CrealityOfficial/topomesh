@@ -3,6 +3,7 @@
 #include "trimesh2/Vec.h"
 #include "mmeshFace.h"
 #include "mmeshVertex.h"
+#include <map>
 
 namespace topomesh
 {
@@ -13,6 +14,7 @@ namespace topomesh
 		MMeshT(const MMeshT& mt) {};
 		MMeshT(MMeshT& mt) {};
 		MMeshT(trimesh::TriMesh* currentMesh);
+		MMeshT(trimesh::TriMesh* currentMesh,std::vector<int>& faces);
 		MMeshT& operator=(MMeshT mt) {};
 		virtual ~MMeshT() { vertices.clear(); faces.clear(); };
 

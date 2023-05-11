@@ -14,12 +14,11 @@ namespace topomesh
 			mt->faces[faces[i]].SetS();
 			mt->faces[faces[i]].V0(0)->SetS();
 			mt->faces[faces[i]].V0(1)->SetS();
-			mt->faces[faces[i]].V0(2)->SetS();			
-		}		
+			mt->faces[faces[i]].V0(2)->SetS();				
+		}			
 		ave_normal /= faces.size();		
-		trimesh::normalize(ave_normal);
-
-		for (int i = 0; i < faces.size(); i++)if (!mt->faces[faces[i]].IsD())
+		trimesh::normalize(ave_normal);	
+		/*for (int i = 0; i < faces.size(); i++)if (!mt->faces[faces[i]].IsD())
 		{
 			for (int j = 0; j < 3; j++)
 			{
@@ -29,6 +28,15 @@ namespace topomesh
 						mt->faces[faces[i]].V0(j)->SetV(); break;
 					}
 			}
+		}*/
+		for (MMeshVertex& v : mt->vertices)if (!v.IsD() && v.IsS())
+		{
+			std::cout << "v connect face size :" << v.connected_face.size() << "\n";
+			for (MMeshFace* f : v.connected_face)
+				if (!f->IsS())
+				{
+					v.SetV(); break;
+				}
 		}
 		
 		if (concave)
@@ -41,9 +49,9 @@ namespace topomesh
 					v.p += ave_normal*deep;
 					//continue;
 				else
-					splitPoint(mt, &v, ave_normal*deep);
-					//continue;
-					//v.p -= 120*ave_normal;
+					//splitPoint(mt, &v, ave_normal*deep);
+					continue;
+					//v.p += ave_normal * deep;
 			}
 		}
 
@@ -842,6 +850,16 @@ namespace topomesh
 		}
 	}
 
+	void TransformationMesh(trimesh::TriMesh* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
+	{
+		for (trimesh::point& v : mesh->vertices)
+		{
+			Eigen::Vector4f vPoint = { v.x,v.y,v.z,1.0 };
+			Eigen::Vector4f point = ProjectionMatrix * ViewMatrix * vPoint;
+			v = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
+		}
+	}
+
 	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
 	{
 		for (MMeshVertex& v : mesh->vertices)if (!v.IsD())
@@ -852,7 +870,17 @@ namespace topomesh
 		}
 	}
 
-	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const TriPolygons& polygons,
+	void unTransformationMesh(trimesh::TriMesh* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
+	{
+		for (trimesh::point& v : mesh->vertices)
+		{
+			Eigen::Vector4f vPoint = { v.x,v.y,v.z,1.0 };
+			Eigen::Vector4f point = ViewMatrix.inverse() * ProjectionMatrix.inverse() * vPoint;
+			v = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
+		}
+	}
+
+	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{
 		mesh->clear_adjacentfaces();
@@ -862,7 +890,7 @@ namespace topomesh
 		mesh->need_neighbors();
 		mesh->need_normals();
 		//mesh->write("frist.ply");
-		MMeshT mt(mesh);				
+		//MMeshT mt(mesh);				
 		CameraParam cp;
 		cp.lookAt = camera.center;
 		cp.pos = camera.pos;
@@ -885,19 +913,37 @@ namespace topomesh
 		std::cout << viewMatrix << std::endl;
 		std::cout << "ProjectionMatrix : " << std::endl;
 		std::cout << projectionMatrix << std::endl;
+
 		std::vector<std::vector<trimesh::vec2>> poly;
 		poly.resize(polygons.size());		
-		for (int i = 0; i < polygons.size(); i++) {				
-			for (int j = polygons[i].size() - 1; j >= 0; j--)
+		for (int i = 0; i < polygons.size(); i++) {
+			for (int j = 0; j <polygons[i].size(); j++)
 			{
-				if (j != polygons[i].size() - 1&&polygons[i][j] != polygons[i][j + 1] )
-				{
-					//std::cout << "polygons : " << polygons[i][j].x << " " << polygons[i][j].y << "\n";
-					poly[i].push_back(trimesh::vec2(polygons[i][j].x, polygons[i][j].y));
-				}
-			}			
+				for(int k= polygons[i][j].size() - 1;k>=0;k--)
+					if (k != polygons[i][j].size() - 1 && polygons[i][j][k] != polygons[i][j][k+1])
+					{
+						//std::cout << "polygons : " << polygons[i][j].x << " " << polygons[i][j].y << "\n";
+						poly[i].push_back(trimesh::vec2(polygons[i][j][k].x, polygons[i][j][k].y));
+					}
+			}
 		}
-		std::vector<int> infaceindex;		
+		TransformationMesh(mesh, viewMatrix, projectionMatrix);
+		std::vector<int> faceindex;
+		getMeshFaces(mesh, poly, cp, faceindex);		
+		MMeshT mt(mesh,faceindex);
+		faceindex.clear();
+		for (int i = 0; i < mt.faces.size(); i++)
+			faceindex.push_back(i);
+		embedingAndCutting(&mt, poly, faceindex);
+		faceindex.clear();
+		for (int i = 0; i < mt.faces.size(); i++)
+			faceindex.push_back(i);
+		std::vector<int> facesIndex;		
+		polygonInnerFaces(&mt, poly, faceindex,facesIndex,cp);
+		unTransformationMesh(&mt, viewMatrix, projectionMatrix);
+		concaveOrConvexOfFaces(&mt, facesIndex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
+
+	/*	std::vector<int> infaceindex;		
 		TransformationMesh(&mt, viewMatrix, projectionMatrix);
 		getMeshFaces(&mt, poly, cp, infaceindex);
 		embedingAndCutting(&mt, poly, infaceindex);
@@ -906,7 +952,7 @@ namespace topomesh
 		std::vector<int> facesIndex;
 		polygonInnerFaces(&mt, poly, infaceindex,facesIndex,cp);
 		unTransformationMesh(&mt, viewMatrix, projectionMatrix);
-		concaveOrConvexOfFaces(&mt, facesIndex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
+		concaveOrConvexOfFaces(&mt, facesIndex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);*/
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
 		mt.set_FacesNormals(false);
 		mt.set_FFadjacent(false);
@@ -1062,7 +1108,8 @@ namespace topomesh
 							c++;
 					}
 					if (c == 1)
-					{						
+					{			
+						
 						faces.push_back(f.index);
 						break;
 					}
@@ -1077,6 +1124,97 @@ namespace topomesh
 						}
 					}
 				}				
+			}
+		}
+	}
+
+	void getMeshFaces(trimesh::TriMesh* mesh, const std::vector<std::vector<trimesh::vec2>>& polygons, const CameraParam& camera, std::vector<int>& faces)
+	{
+		trimesh::vec2 topleft(1, -1);
+		trimesh::vec2 botright(-1, 1);
+		for (int i = 0; i < polygons.size(); i++)
+			for (int j = 0; j < polygons[i].size(); j++)
+			{
+				if (polygons[i][j].x < topleft.x)
+					topleft.x = polygons[i][j].x;
+				if (polygons[i][j].x > botright.x)
+					botright.x = polygons[i][j].x;
+				if (polygons[i][j].y > topleft.y)
+					topleft.y = polygons[i][j].y;
+				if (polygons[i][j].y < botright.y)
+					botright.y = polygons[i][j].y;
+			}
+		trimesh::vec2 topright(botright.x, topleft.y);
+		trimesh::vec2 botleft(topleft.x, botright.y);
+		std::vector<trimesh::vec2> rect = { topleft ,botright ,topright ,botleft };
+		mesh->need_normals();
+		for(int fi=0;fi<mesh->faces.size();fi++)		
+		{
+			trimesh::vec normal = (mesh->normals[mesh->faces[fi][0]] + mesh->normals[mesh->faces[fi][1]] + mesh->normals[mesh->faces[fi][2]]) / 3.0f;
+			float a = normal ^ camera.dir;
+			if (a > 0) continue;
+			bool rectInnerFace = false;
+			float min_x = 1.0, min_y = 1.0, max_x = -1.0, max_y = -1.0;
+			std::vector<trimesh::vec2> triangle;
+			for (int i = 0; i < 3; i++)
+			{
+				trimesh::vec2 v = trimesh::vec2(mesh->vertices[mesh->faces[fi][i]].x, mesh->vertices[mesh->faces[fi][i]].y);
+				triangle.push_back(v);
+				if (v.x<botright.x && v.x>topleft.x && v.y<topleft.y && v.y>botright.y)
+				{
+					faces.push_back(fi); rectInnerFace = true; break;
+				}
+				if (v.x < min_x)
+					min_x = v.x;
+				if (v.x > max_x)
+					max_x = v.x;
+				if (v.y < min_y)
+					min_y = v.y;
+				if (v.y > max_y)
+					max_y = v.y;
+			}
+			if (min_x > botright.x || max_x<topleft.x || min_y>topleft.y || max_y < botright.y)
+				rectInnerFace = true;
+
+			if (rectInnerFace)
+				continue;
+			else
+			{
+				for (int i = 0; i < rect.size(); i++)
+				{
+					int c = 0; float e = 1; bool eq = false;
+					for (int j = 0; j < 3; j++)
+					{
+						if (std::abs(triangle[j].y - triangle[(j + 1) % 3].y) < FLOATERR) continue;
+						if (rect[i].y < std::min(triangle[j].y, triangle[(j + 1) % 3].y))continue;
+						if (rect[i].y > std::max(triangle[j].y, triangle[(j + 1) % 3].y)) continue;
+						if (triangle[j].y == rect[i].y || triangle[(j + 1) % 3].y == rect[i].y)
+						{
+							eq = true;
+							trimesh::point p1 = trimesh::point(triangle[(j + 1) % 3].x, triangle[(j + 1) % 3].y, 0) - trimesh::point(triangle[j].x, triangle[j].y, 0);
+							trimesh::point p2 = trimesh::point(rect[i].x, rect[i].y, 0) - trimesh::point(triangle[j].x, triangle[j].y, 0);
+							e = e * (p1 % p2).z;
+						}
+						double x = (rect[i].y - triangle[j].y) * (triangle[(j + 1) % 3].x - triangle[j].x) / (triangle[(j + 1) % 3].y - triangle[j].y) + triangle[j].x;
+						if (x > rect[i].x)
+							c++;
+					}
+					if (c == 1)
+					{
+						faces.push_back(fi);
+						break;
+					}
+					else if (c == 2)
+					{
+						if (eq)
+						{
+							if (e > 0)
+							{
+								faces.push_back(fi); break;
+							}
+						}
+					}
+				}
 			}
 		}
 	}
