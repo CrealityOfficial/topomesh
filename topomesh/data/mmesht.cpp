@@ -80,6 +80,53 @@ namespace topomesh
 		}
 	}
 
+	MMeshT::MMeshT(trimesh::TriMesh* currentMesh, std::vector<int>& faces)
+	{
+		if (currentMesh->faces.size() < 4096)
+			this->faces.reserve(8192);
+		else
+			this->faces.reserve((unsigned)(currentMesh->faces.size() * 1.5));
+		if (currentMesh->vertices.size() < 4096)
+			this->vertices.reserve(8192);
+		else
+			this->vertices.reserve((unsigned)(currentMesh->vertices.size() * 1.5));
+
+		std::vector<int> vertexIndex;
+		for (int i = 0; i < faces.size(); i++)
+			for (int j = 0; j < 3; j++)
+				vertexIndex.push_back(currentMesh->faces[faces[i]][j]);
+		
+		std::sort(vertexIndex.begin(), vertexIndex.end());
+		for (int i = 0; i < vertexIndex.size(); i++)
+		{
+			if (i != 0 && vertexIndex[i] == vertexIndex[i - 1])
+			{
+				vertexIndex.erase(vertexIndex.begin() + i); i--;
+			}
+		}
+		std::map<int, int> im;
+		for (int i = 0; i < vertexIndex.size(); i++)
+		{
+			this->vertices.push_back(currentMesh->vertices[vertexIndex[i]]);
+			this->vertices.back().index = i;
+			im[vertexIndex[i]] = i;
+		}
+		this->vn = vertexIndex.size();
+		this->faces.resize(faces.size());
+		for (int i = 0; i < this->faces.size(); i++)
+		{
+			this->faces[i].index = i;
+			for (int j = 0; j < 3; j++)
+				this->faces[i].connect_vertex.push_back(&this->vertices[im[currentMesh->faces[faces[i]][j]]]);
+			for (int j = 0; j < 3; j++)
+				this->faces[i].connect_vertex[j]->connected_face.push_back(&this->faces[i]);			
+		}
+		for (int i = 0; i < this->vertices.size(); i++)
+		{
+			//...
+		}
+	}
+
 
 	void MMeshT::mmesh2trimesh(trimesh::TriMesh* currentMesh)
 	{
