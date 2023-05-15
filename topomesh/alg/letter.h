@@ -8,6 +8,7 @@
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
+#include "omp.h"
 #include <vector>
 #include <queue>
 #include <numeric>
@@ -34,7 +35,10 @@ namespace topomesh
 	void TransformationMesh(trimesh::TriMesh* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex);
 	void getMeshFaces(MMeshT* mesh, const std::vector<std::vector<trimesh::vec2>>& polygons, const CameraParam& camera, std::vector<int>& faces);
-	void getMeshFaces(trimesh::TriMesh* mesh, const std::vector<std::vector<trimesh::vec2>>& polygons, const CameraParam& camera, std::vector<int>& faces);
+	void getMeshFaces(trimesh::TriMesh* mesh, const std::vector<std::vector<std::vector<trimesh::vec2>>>& polygons, const CameraParam& camera, std::vector<int>& faces);
+	void getDisCoverFaces(MMeshT* mesh, std::vector<int>& faces, std::map<int, int>& fmap);
+	void mapping(MMeshT* mesh, trimesh::TriMesh* trimesh, std::map<int, int>& vmap, std::map<int, int>& fmap);
+	void simpleCutting(MMeshT* mesh, const std::vector<std::vector<std::vector<trimesh::vec2>>>& polygons, std::vector<std::vector<int>>& faceindexs);
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter,const std::vector<TriPolygons>& polygons,
 		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 }

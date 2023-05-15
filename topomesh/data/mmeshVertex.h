@@ -32,6 +32,7 @@ namespace topomesh
 			MV_BORDER = 0x00000004,
 			MV_VISITED= 0x00000008,
 			MV_ACCUMULATE = 0x00000ff0,
+			MV_LIMITING = 0x00001000,
 			MV_USER	  = 0x00ff0000
 		};
 		int flag = 0;
@@ -51,6 +52,10 @@ namespace topomesh
 		inline void SetV() { flag |= MV_VISITED; }
 		inline bool IsV() { return (MV_VISITED & flag) != 0 ? 1 : 0; }
 		inline void ClearV() { flag &= ~MV_VISITED; }
+
+		inline void SetL() { flag |= MV_LIMITING; }
+		inline bool IsL() { return (MV_LIMITING & flag) != 0 ? 1 : 0; }
+		inline void ClearL() { flag &= ~MV_LIMITING; }
 
 		//0 - 255
 		inline bool SetA() { int copy = flag & MV_ACCUMULATE; copy = copy >> 4;	copy += 1; if (copy > 255) return false; copy = copy << 4; flag&=~MV_ACCUMULATE; flag |= copy; return true; }

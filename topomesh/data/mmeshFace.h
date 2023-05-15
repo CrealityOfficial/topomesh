@@ -36,7 +36,8 @@ namespace topomesh
 			MF_BORDER = 0x00000004,
 			MF_VISITED= 0x00000008,
 			MF_ACCUMULATE   = 0x00000ff0,
-			MF_LIMITING   = 0x00001000
+			MF_LIMITING   = 0x00001000,
+			MF_USER = 0x00ff0000
 		};
 		int flag=0;
 	public:
@@ -65,6 +66,11 @@ namespace topomesh
 		inline void SetL() { flag |= MF_LIMITING; }
 		inline bool IsL() { return (MF_LIMITING & flag) != 0 ? 1 : 0; }
 		inline void ClearL() { flag &= ~MF_LIMITING; }
+
+		inline bool SetU(int user) { if (user > 255) return false; flag &= ~MF_USER; int copy = user << 16; flag |= copy; return true; }
+		inline bool IsU(int i) { int copy = flag & MF_USER; copy = copy >> 16; if (i == copy)return true; return false; }
+		inline void ClearU() { flag &= !MF_USER; }
+		inline int GetU() { int copy = flag & MF_USER; copy = copy >> 16; return copy; }
 
 		inline void open_uv() { uv_coord.reserve(8); }
 

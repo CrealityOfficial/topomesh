@@ -14,7 +14,7 @@ namespace topomesh
 		MMeshT(const MMeshT& mt) {};
 		MMeshT(MMeshT& mt) {};
 		MMeshT(trimesh::TriMesh* currentMesh);
-		MMeshT(trimesh::TriMesh* currentMesh,std::vector<int>& faces);
+		MMeshT(trimesh::TriMesh* currentMesh,std::vector<int>& faces,std::map<int,int>& vmap, std::map<int, int>& fmap);
 		MMeshT& operator=(MMeshT mt) {};
 		virtual ~MMeshT() { vertices.clear(); faces.clear(); };
 
@@ -69,6 +69,9 @@ namespace topomesh
 		inline void set_FFadjacent(bool b) { FFadjacent = b; }
 		inline void set_VertexNormals(bool b) { VertexNormals = b; }
 		inline void set_FacesNormals(bool b) { FacesNormals = b; }
+
+		inline void clear() { vertices.clear(); faces.clear();
+		}
 
 		inline int VN() const { return vn; }
 		inline int FN() const { return fn; }

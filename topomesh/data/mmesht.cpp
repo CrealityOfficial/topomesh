@@ -80,16 +80,16 @@ namespace topomesh
 		}
 	}
 
-	MMeshT::MMeshT(trimesh::TriMesh* currentMesh, std::vector<int>& faces)
+	MMeshT::MMeshT(trimesh::TriMesh* currentMesh, std::vector<int>& faces, std::map<int, int>& vmap, std::map<int, int>& fmap)
 	{
-		if (currentMesh->faces.size() < 4096)
+		if (faces.size() < 4096)
 			this->faces.reserve(8192);
 		else
-			this->faces.reserve((unsigned)(currentMesh->faces.size() * 1.5));
-		if (currentMesh->vertices.size() < 4096)
+			this->faces.reserve((unsigned)(faces.size() * 1.5));
+		if (faces.size()*3 < 4096)
 			this->vertices.reserve(8192);
 		else
-			this->vertices.reserve((unsigned)(currentMesh->vertices.size() * 1.5));
+			this->vertices.reserve((unsigned)(faces.size() * 4.5));
 
 		std::vector<int> vertexIndex;
 		for (int i = 0; i < faces.size(); i++)
@@ -104,26 +104,57 @@ namespace topomesh
 				vertexIndex.erase(vertexIndex.begin() + i); i--;
 			}
 		}
-		std::map<int, int> im;
 		for (int i = 0; i < vertexIndex.size(); i++)
 		{
 			this->vertices.push_back(currentMesh->vertices[vertexIndex[i]]);
 			this->vertices.back().index = i;
-			im[vertexIndex[i]] = i;
+			vmap[vertexIndex[i]] = i;
 		}
 		this->vn = vertexIndex.size();
 		this->faces.resize(faces.size());
 		for (int i = 0; i < this->faces.size(); i++)
 		{
+			fmap[i] = faces[i];
 			this->faces[i].index = i;
 			for (int j = 0; j < 3; j++)
-				this->faces[i].connect_vertex.push_back(&this->vertices[im[currentMesh->faces[faces[i]][j]]]);
+				this->faces[i].connect_vertex.push_back(&this->vertices[vmap[currentMesh->faces[faces[i]][j]]]);
 			for (int j = 0; j < 3; j++)
 				this->faces[i].connect_vertex[j]->connected_face.push_back(&this->faces[i]);			
-		}
+		}	
 		for (int i = 0; i < this->vertices.size(); i++)
 		{
-			//...
+			for (MMeshFace* f : this->vertices[i].connected_face)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					if (!f->V0(j)->IsL()&&f->V0(j)->index!=i)
+					{
+						this->vertices[i].connected_vertex.push_back(f->V0(j)); f->V0(j)->SetL();
+					}
+				}				
+			}
+			for (MMeshVertex* v : this->vertices[i].connected_vertex)
+				v->ClearL();
+		}
+		for (int i = 0; i < this->faces.size(); i++)
+		{
+			for (int j = 0; j < 3; j++)
+				for (int k = 0; k < this->faces[i].connect_vertex[j]->connected_face.size(); k++)
+					this->faces[i].connect_vertex[j]->connected_face[k]->SetA();
+
+			for (int j = 0; j < 3; j++)
+				for (int k = 0; k < this->faces[i].connect_vertex[j]->connected_face.size(); k++)
+					if (this->faces[i].connect_vertex[j]->connected_face[k]->IsA(2) && !this->faces[i].connect_vertex[j]->connected_face[k]->IsS())
+					{
+						this->faces[i].connect_vertex[j]->connected_face[k]->SetS();
+						this->faces[i].connect_face.push_back(this->faces[i].connect_vertex[j]->connected_face[k]);
+					}
+			for (int j = 0; j < 3; j++)
+				for (int k = 0; k < this->faces[i].connect_vertex[j]->connected_face.size(); k++)
+				{
+					this->faces[i].connect_vertex[j]->connected_face[k]->ClearS();
+					this->faces[i].connect_vertex[j]->connected_face[k]->ClearA();
+				}
 		}
 	}
 
