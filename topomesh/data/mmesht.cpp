@@ -320,6 +320,7 @@ namespace topomesh
 			for (int i = 0; i < deleteface.size(); i++)
 				deleteFace(*deleteface[i]);
 		}
+#pragma omp atomic
 		this->vn--;
 	}
 
@@ -398,6 +399,7 @@ namespace topomesh
 				}
 			}
 		}
+#pragma omp atomic
 		this->fn--;
 	}
 

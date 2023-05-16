@@ -15,7 +15,7 @@ namespace topomesh
 			mt->faces[faces[i]].V0(0)->SetS();
 			mt->faces[faces[i]].V0(1)->SetS();
 			mt->faces[faces[i]].V0(2)->SetS();				
-		}			
+		}					
 		ave_normal /= faces.size();		
 		trimesh::normalize(ave_normal);	
 		/*for (int i = 0; i < faces.size(); i++)if (!mt->faces[faces[i]].IsD())
@@ -54,6 +54,13 @@ namespace topomesh
 					//v.p += ave_normal * deep;
 			}
 		}
+		/*for (int i = 0; i < faces.size(); i++)if (!mt->faces[faces[i]].IsD())
+		{			
+			mt->faces[faces[i]].ClearS();
+			mt->faces[faces[i]].V0(0)->ClearS();
+			mt->faces[faces[i]].V0(1)->ClearS();
+			mt->faces[faces[i]].V0(2)->ClearS();
+		}*/
 
 	}
 
@@ -234,7 +241,8 @@ namespace topomesh
 						e << v12.x, v13.x, v12.y, v13.y;
 						Eigen::Vector2f b = { lines[i][j].x - f.V0(0)->p.x ,lines[i][j].y - f.V0(0)->p.y };
 						Eigen::Vector2f x = e.fullPivLu().solve(b);
-						mesh->appendVertex(trimesh::point(f.V0(0)->p + x.x() * vv01 + x.y() * vv02));
+#pragma omp critical
+						{mesh->appendVertex(trimesh::point(f.V0(0)->p + x.x() * vv01 + x.y() * vv02)); }
 						f.uv_coord.push_back(trimesh::vec4(-1, mesh->vertices.back().index, j, i));
 					}					
 					std::vector<trimesh::ivec2> edge = {trimesh::ivec2(f.V0(0)->index,f.V1(0)->index),trimesh::ivec2(f.V1(0)->index,f.V2(0)->index) ,trimesh::ivec2(f.V2(0)->index,f.V0(0)->index) };
@@ -256,7 +264,8 @@ namespace topomesh
 						if (pass)
 							continue;
 						trimesh::point d = mesh->vertices[cp.second.y].p - mesh->vertices[cp.second.x].p;
-						mesh->appendVertex(trimesh::point(mesh->vertices[cp.second.x].p + cp.first * d));
+#pragma omp critical
+						{mesh->appendVertex(trimesh::point(mesh->vertices[cp.second.x].p + cp.first * d)); }
 						//f.uv_coord.push_back(trimesh::vec4(index, mesh->vertices.size() - 1, j, i));
 						dis.push_back(trimesh::vec4(index, mesh->vertices.size() - 1, j, i));
 						push_lines.push_back(trimesh::ivec3(std::min(cp.second.x, cp.second.y), std::max(cp.second.x, cp.second.y), mesh->vertices.size() - 1));
@@ -281,417 +290,454 @@ namespace topomesh
 			}
 		}
 #endif
-		
-		for (int fi : facesIndex)if (!mesh->faces[fi].IsD() && (mesh->faces[fi].IsS()||mesh->faces[fi].IsV()))
-		{				
+		int facesize = facesIndex.size();
+		for (int i=0; i<facesize; i++)
+		{
+			int fi = facesIndex[i];
+			if (!mesh->faces[fi].IsD() && (mesh->faces[fi].IsS() || mesh->faces[fi].IsV()))
+			{
 #if 0
-			mesh->deleteFace(f);
-			f.ClearS();
-			if(!f.IsV())
-				if (f.uv_coord.size() == 2)
-				{					
-					if (f.V1(f.uv_coord[0].x)->index == f.V0(f.uv_coord[1].x)->index)
-					{						
-						mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.V2(f.uv_coord[0].x)->index);
-						mesh->appendFace(f.uv_coord[0].y, f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y);
-						mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index);
+				mesh->deleteFace(f);
+				f.ClearS();
+				if (!f.IsV())
+					if (f.uv_coord.size() == 2)
+					{
+						if (f.V1(f.uv_coord[0].x)->index == f.V0(f.uv_coord[1].x)->index)
+						{
+							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.V2(f.uv_coord[0].x)->index);
+							mesh->appendFace(f.uv_coord[0].y, f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y);
+							mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index);
+						}
+						else
+						{
+							mesh->appendFace(f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y, f.V1(f.uv_coord[0].x)->index);
+							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
+							mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
+						}
 					}
-					else
-					{					
-						mesh->appendFace(f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y, f.V1(f.uv_coord[0].x)->index);
-						mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
-						mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
-					}
-				}
-				else//----一个三角面被多条线切割			
-				{										
-					std::vector<std::pair<int,float>> faceVertexSque;					
-					for (int j = 0; j < 3; j++)
-					{					
-						trimesh::point v1 = f.V1(j)->p - f.V0(j)->p;
-						trimesh::point v2 = f.V2(j)->p - f.V0(j)->p;
-						float a = std::acosf(trimesh::normalized(v1) ^ trimesh::normalized(v2));					
-						faceVertexSque.push_back(std::make_pair(f.V0(j)->index,a));
-						std::vector<std::pair<int, float>> verVertexSque;
+					else//----一个三角面被多条线切割			
+					{
+						std::vector<std::pair<int, float>> faceVertexSque;
+						for (int j = 0; j < 3; j++)
+						{
+							trimesh::point v1 = f.V1(j)->p - f.V0(j)->p;
+							trimesh::point v2 = f.V2(j)->p - f.V0(j)->p;
+							float a = std::acosf(trimesh::normalized(v1) ^ trimesh::normalized(v2));
+							faceVertexSque.push_back(std::make_pair(f.V0(j)->index, a));
+							std::vector<std::pair<int, float>> verVertexSque;
+							for (int i = 0; i < f.uv_coord.size(); i++)
+							{
+								if (j == f.uv_coord[i].x)
+								{
+									verVertexSque.push_back(std::make_pair((int)f.uv_coord[i].y, M_PI));
+								}
+							}
+							std::sort(verVertexSque.begin(), verVertexSque.end(), [&](std::pair<int, float> a, std::pair<int, float> b)->bool {
+								float ad = trimesh::distance2(mesh->vertices[a.first].p, f.V0(j)->p);
+								float bd = trimesh::distance2(mesh->vertices[b.first].p, f.V0(j)->p);
+								return ad < bd;
+								});
+							faceVertexSque.insert(faceVertexSque.end(), verVertexSque.begin(), verVertexSque.end());
+						}
+
+						std::vector<std::pair<int, int>> lines;
 						for (int i = 0; i < f.uv_coord.size(); i++)
-						{						
-							if (j == f.uv_coord[i].x)
-							{								
-								verVertexSque.push_back(std::make_pair((int)f.uv_coord[i].y,M_PI));
+							for (int j = i + 1; j < f.uv_coord.size(); j++)
+							{
+								if ((f.uv_coord[i].z == f.uv_coord[j].z) && (f.uv_coord[i].w == f.uv_coord[j].w))
+									lines.push_back(std::make_pair(f.uv_coord[i].y, f.uv_coord[j].y));
+							}
+						for (int i = 0; i < faceVertexSque.size(); i++)
+							mesh->vertices[faceVertexSque[i].first].inner.clear();
+						for (int i = 0; i < lines.size(); i++)
+						{
+							for (int j = 0; j < faceVertexSque.size(); j++)
+							{
+								if (lines[i].first == faceVertexSque[j].first)
+								{
+									mesh->appendFace(lines[i].first, faceVertexSque[(j + 1) % faceVertexSque.size()].first, lines[i].second);
+									mesh->vertices[lines[i].first].inner.push_back(mesh->faces.size() - 1);  //是下标不是index face index  不一定等于下标
+									mesh->vertices[faceVertexSque[(j + 1) % faceVertexSque.size()].first].inner.push_back(mesh->faces.size() - 1);
+									mesh->vertices[lines[i].second].inner.push_back(mesh->faces.size() - 1);
+								}
+								if (lines[i].second == faceVertexSque[j].first)
+								{
+									mesh->appendFace(lines[i].first, lines[i].second, faceVertexSque[(j + 1) % faceVertexSque.size()].first);
+									mesh->vertices[lines[i].first].inner.push_back(mesh->faces.size() - 1);
+									mesh->vertices[faceVertexSque[(j + 1) % faceVertexSque.size()].first].inner.push_back(mesh->faces.size() - 1);
+									mesh->vertices[lines[i].second].inner.push_back(mesh->faces.size() - 1);
+								}
 							}
 						}
-						std::sort(verVertexSque.begin(), verVertexSque.end(), [&](std::pair<int, float> a, std::pair<int, float> b)->bool {
-							float ad = trimesh::distance2(mesh->vertices[a.first].p, f.V0(j)->p);
-							float bd = trimesh::distance2(mesh->vertices[b.first].p, f.V0(j)->p);
-							return ad < bd;						
-							});
-						faceVertexSque.insert(faceVertexSque.end(), verVertexSque.begin(), verVertexSque.end());						
-					}	
-					
-					std::vector<std::pair<int, int>> lines;
-					for(int i=0;i<f.uv_coord.size();i++)
-						for (int j = i + 1; j < f.uv_coord.size(); j++)
+						std::vector<int> last_face;
+						for (int i = 0; i < faceVertexSque.size(); i++)
 						{
-							if ((f.uv_coord[i].z == f.uv_coord[j].z)&& (f.uv_coord[i].w == f.uv_coord[j].w))
-								lines.push_back(std::make_pair(f.uv_coord[i].y, f.uv_coord[j].y));
-						}
-					for (int i = 0; i < faceVertexSque.size(); i++)
-						mesh->vertices[faceVertexSque[i].first].inner.clear();
-					for (int i = 0; i < lines.size(); i++)
-					{
-						for (int j = 0; j < faceVertexSque.size(); j++)
-						{
-							if (lines[i].first == faceVertexSque[j].first)
-							{								
-								mesh->appendFace(lines[i].first, faceVertexSque[(j + 1) % faceVertexSque.size()].first, lines[i].second);								
-								mesh->vertices[lines[i].first].inner.push_back(mesh->faces.size() - 1);  //是下标不是index face index  不一定等于下标
-								mesh->vertices[faceVertexSque[(j + 1) % faceVertexSque.size()].first].inner.push_back(mesh->faces.size() - 1);
-								mesh->vertices[lines[i].second].inner.push_back(mesh->faces.size() - 1);
+							float a = 0;
+							MMeshVertex* v = &mesh->vertices[faceVertexSque[i].first];
+							for (int j = 0; j < v->inner.size(); j++)
+							{
+								trimesh::point v01 = trimesh::normalized(mesh->faces[v->inner[j]].V1(v)->p - v->p);
+								trimesh::point v02 = trimesh::normalized(mesh->faces[v->inner[j]].V2(v)->p - v->p);
+								a += std::acosf(v01 ^ v02);
 							}
-							if (lines[i].second == faceVertexSque[j].first)
-							{								
-								mesh->appendFace(lines[i].first, lines[i].second, faceVertexSque[(j + 1) % faceVertexSque.size()].first);
-								mesh->vertices[lines[i].first].inner.push_back(mesh->faces.size() - 1);
-								mesh->vertices[faceVertexSque[(j + 1) % faceVertexSque.size()].first].inner.push_back(mesh->faces.size() - 1);
-								mesh->vertices[lines[i].second].inner.push_back(mesh->faces.size() - 1);
-							}
+							if (a < faceVertexSque[i].second - FLOATERR || a > faceVertexSque[i].second + FLOATERR)
+								last_face.push_back(faceVertexSque[i].first);
 						}
-					}				
-					std::vector<int> last_face;
-					for (int i = 0; i < faceVertexSque.size(); i++)
-					{			
-						float a = 0;
-						MMeshVertex* v = &mesh->vertices[faceVertexSque[i].first];
-						for (int j = 0; j < v->inner.size(); j++)
-						{							
-							trimesh::point v01= trimesh::normalized(mesh->faces[v->inner[j]].V1(v)->p-v->p);
-							trimesh::point v02 = trimesh::normalized(mesh->faces[v->inner[j]].V2(v)->p-v->p);												
-							a += std::acosf(v01 ^ v02);
-						}
-						if (a < faceVertexSque[i].second - FLOATERR || a > faceVertexSque[i].second + FLOATERR)
-							last_face.push_back(faceVertexSque[i].first);
-					}					
-					if(last_face.size()==3)
-						mesh->appendFace(last_face[0], last_face[1], last_face[2]);
-				}
-			else//顶点			
-			{				
-				if (f.inner_vertex.size() == 1)//只有一个点 直接剖分
-				{				
-					std::vector<int> faceVertexSque ;
-					for (int i = 0; i < f.connect_vertex.size(); i++)
-					{
-						faceVertexSque.push_back(f.V0(i)->index);
-						std::vector<int> verVertexSque;
-						for (int j = 0; j < f.uv_coord.size(); j++)
-						{
-							if (f.uv_coord[j].x == i)
-								verVertexSque.push_back(f.uv_coord[j].y);
-						}
-						std::sort(verVertexSque.begin(), verVertexSque.end(), [&](int a, int b)->bool {
-							float ad = trimesh::distance2(mesh->vertices[a].p, f.V0(i)->p);
-							float bd = trimesh::distance2(mesh->vertices[b].p, f.V0(i)->p);
-							return ad < bd;
-							});
-						faceVertexSque.insert(faceVertexSque.end(), verVertexSque.begin(), verVertexSque.end());
+						if (last_face.size() == 3)
+							mesh->appendFace(last_face[0], last_face[1], last_face[2]);
 					}
-
-					for (int i = 0; i < faceVertexSque.size(); i++)
-					{
-						mesh->appendFace(faceVertexSque[i], faceVertexSque[(i + 1) % faceVertexSque.size()], f.inner_vertex[0]);
-					}
-				}
-				else//内部多个点
+				else//顶点			
 				{
+					if (f.inner_vertex.size() == 1)//只有一个点 直接剖分
+					{
+						std::vector<int> faceVertexSque;
+						for (int i = 0; i < f.connect_vertex.size(); i++)
+						{
+							faceVertexSque.push_back(f.V0(i)->index);
+							std::vector<int> verVertexSque;
+							for (int j = 0; j < f.uv_coord.size(); j++)
+							{
+								if (f.uv_coord[j].x == i)
+									verVertexSque.push_back(f.uv_coord[j].y);
+							}
+							std::sort(verVertexSque.begin(), verVertexSque.end(), [&](int a, int b)->bool {
+								float ad = trimesh::distance2(mesh->vertices[a].p, f.V0(i)->p);
+								float bd = trimesh::distance2(mesh->vertices[b].p, f.V0(i)->p);
+								return ad < bd;
+								});
+							faceVertexSque.insert(faceVertexSque.end(), verVertexSque.begin(), verVertexSque.end());
+						}
 
+						for (int i = 0; i < faceVertexSque.size(); i++)
+						{
+							mesh->appendFace(faceVertexSque[i], faceVertexSque[(i + 1) % faceVertexSque.size()], f.inner_vertex[0]);
+						}
+					}
+					else//内部多个点
+					{
+
+					}
 				}
-			}
-			f.ClearV();
+				f.ClearV();
 
 #else		
 
-			MMeshFace& f = mesh->faces[fi];
-			std::vector<int> facelines;
-			for(int i=0;i<f.uv_coord.size();i++)
-			{
-				if (i == 0)
-					facelines.push_back(f.uv_coord[i].w);
-				if (f.uv_coord[i].w != facelines.back())
-					facelines.push_back(f.uv_coord[i].w);
-			}
-			
-			for (int i = 0; i < facelines.size(); i++)
-			{
-				bool corss = false;
-				for (int j = 0; j < f.uv_coord.size(); j++)
+				MMeshFace& f = mesh->faces[fi];
+				std::vector<int> facelines;
+				for (int i = 0; i < f.uv_coord.size(); i++)
 				{
-					if (facelines[i] == f.uv_coord[j].w)
-						if (f.uv_coord[j].x != -1)
+					if (i == 0)
+						facelines.push_back(f.uv_coord[i].w);
+					if (f.uv_coord[i].w != facelines.back())
+						facelines.push_back(f.uv_coord[i].w);
+				}
+
+				for (int i = 0; i < facelines.size(); i++)
+				{
+					bool corss = false;
+					for (int j = 0; j < f.uv_coord.size(); j++)
+					{
+						if (facelines[i] == f.uv_coord[j].w)
+							if (f.uv_coord[j].x != -1)
+							{
+								corss = true; break;
+							}
+					}
+					if (!corss)
+					{
+						f.SetB(); break;
+					}
+				}
+				if (f.IsB())
+					continue;
+				mesh->deleteFace(f);
+				if (f.uv_coord.size() == 2)
+				{
+					if (f.V1(f.uv_coord[0].x)->index == f.V0(f.uv_coord[1].x)->index)
+					{
+#pragma omp critical
 						{
-							corss = true; break;
+							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.V2(f.uv_coord[0].x)->index);
+							mesh->appendFace(f.uv_coord[0].y, f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y);
+							mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index);
+							facesIndex.push_back(mesh->faces.size() - 3);
+							facesIndex.push_back(mesh->faces.size() - 2);
+							facesIndex.push_back(mesh->faces.size() - 1);
 						}
+					}
+					else
+					{
+#pragma omp critical
+						{
+							mesh->appendFace(f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y, f.V1(f.uv_coord[0].x)->index);
+							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
+							mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
+							facesIndex.push_back(mesh->faces.size() - 3);
+							facesIndex.push_back(mesh->faces.size() - 2);
+							facesIndex.push_back(mesh->faces.size() - 1); 
+						}
+					}
+
+					continue;
 				}
-				if (!corss)
+
+				std::vector<int> faceVertexSque;
+				for (int i = 0; i < f.connect_vertex.size(); i++)
 				{
-					f.SetB(); break;
+					f.connect_vertex[i]->SetV();
+					faceVertexSque.push_back(f.connect_vertex[i]->index);
+					std::vector<int> verVertexSque;
+					for (int j = 0; j < f.uv_coord.size(); j++)
+					{
+						if (f.uv_coord[j].x == i)
+							verVertexSque.push_back(f.uv_coord[j].y);
+					}
+					std::sort(verVertexSque.begin(), verVertexSque.end(), [&](int a, int b)->bool {
+						float ad = trimesh::distance2(mesh->vertices[a].p, f.V0(i)->p);
+						float bd = trimesh::distance2(mesh->vertices[b].p, f.V0(i)->p);
+						return ad < bd;
+						});
+					faceVertexSque.insert(faceVertexSque.end(), verVertexSque.begin(), verVertexSque.end());
 				}
-			}
-			if (f.IsB())
-				continue;
-			mesh->deleteFace(f);			
-			if (f.uv_coord.size() == 2)
-			{
-				if (f.V1(f.uv_coord[0].x)->index == f.V0(f.uv_coord[1].x)->index)
+				int l = 1;
+				std::vector<std::vector<int>> innerPoint(f.uv_coord.size());
+				std::vector<bool> curve(f.uv_coord.size(), false);
+				std::vector<int>  lastIndex(f.uv_coord.size(), -1);
+				if (!f.IsV())
 				{
-					mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.V2(f.uv_coord[0].x)->index);
-					mesh->appendFace(f.uv_coord[0].y, f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y);
-					mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index);
+					int n = 0;
+					for (int i = 0; i < f.uv_coord.size(); i++)
+					{
+						mesh->vertices[f.uv_coord[i].y].SetU(l);
+						lastIndex[l] = f.uv_coord[i].y;
+						if (f.uv_coord[i].x != -1)
+							n++;
+						else
+						{
+							curve[l] = true;
+							innerPoint[l].push_back(f.uv_coord[i].y);
+						}
+						if (n == 2)
+						{
+							n = 0; l++;
+						}
+					}
 				}
 				else
 				{
-					mesh->appendFace(f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y, f.V1(f.uv_coord[0].x)->index);
-					mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
-					mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
-				}
-				continue;
-			}
-				
-			std::vector<int> faceVertexSque;
-			for (int i = 0; i < f.connect_vertex.size(); i++)
-			{
-				f.connect_vertex[i]->SetV();
-				faceVertexSque.push_back(f.connect_vertex[i]->index);
-				std::vector<int> verVertexSque;
-				for (int j = 0; j < f.uv_coord.size(); j++)
-				{
-					if (f.uv_coord[j].x == i)
-						verVertexSque.push_back(f.uv_coord[j].y);
-				}
-				std::sort(verVertexSque.begin(), verVertexSque.end(), [&](int a, int b)->bool {
-					float ad = trimesh::distance2(mesh->vertices[a].p, f.V0(i)->p);
-					float bd = trimesh::distance2(mesh->vertices[b].p, f.V0(i)->p);
-					return ad < bd;
-					});
-				faceVertexSque.insert(faceVertexSque.end(), verVertexSque.begin(), verVertexSque.end());
-			}
-			int l = 1;
-			std::vector<std::vector<int>> innerPoint(f.uv_coord.size());
-			std::vector<bool> curve(f.uv_coord.size(), false);
-			std::vector<int>  lastIndex(f.uv_coord.size(), -1);
-			if (!f.IsV())
-			{
-				int n=0;
-				for (int i = 0; i < f.uv_coord.size(); i++)
-				{
-					mesh->vertices[f.uv_coord[i].y].SetU(l);
-					lastIndex[l] = f.uv_coord[i].y;
-					if (f.uv_coord[i].x != -1)
-						n++;
-					else
+					int ln = -1;
+					int n = 0;
+					bool innerOrCorss = false;
+					std::vector<std::vector<trimesh::ivec2>> mark_lines;
+					for (int i = 0; i < f.uv_coord.size(); i++)
 					{
-						curve[l] = true;
-						innerPoint[l].push_back(f.uv_coord[i].y);
-					}
-					if (n == 2)
-					{
-						n = 0; l++;
-					}
-				}			
-			}
-			else
-			{							
-				int ln = -1;
-				int n = 0;
-				bool innerOrCorss = false;
-				std::vector<std::vector<trimesh::ivec2>> mark_lines;
-				for (int i = 0; i < f.uv_coord.size(); i++)
-				{
-					if (f.uv_coord[i].w == ln)
-					{
-						if (innerOrCorss)
+						if (f.uv_coord[i].w == ln)
 						{
-							mark_lines.back().push_back(trimesh::ivec2(f.uv_coord[i].x, f.uv_coord[i].y));
-						}
-						else
-						{
-							mesh->vertices[f.uv_coord[i].y].SetU(l);
-							lastIndex[l] = f.uv_coord[i].y;
-							if (f.uv_coord[i].x != -1)
-								n++;
+							if (innerOrCorss)
+							{
+								mark_lines.back().push_back(trimesh::ivec2(f.uv_coord[i].x, f.uv_coord[i].y));
+							}
 							else
 							{
-								curve[l] = true;
-								innerPoint[l].push_back(f.uv_coord[i].y);
+								mesh->vertices[f.uv_coord[i].y].SetU(l);
+								lastIndex[l] = f.uv_coord[i].y;
+								if (f.uv_coord[i].x != -1)
+									n++;
+								else
+								{
+									curve[l] = true;
+									innerPoint[l].push_back(f.uv_coord[i].y);
+								}
+								if (n == 2)
+								{
+									n = 0; l++;
+								}
 							}
-							if (n == 2)
-							{
-								n = 0; l++;
-							}
-						}
-					}
-					else
-					{
-						ln = f.uv_coord[i].w;
-						if (f.uv_coord[i].x == -1)
-						{
-							innerOrCorss = true;
-							std::vector<trimesh::ivec2> line;
-							mark_lines.push_back(line);
 						}
 						else
-							innerOrCorss = false;
-						i--;						
-					}
-				}
-				bool pass = false;
-				n = 0;
-				for (int i = 0; i < mark_lines.size(); i++)
-				{
-					for (int j = 0; j < mark_lines[i].size(); j++)
-					{
-						if (mark_lines[i][j].x != -1 && pass == false)
 						{
-							pass = true;
-							continue;
+							ln = f.uv_coord[i].w;
+							if (f.uv_coord[i].x == -1)
+							{
+								innerOrCorss = true;
+								std::vector<trimesh::ivec2> line;
+								mark_lines.push_back(line);
+							}
+							else
+								innerOrCorss = false;
+							i--;
 						}
-						if (pass)
+					}
+					bool pass = false;
+					n = 0;
+					for (int i = 0; i < mark_lines.size(); i++)
+					{
+						for (int j = 0; j < mark_lines[i].size(); j++)
+						{
+							if (mark_lines[i][j].x != -1 && pass == false)
+							{
+								pass = true;
+								continue;
+							}
+							if (pass)
+							{
+								mesh->vertices[mark_lines[i][j].y].SetU(l);
+								lastIndex[l] = mark_lines[i][j].y;
+								if (mark_lines[i][j].x != -1)
+									n++;
+								else
+								{
+									curve[l] = true;
+									innerPoint[l].push_back(mark_lines[i][j].y);
+								}
+								if (n == 2)
+								{
+									n = 0; l++;
+								}
+							}
+						}
+						for (int j = 0; j < mark_lines[i].size(); j++)
 						{
 							mesh->vertices[mark_lines[i][j].y].SetU(l);
 							lastIndex[l] = mark_lines[i][j].y;
+							curve[l] = true;
 							if (mark_lines[i][j].x != -1)
-								n++;
-							else
-							{
-								curve[l] = true;
-								innerPoint[l].push_back(mark_lines[i][j].y);
-							}
-							if (n == 2)
-							{
-								n = 0; l++;
-							}
+								break;
+							innerPoint[l].push_back(mark_lines[i][j].y);
 						}
+						l++;
 					}
-					for (int j = 0; j < mark_lines[i].size(); j++)
-					{
-						mesh->vertices[mark_lines[i][j].y].SetU(l);
-						lastIndex[l] = mark_lines[i][j].y;
-						curve[l] = true;
-						if (mark_lines[i][j].x != -1)
-							break;
-						innerPoint[l].push_back(mark_lines[i][j].y);
-					}
-					l++;
 				}
-			}			
-			std::vector<std::vector<int>> polygon;
-			polygon.push_back(faceVertexSque);			
-			for (int u = 1; u < l; u++)
-			{
-				int polygon_size = polygon.size();
-				for (int i = 0; i < polygon_size; i++)
+				std::vector<std::vector<int>> polygon;
+				polygon.push_back(faceVertexSque);
+				for (int u = 1; u < l; u++)
 				{
-					int begin = -1, end = -1;
-					for (int j = 0; j < polygon[i].size(); j++)
+					int polygon_size = polygon.size();
+					for (int i = 0; i < polygon_size; i++)
 					{
-						if (mesh->vertices[polygon[i][j]].IsU(u))
+						int begin = -1, end = -1;
+						for (int j = 0; j < polygon[i].size(); j++)
 						{
-							if (begin == -1)
-								begin = j;
-							else
+							if (mesh->vertices[polygon[i][j]].IsU(u))
 							{
-								end = j; break;
+								if (begin == -1)
+									begin = j;
+								else
+								{
+									end = j; break;
+								}
 							}
 						}
-					}
-					if (begin == -1 || end == -1) continue;
-					std::vector<int> subpoly1;
-					bool push1 = false;
-					for (int j = begin; j <= end; j++)
-					{
-						subpoly1.push_back(polygon[i][j]);
-						int getu = mesh->vertices[polygon[i][j]].GetU();
-						if (!mesh->vertices[polygon[i][j]].IsV() && getu > u)
-							push1 = true;
-					}
-					if (curve[u])
-					{
-						if (subpoly1[subpoly1.size() - 1] == lastIndex[u])
-							for (int j = innerPoint[u].size() - 1; j > -1; j--)
-								subpoly1.push_back(innerPoint[u][j]);
-						else
-							subpoly1.insert(subpoly1.end(), innerPoint[u].begin(), innerPoint[u].end());
-					}
-					if (push1)
-					{
-						polygon.push_back(subpoly1);
-					}
-					else {					
-						if (subpoly1.size() == 3)
-							mesh->appendFace(subpoly1[0], subpoly1[1], subpoly1[2]);						
-						else
-						{											
-							fillTriangle(mesh, subpoly1);							
+						if (begin == -1 || end == -1) continue;
+						std::vector<int> subpoly1;
+						bool push1 = false;
+						for (int j = begin; j <= end; j++)
+						{
+							subpoly1.push_back(polygon[i][j]);
+							int getu = mesh->vertices[polygon[i][j]].GetU();
+							if (!mesh->vertices[polygon[i][j]].IsV() && getu > u)
+								push1 = true;
 						}
-					}
-					
-					std::vector<int> subpoly2;
-					bool push2 = false;
-					for (int j = end; j <= begin + polygon[i].size(); j++)
-					{
-						subpoly2.push_back(polygon[i][j % polygon[i].size()]);
-						int getu = mesh->vertices[polygon[i][j % polygon[i].size()]].GetU();
-						if (!mesh->vertices[polygon[i][j % polygon[i].size()]].IsV() && getu > u)
-							push2 = true;
-					}
-					if (curve[u])
-					{
-						if (subpoly2[subpoly2.size() - 1] == lastIndex[u])
-							for (int j = innerPoint[u].size() - 1; j > -1; j--)
-								subpoly2.push_back(innerPoint[u][j]);
-						else
-							subpoly2.insert(subpoly2.end(), innerPoint[u].begin(), innerPoint[u].end());
-					}
-					if (push2)
-					{
-						polygon.push_back(subpoly2);
-					}
-					else {
-						if (subpoly2.size() == 3)
-							mesh->appendFace(subpoly2[0], subpoly2[1], subpoly2[2]);						
-						else
-						{										
-							fillTriangle(mesh, subpoly2);
+						if (curve[u])
+						{
+							if (subpoly1[subpoly1.size() - 1] == lastIndex[u])
+								for (int j = innerPoint[u].size() - 1; j > -1; j--)
+									subpoly1.push_back(innerPoint[u][j]);
+							else
+								subpoly1.insert(subpoly1.end(), innerPoint[u].begin(), innerPoint[u].end());
 						}
+						if (push1)
+						{
+							polygon.push_back(subpoly1);
+						}
+						else {
+							if (subpoly1.size() == 3)
+							{
+#pragma omp critical
+								{mesh->appendFace(subpoly1[0], subpoly1[1], subpoly1[2]);
+								facesIndex.push_back(mesh->faces.size() - 1);
+								}
+							}
+							else
+							{
+								fillTriangle(mesh, subpoly1, facesIndex);
+							}
+						}
+
+						std::vector<int> subpoly2;
+						bool push2 = false;
+						for (int j = end; j <= begin + polygon[i].size(); j++)
+						{
+							subpoly2.push_back(polygon[i][j % polygon[i].size()]);
+							int getu = mesh->vertices[polygon[i][j % polygon[i].size()]].GetU();
+							if (!mesh->vertices[polygon[i][j % polygon[i].size()]].IsV() && getu > u)
+								push2 = true;
+						}
+						if (curve[u])
+						{
+							if (subpoly2[subpoly2.size() - 1] == lastIndex[u])
+								for (int j = innerPoint[u].size() - 1; j > -1; j--)
+									subpoly2.push_back(innerPoint[u][j]);
+							else
+								subpoly2.insert(subpoly2.end(), innerPoint[u].begin(), innerPoint[u].end());
+						}
+						if (push2)
+						{
+							polygon.push_back(subpoly2);
+						}
+						else {
+							if (subpoly2.size() == 3)
+							{
+#pragma omp critical
+								{mesh->appendFace(subpoly2[0], subpoly2[1], subpoly2[2]);
+								facesIndex.push_back(mesh->faces.size() - 1); 
+								}
+							}
+							else
+							{
+								fillTriangle(mesh, subpoly2, facesIndex);
+							}
+						}
+
+						polygon.erase(polygon.begin() + i);
+						break;
+
 					}
-					
-					polygon.erase(polygon.begin() + i);
-					break;
-					
+				}
+				for (int i = 0; i < faceVertexSque.size(); i++)
+				{
+					mesh->vertices[faceVertexSque[i]].ClearU();
+					mesh->vertices[faceVertexSque[i]].ClearV();
+				}
+#endif
+			}
+		}
+		//std::vector<int> nextfaceid;
+		facesize = facesIndex.size();
+		for (int i = 0; i < facesize; i++)
+		{
+			int fi = facesIndex[i];
+			if (!mesh->faces[fi].IsD() && mesh->faces[fi].IsB())
+			{
+				MMeshFace& f = mesh->faces[fi];
+				mesh->deleteFace(f);
+				trimesh::point c = (f.V0(0)->p + f.V1(0)->p + f.V2(0)->p) / 3.0f;
+#pragma omp critical
+				{mesh->appendVertex(c);
+				mesh->appendFace(f.V0(0)->index, f.V1(0)->index, mesh->vertices.size() - 1);
+				facesIndex.push_back(mesh->faces.size() - 1);
+				//nextfaceid.push_back(mesh->faces.size() - 1);
+				mesh->appendFace(f.V1(0)->index, f.V2(0)->index, mesh->vertices.size() - 1);
+				facesIndex.push_back(mesh->faces.size() - 1);
+				//nextfaceid.push_back(mesh->faces.size() - 1);
+				mesh->appendFace(f.V2(0)->index, f.V0(0)->index, mesh->vertices.size() - 1);
+				facesIndex.push_back(mesh->faces.size() - 1);
+				//nextfaceid.push_back(mesh->faces.size() - 1);		
 				}
 			}
-			for (int i = 0; i < faceVertexSque.size(); i++)
-			{
-				mesh->vertices[faceVertexSque[i]].ClearU();
-				mesh->vertices[faceVertexSque[i]].ClearV();
-			}
-#endif
 		}
-		std::vector<int> nextfaceid;
-		for (int fi : facesIndex)if (!mesh->faces[fi].IsD() && mesh->faces[fi].IsB())
-		{
-			MMeshFace& f = mesh->faces[fi];						
-			mesh->deleteFace(f);
-			trimesh::point c = (f.V0(0)->p + f.V1(0)->p + f.V2(0)->p) / 3.0f;
-			mesh->appendVertex(c);
-			mesh->appendFace(f.V0(0)->index, f.V1(0)->index, mesh->vertices.size() - 1);
-			nextfaceid.push_back(mesh->faces.size() - 1);
-			mesh->appendFace(f.V1(0)->index, f.V2(0)->index, mesh->vertices.size() - 1);
-			nextfaceid.push_back(mesh->faces.size() - 1);
-			mesh->appendFace(f.V2(0)->index, f.V0(0)->index, mesh->vertices.size() - 1);
-			nextfaceid.push_back(mesh->faces.size() - 1);						
-		}
-		if (!nextfaceid.empty())
-			return embedingAndCutting(mesh,lines, nextfaceid);
+		if (facesIndex.size()!=facesize)
+			return embedingAndCutting(mesh,lines, facesIndex);
 		
 	}
 
@@ -768,7 +814,7 @@ namespace topomesh
 		return trimesh::point(screenCenter - camera.up * y_ratio * screenhw.first + left * x_ratio * screenhw.second);
 	}
 
-	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex, const CameraParam& camera)
+	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex)
 	{
 		for (int fi : infaceIndex)if (!mt->faces[fi].IsD())
 		{		
@@ -887,24 +933,32 @@ namespace topomesh
 		*newmesh = *mesh;				
 		newmesh->need_adjacentfaces();
 		newmesh->need_neighbors();
-		newmesh->need_across_edge();
-
+		
 		CameraParam cp;
-		cp.lookAt = camera.center;
+		/*cp.lookAt = camera.center;
 		cp.pos = camera.pos;
 		cp.up = camera.up;
 		cp.n = camera.n; cp.f = camera.f;
-		cp.fov = camera.fov; cp.aspect = camera.aspect;
+		cp.fov = camera.fov; cp.aspect = camera.aspect;*/
+
+		cp.lookAt = trimesh::point(78.2802, 8.18323, -53.8917);
+		cp.pos = trimesh::point(361.37, -431.089, -160.111);
+		cp.up = trimesh::point(0.107898, -0.167426, 0.979962);
+		cp.n = 371.791; cp.f = 3785.86;
+		cp.fov = 6.52887; cp.aspect = 1.92965;
+
+		std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
+			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";
 		loadCameraParam(cp);
 		Eigen::Matrix4f viewMatrix;
 		Eigen::Matrix4f projectionMatrix;
 		getViewMatrixAndProjectionMatrix(cp, viewMatrix, projectionMatrix);	
-		/*viewMatrix << 0.981959, 0.189095, -1.86264e-08, -2.35648e-06,
-			0.0448605, -0.232957, 0.971452, 0,
-			0.183697, -0.953926, -0.237237, -533.275,
+		/*viewMatrix << 0.989526, 0.144356, 1.86264e-09, -54.064,
+			-0.00439922, 0.0301556, 0.999536, 51.6756,
+			0.144289, -0.989066, 0.0304748, -533.275,
 			0, 0, 0, 1;
-		projectionMatrix << 6.82063, 0, 0, 0,
-			0, 13.1614, 0, 0,
+		projectionMatrix << 5.11684, 0, 0, 0,
+			0, 9.8737, 0, 0,
 			0, 0, -1.19112, -714.835,
 			0, 0, -1, 0;*/
 		std::cout << "ViewMatrix : " << std::endl;
@@ -929,8 +983,14 @@ namespace topomesh
 			}
 		}
 		TransformationMesh(newmesh, viewMatrix, projectionMatrix);
+		/*for (int i = 0; i < newmesh->vertices.size(); i++)
+			newmesh->vertices[i].z = 0;
+		newmesh->write("visualizationmesh.ply");
+		return newmesh;*/
+
 		std::vector<int> faceindex;
 		getMeshFaces(newmesh, poly, cp, faceindex);
+		
 		std::map<int, int> vmap;
 		std::map<int, int> fmap;		
 		MMeshT mt(newmesh,faceindex,vmap,fmap);		
@@ -938,14 +998,30 @@ namespace topomesh
 		getDisCoverFaces(&mt, faceindex, fmap);
 		fmap.clear();
 		vmap.clear();
-		MMeshT mt2(newmesh, faceindex, vmap, fmap);						
+		MMeshT mt2(newmesh, faceindex, vmap, fmap);		
+		mt2.set_VFadjacent(true);
+		mt2.set_VVadjacent(true);
+		mt2.set_FFadjacent(true);
 		faceindex.clear();
 		if (polygons.size() >= 8 && mt2.faces.size() > 800)
 		//if (polygons.size() >= 2 )
 		{
 			std::vector<std::vector<int>> faceindexs;
-			simpleCutting(&mt2, poly, faceindexs);
+			std::vector<std::vector<int>> outfacesIndexs(poly.size());
+			simpleCutting(&mt2, poly, faceindexs);		
+#pragma omp parallel for shared(mt2) 
+			for (int i = 0; i < poly.size(); i++)
+			{							
+				embedingAndCutting(&mt2, poly[i], faceindexs[i]);				
+				polygonInnerFaces(&mt2, poly[i], faceindexs[i], outfacesIndexs[i]);
+			}
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
+			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);
+			std::vector<int> outfacesindex;
+			for (int i = 0; i < outfacesIndexs.size(); i++)
+				outfacesindex.insert(outfacesindex.end(), outfacesIndexs[i].begin(), outfacesIndexs[i].end());
+			concaveOrConvexOfFaces(&mt2, outfacesindex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
+			mapping(&mt2, newmesh, vmap, fmap);			
 		}
 		else
 		{
@@ -960,12 +1036,9 @@ namespace topomesh
 			mt2.set_VFadjacent(true);
 			mt2.set_VVadjacent(true);
 			mt2.set_FFadjacent(true);
-			embedingAndCutting(&mt2, totalpoly, faceindex);
-			faceindex.clear();
-			for (int i = 0; i < mt2.faces.size(); i++)
-				faceindex.push_back(i);
+			embedingAndCutting(&mt2, totalpoly, faceindex);			
 			std::vector<int> outfacesIndex;
-			polygonInnerFaces(&mt2, totalpoly, faceindex, outfacesIndex, cp);
+			polygonInnerFaces(&mt2, totalpoly, faceindex, outfacesIndex);
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
 			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);
 			concaveOrConvexOfFaces(&mt2, outfacesIndex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
@@ -995,13 +1068,16 @@ namespace topomesh
 		return newmesh;
 	}
 
-	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex)
+	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex, std::vector<int>& faces)
 	{	
 		int size = vindex.size();
 		if (size == 0) return;		
 		if (size == 3)
 		{
-			mesh->appendFace(vindex[0], vindex[1], vindex[2]); 
+#pragma omp critical
+			{mesh->appendFace(vindex[0], vindex[1], vindex[2]);
+			faces.push_back(mesh->faces.size() - 1); 
+			}
 			return;
 		}		
 		int index = -1;
@@ -1055,16 +1131,18 @@ namespace topomesh
 			if (pass)
 				continue;
 			else
-			{			
-				mesh->appendFace(vindex[i], vindex[(i + 1) % size], vindex[(i + size - 1) % size]);
-				index = i;				
+			{	
+#pragma omp critical
+				{mesh->appendFace(vindex[i], vindex[(i + 1) % size], vindex[(i + size - 1) % size]);
+				faces.push_back(mesh->faces.size() - 1);
+				index = i;		}
 				break;
 			}
 		}
 		if (index != -1)
 		{			
 			vindex.erase(vindex.begin() + index);
-			return fillTriangle(mesh, vindex);
+			return fillTriangle(mesh, vindex, faces);
 		}				
 	}
 
@@ -1181,18 +1259,22 @@ namespace topomesh
 				if (polygons.back()[i][j].y < botright.y)
 					botright.y = polygons.back()[i][j].y;
 			}
+
 		trimesh::vec2 topright(botright.x, topleft.y);
 		trimesh::vec2 botleft(topleft.x, botright.y);
 		std::vector<trimesh::vec2> rect = { topleft ,botright ,topright ,botleft };
 		
+		int ctime = 0;
 		for(int fi=0;fi<mesh->faces.size();fi++)		
 		{
-			trimesh::point v01 = mesh->vertices[mesh->faces[fi][1]] - mesh->vertices[mesh->faces[fi][0]];
+			/*trimesh::point v01 = mesh->vertices[mesh->faces[fi][1]] - mesh->vertices[mesh->faces[fi][0]];
 			trimesh::point v02 = mesh->vertices[mesh->faces[fi][2]] - mesh->vertices[mesh->faces[fi][0]];
-			trimesh::point normal = v01 % v02;
+			trimesh::point normal = v01 % v02;*/
+			trimesh::point normal =mesh->trinorm(fi);
 			//trimesh::vec normal = (mesh->normals[mesh->faces[fi][0]] + mesh->normals[mesh->faces[fi][1]] + mesh->normals[mesh->faces[fi][2]]) / 3.0f;
-			float a = normal ^ camera.dir;												
-			if (a >= 0) continue;						
+			//float a = normal ^ camera.dir;												
+			if (normal.z <= 0) continue;
+			ctime++;
 			bool rectInnerFace = false;
 			float min_x = 1.0, min_y = 1.0, max_x = -1.0, max_y = -1.0;
 			std::vector<trimesh::vec2> triangle;
@@ -1258,6 +1340,8 @@ namespace topomesh
 				}*/
 			}
 		}
+		if (faces.empty())
+			std::cout << "stop!" << ctime<<"\n";
 	}
 
 	void mapping(MMeshT* mesh, trimesh::TriMesh* trimesh, std::map<int, int>& vmap, std::map<int, int>& fmap)
@@ -1331,7 +1415,7 @@ namespace topomesh
 			for (int j = 0; j < polygons[i].size(); j++)			
 				for (int k = 0; k < polygons[i][j].size(); k++)				
 					if (tangent[i-1] > polygons[i][j][k].x)
-						tangent[i-1] = polygons[i][j][k].x;
+						tangent[i-1] = polygons[i][j][k].x-0.0001f;
 			
 		for (int i = 0; i < mesh->faces.size(); i++)
 		{
@@ -1365,16 +1449,17 @@ namespace topomesh
 					mesh->faces[i].SetU(j+1); mesh->faces[i].SetS(); break;
 				}
 			}
-		}
-		for (int i = 0; i < mesh->faces.size(); i++)
+		}	
+		int size = mesh->faces.size();
+		for (int i = 0; i < size; i++)
 		{
-			if (!mesh->faces[i].IsS())
+			if (!mesh->faces[i].IsS())				
 				faceindexs.back().push_back(i);
 			else
 			{
 				int user = mesh->faces[i].GetU();
 				if (user > 0)
-				{
+				{			
 					std::vector<std::pair<int, int>> ln;
 					for (int j = 0; j < 3; j++)
 					{
@@ -1424,7 +1509,7 @@ namespace topomesh
 						else
 							faceindexs[user].push_back(mesh->faces.size() - 1);
 
-						mesh->appendFace(mesh->faces[i].V1(ln[0].first)->index, ln[0].second, ln[1].second);
+						mesh->appendFace(mesh->faces[i].V1(ln[0].first)->index, ln[1].second, ln[0].second);
 						trimesh::point c2 = (mesh->faces[i].V1(ln[0].first)->p + mesh->vertices[ln[0].second].p + mesh->vertices[ln[1].second].p) / 3.0f;
 						if (c2.x < tangent[user - 1])
 							faceindexs[user - 1].push_back(mesh->faces.size() - 1);
@@ -1433,7 +1518,8 @@ namespace topomesh
 					}
 				}
 			}
-		}
-
+		}	
+		for (int i = 0; i < mesh->faces.size(); i++)
+			mesh->faces[i].ClearS();
 	}
 }
