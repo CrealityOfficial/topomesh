@@ -940,8 +940,8 @@ namespace topomesh
 		vmap.clear();
 		MMeshT mt2(newmesh, faceindex, vmap, fmap);						
 		faceindex.clear();
-		//if (polygons.size() >= 8 && mt2.faces.size() > 800)
-		if (polygons.size() >= 2 )
+		if (polygons.size() >= 8 && mt2.faces.size() > 800)
+		//if (polygons.size() >= 2 )
 		{
 			std::vector<std::vector<int>> faceindexs;
 			simpleCutting(&mt2, poly, faceindexs);
@@ -990,7 +990,7 @@ namespace topomesh
 		mt.set_VFadjacent(false);
 		mt.set_VVadjacent(false);*/
 					
-		mt2.mmesh2trimesh(newmesh);		
+		//mt2.mmesh2trimesh(newmesh);		
 		newmesh->write("visualizationmesh.ply");	
 		return newmesh;
 	}
