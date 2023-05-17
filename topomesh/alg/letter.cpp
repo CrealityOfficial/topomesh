@@ -61,7 +61,6 @@ namespace topomesh
 			mt->faces[faces[i]].V0(1)->ClearS();
 			mt->faces[faces[i]].V0(2)->ClearS();
 		}*/
-
 	}
 
 	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori)
@@ -223,6 +222,13 @@ namespace topomesh
 				for (int fi : facesIndex)if (!mesh->faces[fi].IsD())
 				{
 					MMeshFace& f = mesh->faces[fi];
+					for (int k = 0; k < f.inner_vertex.size(); k++)
+					{
+						if (f.inner_vertex[k].z == j && f.inner_vertex[k].w == i)
+						{
+							push_lines.push_back(trimesh::ivec3(std::min(f.V0(0)->index, f.V0(1)->index), std::max(f.V0(0)->index, f.V0(1)->index), f.inner_vertex[k].y));
+						}
+					}
 					trimesh::vec2 v10 = trimesh::vec2(lines[i][j].x, lines[i][j].y)-trimesh::vec2(f.V0(0)->p.x, f.V0(0)->p.y);
 					trimesh::vec2 v20 = trimesh::vec2(lines[i][j].x, lines[i][j].y)-trimesh::vec2(f.V0(1)->p.x, f.V0(1)->p.y);
 					trimesh::vec2 v30 = trimesh::vec2(lines[i][j].x, lines[i][j].y)-trimesh::vec2(f.V0(2)->p.x, f.V0(2)->p.y);
@@ -264,8 +270,11 @@ namespace topomesh
 						if (pass)
 							continue;
 						trimesh::point d = mesh->vertices[cp.second.y].p - mesh->vertices[cp.second.x].p;
+
 #pragma omp critical
-						{mesh->appendVertex(trimesh::point(mesh->vertices[cp.second.x].p + cp.first * d)); }
+						{
+							mesh->appendVertex(trimesh::point(mesh->vertices[cp.second.x].p + cp.first * d));
+						}
 						//f.uv_coord.push_back(trimesh::vec4(index, mesh->vertices.size() - 1, j, i));
 						dis.push_back(trimesh::vec4(index, mesh->vertices.size() - 1, j, i));
 						push_lines.push_back(trimesh::ivec3(std::min(cp.second.x, cp.second.y), std::max(cp.second.x, cp.second.y), mesh->vertices.size() - 1));
@@ -289,7 +298,9 @@ namespace topomesh
 				}
 			}
 		}
-#endif
+#endif		
+		
+		
 		int facesize = facesIndex.size();
 		for (int i=0; i<facesize; i++)
 		{
@@ -423,14 +434,21 @@ namespace topomesh
 #else		
 
 				MMeshFace& f = mesh->faces[fi];
+				if (f.uv_coord.size() == 1)
+					continue;
 				std::vector<int> facelines;
+				int q = 0;
 				for (int i = 0; i < f.uv_coord.size(); i++)
 				{
 					if (i == 0)
 						facelines.push_back(f.uv_coord[i].w);
 					if (f.uv_coord[i].w != facelines.back())
 						facelines.push_back(f.uv_coord[i].w);
+					if (f.uv_coord[i].x != -1)
+						q++;
 				}
+				if (q % 2 != 0)
+					continue;
 
 				for (int i = 0; i < facelines.size(); i++)
 				{
@@ -459,10 +477,7 @@ namespace topomesh
 						{
 							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.V2(f.uv_coord[0].x)->index);
 							mesh->appendFace(f.uv_coord[0].y, f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y);
-							mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index);
-							facesIndex.push_back(mesh->faces.size() - 3);
-							facesIndex.push_back(mesh->faces.size() - 2);
-							facesIndex.push_back(mesh->faces.size() - 1);
+							mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index);							
 						}
 					}
 					else
@@ -471,10 +486,7 @@ namespace topomesh
 						{
 							mesh->appendFace(f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y, f.V1(f.uv_coord[0].x)->index);
 							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
-							mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
-							facesIndex.push_back(mesh->faces.size() - 3);
-							facesIndex.push_back(mesh->faces.size() - 2);
-							facesIndex.push_back(mesh->faces.size() - 1); 
+							mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);							
 						}
 					}
 
@@ -654,13 +666,12 @@ namespace topomesh
 							if (subpoly1.size() == 3)
 							{
 #pragma omp critical
-								{mesh->appendFace(subpoly1[0], subpoly1[1], subpoly1[2]);
-								facesIndex.push_back(mesh->faces.size() - 1);
+								{mesh->appendFace(subpoly1[0], subpoly1[1], subpoly1[2]);								
 								}
 							}
 							else
 							{
-								fillTriangle(mesh, subpoly1, facesIndex);
+								fillTriangle(mesh, subpoly1);
 							}
 						}
 
@@ -689,13 +700,12 @@ namespace topomesh
 							if (subpoly2.size() == 3)
 							{
 #pragma omp critical
-								{mesh->appendFace(subpoly2[0], subpoly2[1], subpoly2[2]);
-								facesIndex.push_back(mesh->faces.size() - 1); 
+								{mesh->appendFace(subpoly2[0], subpoly2[1], subpoly2[2]);								 
 								}
 							}
 							else
 							{
-								fillTriangle(mesh, subpoly2, facesIndex);
+								fillTriangle(mesh, subpoly2);
 							}
 						}
 
@@ -712,8 +722,7 @@ namespace topomesh
 #endif
 			}
 		}
-		//std::vector<int> nextfaceid;
-		facesize = facesIndex.size();
+		std::vector<int> nextfaceid;		
 		for (int i = 0; i < facesize; i++)
 		{
 			int fi = facesIndex[i];
@@ -723,21 +732,34 @@ namespace topomesh
 				mesh->deleteFace(f);
 				trimesh::point c = (f.V0(0)->p + f.V1(0)->p + f.V2(0)->p) / 3.0f;
 #pragma omp critical
-				{mesh->appendVertex(c);
-				mesh->appendFace(f.V0(0)->index, f.V1(0)->index, mesh->vertices.size() - 1);
-				facesIndex.push_back(mesh->faces.size() - 1);
-				//nextfaceid.push_back(mesh->faces.size() - 1);
-				mesh->appendFace(f.V1(0)->index, f.V2(0)->index, mesh->vertices.size() - 1);
-				facesIndex.push_back(mesh->faces.size() - 1);
-				//nextfaceid.push_back(mesh->faces.size() - 1);
-				mesh->appendFace(f.V2(0)->index, f.V0(0)->index, mesh->vertices.size() - 1);
-				facesIndex.push_back(mesh->faces.size() - 1);
-				//nextfaceid.push_back(mesh->faces.size() - 1);		
+				{
+					mesh->appendVertex(c);
+					mesh->appendFace(f.V0(0)->index, f.V1(0)->index, mesh->vertices.size() - 1);
+					for (int j = 0; j < f.uv_coord.size(); j++)
+					{
+						if (f.uv_coord[j].x == 0)
+							mesh->faces.back().inner_vertex.push_back(trimesh::vec4(0, f.uv_coord[j].y, f.uv_coord[j].z, f.uv_coord[j].w));
+					}
+					nextfaceid.push_back(mesh->faces.size() - 1);
+					mesh->appendFace(f.V1(0)->index, f.V2(0)->index, mesh->vertices.size() - 1);
+					for (int j = 0; j < f.uv_coord.size(); j++)
+					{
+						if (f.uv_coord[j].x == 1)
+							mesh->faces.back().inner_vertex.push_back(trimesh::vec4(0, f.uv_coord[j].y, f.uv_coord[j].z, f.uv_coord[j].w));
+					}
+					nextfaceid.push_back(mesh->faces.size() - 1);
+					mesh->appendFace(f.V2(0)->index, f.V0(0)->index, mesh->vertices.size() - 1);
+					for (int j = 0; j < f.uv_coord.size(); j++)
+					{
+						if (f.uv_coord[j].x == 2)
+							mesh->faces.back().inner_vertex.push_back(trimesh::vec4(0, f.uv_coord[j].y, f.uv_coord[j].z, f.uv_coord[j].w));
+					}
+					nextfaceid.push_back(mesh->faces.size() - 1);		
 				}
 			}
 		}
-		if (facesIndex.size()!=facesize)
-			return embedingAndCutting(mesh,lines, facesIndex);
+		if (!nextfaceid.empty())
+			return embedingAndCutting(mesh,lines, nextfaceid);
 		
 	}
 
@@ -762,7 +784,7 @@ namespace topomesh
 			{
 				mt->appendVertex(trimesh::point(f.V0(0)->p + u * v01 + v * v02));
 				f.SetV();
-				f.inner_vertex.push_back(mt->VN() - 1);
+				//f.inner_vertex.push_back(mt->VN() - 1);
 				//ÏÈ²»É¾³ý¶¥µãface
 				/*if(!f.IsD())
 					mt->deleteFace(f.index);*/
@@ -941,11 +963,11 @@ namespace topomesh
 		cp.n = camera.n; cp.f = camera.f;
 		cp.fov = camera.fov; cp.aspect = camera.aspect;*/
 
-		cp.lookAt = trimesh::point(78.2802, 8.18323, -53.8917);
-		cp.pos = trimesh::point(361.37, -431.089, -160.111);
-		cp.up = trimesh::point(0.107898, -0.167426, 0.979962);
-		cp.n = 371.791; cp.f = 3785.86;
-		cp.fov = 6.52887; cp.aspect = 1.92965;
+		cp.lookAt = trimesh::point(1.90735e-06, 0, 0);
+		cp.pos = trimesh::point(11.4227, -327.104, 47.6204);
+		cp.up = trimesh::point(-0.00502474, 0.14389, 0.989581);
+		cp.n = 202.343; cp.f = 3459.16;
+		cp.fov = 18.6276; cp.aspect = 1.92965;
 
 		std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
 			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";
@@ -1006,21 +1028,25 @@ namespace topomesh
 		if (polygons.size() >= 8 && mt2.faces.size() > 800)
 		//if (polygons.size() >= 2 )
 		{
-			std::vector<std::vector<int>> faceindexs;
-			std::vector<std::vector<int>> outfacesIndexs(poly.size());
+			std::vector<std::vector<int>> faceindexs;			
+			std::vector<std::vector<trimesh::vec2>> totalpoly;
 			simpleCutting(&mt2, poly, faceindexs);		
 #pragma omp parallel for shared(mt2) 
 			for (int i = 0; i < poly.size(); i++)
 			{							
-				embedingAndCutting(&mt2, poly[i], faceindexs[i]);				
-				polygonInnerFaces(&mt2, poly[i], faceindexs[i], outfacesIndexs[i]);
+				embedingAndCutting(&mt2, poly[i], faceindexs[i]);						
 			}
+			for (int i = 0; i < poly.size(); i++)
+				for (int j = 0; j < poly[i].size(); j++)				
+					totalpoly.push_back(poly[i][j]);
+			std::vector<int> facesindex;
+			std::vector<int> outfacesIndexs;
+			for (int i = 0; i < mt2.faces.size(); i++)
+				facesindex.push_back(i);
+			polygonInnerFaces(&mt2, totalpoly, facesindex, outfacesIndexs);
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
-			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);
-			std::vector<int> outfacesindex;
-			for (int i = 0; i < outfacesIndexs.size(); i++)
-				outfacesindex.insert(outfacesindex.end(), outfacesIndexs[i].begin(), outfacesIndexs[i].end());
-			concaveOrConvexOfFaces(&mt2, outfacesindex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
+			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);			
+			concaveOrConvexOfFaces(&mt2, outfacesIndexs, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
 			mapping(&mt2, newmesh, vmap, fmap);			
 		}
 		else
@@ -1036,7 +1062,10 @@ namespace topomesh
 			mt2.set_VFadjacent(true);
 			mt2.set_VVadjacent(true);
 			mt2.set_FFadjacent(true);
-			embedingAndCutting(&mt2, totalpoly, faceindex);			
+			embedingAndCutting(&mt2, totalpoly, faceindex);	
+			faceindex.clear();
+			for (int i = 0; i < mt2.faces.size(); i++)
+				faceindex.push_back(i);
 			std::vector<int> outfacesIndex;
 			polygonInnerFaces(&mt2, totalpoly, faceindex, outfacesIndex);
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
@@ -1068,15 +1097,14 @@ namespace topomesh
 		return newmesh;
 	}
 
-	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex, std::vector<int>& faces)
+	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex)
 	{	
 		int size = vindex.size();
 		if (size == 0) return;		
 		if (size == 3)
 		{
 #pragma omp critical
-			{mesh->appendFace(vindex[0], vindex[1], vindex[2]);
-			faces.push_back(mesh->faces.size() - 1); 
+			{mesh->appendFace(vindex[0], vindex[1], vindex[2]);			
 			}
 			return;
 		}		
@@ -1133,8 +1161,7 @@ namespace topomesh
 			else
 			{	
 #pragma omp critical
-				{mesh->appendFace(vindex[i], vindex[(i + 1) % size], vindex[(i + size - 1) % size]);
-				faces.push_back(mesh->faces.size() - 1);
+				{mesh->appendFace(vindex[i], vindex[(i + 1) % size], vindex[(i + size - 1) % size]);				
 				index = i;		}
 				break;
 			}
@@ -1142,7 +1169,7 @@ namespace topomesh
 		if (index != -1)
 		{			
 			vindex.erase(vindex.begin() + index);
-			return fillTriangle(mesh, vindex, faces);
+			return fillTriangle(mesh, vindex);
 		}				
 	}
 
@@ -1264,7 +1291,6 @@ namespace topomesh
 		trimesh::vec2 botleft(topleft.x, botright.y);
 		std::vector<trimesh::vec2> rect = { topleft ,botright ,topright ,botleft };
 		
-		int ctime = 0;
 		for(int fi=0;fi<mesh->faces.size();fi++)		
 		{
 			/*trimesh::point v01 = mesh->vertices[mesh->faces[fi][1]] - mesh->vertices[mesh->faces[fi][0]];
@@ -1273,8 +1299,7 @@ namespace topomesh
 			trimesh::point normal =mesh->trinorm(fi);
 			//trimesh::vec normal = (mesh->normals[mesh->faces[fi][0]] + mesh->normals[mesh->faces[fi][1]] + mesh->normals[mesh->faces[fi][2]]) / 3.0f;
 			//float a = normal ^ camera.dir;												
-			if (normal.z <= 0) continue;
-			ctime++;
+			if (normal.z <= 0) continue;			
 			bool rectInnerFace = false;
 			float min_x = 1.0, min_y = 1.0, max_x = -1.0, max_y = -1.0;
 			std::vector<trimesh::vec2> triangle;
