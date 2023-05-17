@@ -957,17 +957,17 @@ namespace topomesh
 		newmesh->need_neighbors();
 		
 		CameraParam cp;
-		/*cp.lookAt = camera.center;
+		cp.lookAt = camera.center;
 		cp.pos = camera.pos;
 		cp.up = camera.up;
 		cp.n = camera.n; cp.f = camera.f;
-		cp.fov = camera.fov; cp.aspect = camera.aspect;*/
+		cp.fov = camera.fov; cp.aspect = camera.aspect;
 
-		cp.lookAt = trimesh::point(1.90735e-06, 0, 0);
-		cp.pos = trimesh::point(11.4227, -327.104, 47.6204);
-		cp.up = trimesh::point(-0.00502474, 0.14389, 0.989581);
-		cp.n = 202.343; cp.f = 3459.16;
-		cp.fov = 18.6276; cp.aspect = 1.92965;
+		/*cp.lookAt = trimesh::point(3.00976, -11.2291, -11.0656);
+		cp.pos = trimesh::point(-41.8644, -608.048, -3.57183);
+		cp.up = trimesh::point(0.000938701, 0.0124846, 0.999922);
+		cp.n = 377.009; cp.f = 3841.79;
+		cp.fov = 7.18176; cp.aspect = 1.92965;*/
 
 		std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
 			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";
@@ -1412,13 +1412,16 @@ namespace topomesh
 		}
 		std::queue<int> queue;
 		queue.push(index);
+		mesh->faces[index].SetS();
 		while (!queue.empty())
 		{
-			mesh->faces[queue.front()].SetS();
 			for (int i = 0; i < mesh->faces[queue.front()].connect_face.size(); i++)
 			{
 				if (!mesh->faces[queue.front()].connect_face[i]->IsS())
+				{
 					queue.push(mesh->faces[queue.front()].connect_face[i]->index);
+					mesh->faces[queue.front()].connect_face[i]->SetS();
+				}
 			}
 			queue.pop();
 		}
