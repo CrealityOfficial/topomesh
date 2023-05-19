@@ -959,7 +959,8 @@ namespace topomesh
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{								
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
-		*newmesh = *mesh;				
+		*newmesh = *mesh;		
+		if (newmesh->faces.empty()) return newmesh;
 		newmesh->need_adjacentfaces();
 		newmesh->need_neighbors();
 		
@@ -970,11 +971,11 @@ namespace topomesh
 		cp.n = camera.n; cp.f = camera.f;
 		cp.fov = camera.fov; cp.aspect = camera.aspect;
 
-		/*cp.lookAt = trimesh::point(22.9868, 4.80472, 53.601);
-		cp.pos = trimesh::point(-52.6215, -320.099, 27.6897);
-		cp.up = trimesh::point(-0.0175525, -0.0754266, 0.996997);
-		cp.n = 190.682; cp.f = 3450.46;
-		cp.fov = 7.18175; cp.aspect = 1.92965;*/
+		/*cp.lookAt = trimesh::point(11.069, 0.829865, -7.61365);
+		cp.pos = trimesh::point(76.4595, -317.728, 52.7323);
+		cp.up = trimesh::point(-0.0366869, 0.178725, 0.983215);
+		cp.n = 202.344; cp.f = 3459.16;
+		cp.fov = 8.68993; cp.aspect = 1.92965;*/
 
 		std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
 			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";
@@ -1019,7 +1020,7 @@ namespace topomesh
 
 		std::vector<int> faceindex;
 		getMeshFaces(newmesh, poly, cp, faceindex);
-		
+		if (faceindex.empty()) return newmesh;
 		std::map<int, int> vmap;
 		std::map<int, int> fmap;		
 		MMeshT mt(newmesh,faceindex,vmap,fmap);		
@@ -1032,8 +1033,8 @@ namespace topomesh
 		mt2.set_VVadjacent(true);
 		mt2.set_FFadjacent(true);
 		faceindex.clear();
-		//if (polygons.size() >= 8 && mt2.faces.size() > 800)
-		if (polygons.size() >= 1 )
+		if (polygons.size() >= 8 && mt2.faces.size() > 800)
+		//if (polygons.size() >= 1 )
 		{
 			std::vector<std::vector<int>> faceindexs;			
 			std::vector<std::vector<trimesh::vec2>> totalpoly;
@@ -1120,8 +1121,12 @@ namespace topomesh
 		for (int i = 0; i < size; i++)
 		{			
 			float b = trimesh::point((mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p)%(mesh->vertices[vindex[(i + size - 1) % size]].p- mesh->vertices[vindex[i]].p)).z;			
-			if(b<=0)
+			if(b<=0.000001f)
 				continue;
+			/*float a = trimesh::normalized(trimesh::point(mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p))^ trimesh::normalized(trimesh::point(mesh->vertices[vindex[(i + size - 1) % size]].p - mesh->vertices[vindex[i]].p));
+			float b = acos(a);
+			if (b >= M_PIf - FLOATERR)
+				continue;*/
 			bool pass = false;
 			std::vector<trimesh::vec2> triangle = { trimesh::vec2(mesh->vertices[vindex[i]].p.x,mesh->vertices[vindex[i]].p.y),trimesh::vec2(mesh->vertices[vindex[(i + 1) % size]].p.x, mesh->vertices[vindex[(i + 1) % size]].p.y),
 			trimesh::vec2(mesh->vertices[vindex[(i + size - 1) % size]].p.x, mesh->vertices[vindex[(i + size - 1) % size]].p.y) };
@@ -1288,6 +1293,7 @@ namespace topomesh
 				if (polygons[0][i][j].y > topleft.y)
 					topleft.y = polygons[0][i][j].y;
 			}
+		topleft.x -= 0.001f; topleft.y += 0.001f;
 		for(int i=0;i<polygons.back().size();i++)
 			for (int j = 0; j < polygons.back()[i].size(); j++)
 			{
@@ -1296,7 +1302,7 @@ namespace topomesh
 				if (polygons.back()[i][j].y < botright.y)
 					botright.y = polygons.back()[i][j].y;
 			}
-
+		botright.x += 0.001f; botright.y -= 0.001f;
 		trimesh::vec2 topright(botright.x, topleft.y);
 		trimesh::vec2 botleft(topleft.x, botright.y);
 		std::vector<trimesh::vec2> rect = { topleft ,botright ,topright ,botleft };
@@ -1379,6 +1385,7 @@ namespace topomesh
 
 	void mapping(MMeshT* mesh, trimesh::TriMesh* trimesh, std::map<int, int>& vmap, std::map<int, int>& fmap, bool is_thread)
 	{				
+		
 		for (int i = vmap.size(); i < mesh->vertices.size(); i++)
 		{
 			trimesh->vertices.push_back(mesh->vertices[i].p);
@@ -1407,18 +1414,13 @@ namespace topomesh
 
 		if (is_thread)
 		{
-			/*for (int i = 0; i < mesh->faces.size(); i++)
-			{
-				if (mesh->faces[i].IsD()&&mesh->faces[i].IsU(1))
-				{
-
-				}
-			}*/
+			fillholes(trimesh);
 		}
 	}
 
 	void getDisCoverFaces(MMeshT* mesh, std::vector<int>& faces, std::map<int, int>& fmap)
 	{
+		if (mesh->faces.empty()) return;
 		float minz = std::numeric_limits<float>::max();
 		int index = -1;
 		for (int i = 0; i < mesh->faces.size(); i++)
@@ -1499,10 +1501,11 @@ namespace topomesh
 					}
 				}				
 			}
-		}			
+		}
+		//mesh->getMeshBoundaryFaces();
 		for (int i = 0; i < tangent.size(); i++)
 		{
-			std::vector<trimesh::ivec3> push_edge;
+			std::vector<trimesh::ivec3> push_edge;			
 			int size = mesh->faces.size();
 			for (int j = 0; j < size; j++)
 			{
@@ -1524,31 +1527,30 @@ namespace topomesh
 							}
 						if (pass)
 							continue;
-						trimesh::point d = mesh->vertices[cp.second.y].p - mesh->vertices[cp.second.x].p;
-						mesh->appendVertex(trimesh::point(mesh->vertices[cp.second.x].p + cp.first * d));
+						trimesh::point d = mesh->vertices[cp.second.y].p - mesh->vertices[cp.second.x].p;				
+						mesh->appendVertex(trimesh::point(mesh->vertices[cp.second.x].p + cp.first * d));												
 						f.uv_coord.push_back(trimesh::vec4(index, mesh->vertices.size() - 1, 0, i));
 						push_edge.push_back(trimesh::ivec3(std::min(cp.second.x, cp.second.y), std::max(cp.second.x, cp.second.y), mesh->vertices.size() - 1));
 					}
 					if (f.uv_coord.size() == 2)
 					{						
-						mesh->deleteFace(f);
-						int user = f.GetU();						
-						f.SetU(user+1);
+						mesh->deleteFace(f);																	
 						if (f.V1(f.uv_coord[0].x)->index == f.V0(f.uv_coord[1].x)->index)
 						{
-							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.V2(f.uv_coord[0].x)->index); mesh->faces.back().SetU(user + 1);
-							mesh->appendFace(f.uv_coord[0].y, f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y); mesh->faces.back().SetU(user + 1);
-							mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index); mesh->faces.back().SetU(user + 1);
+							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.V2(f.uv_coord[0].x)->index);
+							mesh->appendFace(f.uv_coord[0].y, f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y); 
+							mesh->appendFace(f.uv_coord[0].y, f.uv_coord[1].y, f.V2(f.uv_coord[0].x)->index); 
 						}
 						else
 						{
-							mesh->appendFace(f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y, f.V1(f.uv_coord[0].x)->index); mesh->faces.back().SetU(user + 1);
-							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y); mesh->faces.back().SetU(user + 1);
-							mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y); mesh->faces.back().SetU(user + 1);
+							mesh->appendFace(f.V0(f.uv_coord[1].x)->index, f.uv_coord[1].y, f.V1(f.uv_coord[0].x)->index);
+							mesh->appendFace(f.V0(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y);
+							mesh->appendFace(f.V1(f.uv_coord[0].x)->index, f.uv_coord[0].y, f.uv_coord[1].y); 
 						}
 					}
 				}
-			}
+			}	
+			
 		}
 		for (int i = 0; i < mesh->faces.size(); i++)
 		{			
@@ -1581,6 +1583,69 @@ namespace topomesh
 				}
 			}			
 			mesh->faces[i].ClearS();
+		}
+	}
+
+	void fillholes(trimesh::TriMesh* mesh)
+	{
+		mesh->clear_adjacentfaces();
+		mesh->clear_neighbors();
+		std::vector<int> boundary;
+		for (int i = 0; i < mesh->vertices.size(); i++)
+		{
+			if (mesh->is_bdy(i))
+			{
+				//std::cout << " i :" << i << "\n";
+				boundary.push_back(i);
+			}
+		}
+		if (boundary.empty()) return;
+		std::vector<std::vector<int>> holes;
+		while (!boundary.empty())
+		{
+			std::queue<int> ring;
+			ring.push(boundary[0]);
+			std::vector<int> hole = { boundary[0] };
+			while (!ring.empty())
+			{
+				for (int i = 0; i < mesh->neighbors[ring.front()].size(); i++)
+				{
+					int index = mesh->neighbors[ring.front()][i];
+					if (mesh->is_bdy(index))
+					{
+						bool pass = false;
+						for (int j = 0; j < hole.size(); j++)
+						{
+							if (hole[j] == index)
+								pass = true;
+						}
+						if (pass)
+							continue;
+						ring.push(index); hole.push_back(index);
+					}
+				}
+				ring.pop();
+			}
+			holes.push_back(hole);
+			for (int i = 0; i < boundary.size(); i++)
+			{
+				for (int j = 0; j < hole.size(); j++)
+				{
+					if (boundary[i] == hole[j])
+					{
+						boundary.erase(boundary.begin() + i); i--;
+						break;
+					}
+				}
+			}
+		}
+
+		for (int i = 0; i < holes.size(); i++)
+		{
+			for (int j = 0; j < holes[i].size() - 2; j++)
+			{
+				mesh->faces.push_back(trimesh::TriMesh::Face(holes[i][0], holes[i][j + 1], holes[i][j + 2]));
+			}
 		}
 	}
 }

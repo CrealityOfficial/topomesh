@@ -270,6 +270,21 @@ namespace topomesh
 			v.ClearA();
 	}
 
+	void MMeshT::getMeshBoundaryFaces()
+	{
+		if (!this->is_FFadjacent()) return;
+		for (MMeshFace& f : this->faces)
+		{
+			int fn = 0;
+			for (int i = 0; i < f.connect_face.size(); i++)
+				if (!f.connect_face[i]->IsD())
+					fn++;
+			if (fn == 3)
+				f.SetB();
+		}
+	}
+
+
 	void MMeshT::getEdge(std::vector<trimesh::ivec2>& edge, bool is_select)
 	{
 		for (MMeshVertex& v : this->vertices)
