@@ -83,13 +83,13 @@ namespace topomesh
 	MMeshT::MMeshT(trimesh::TriMesh* currentMesh, std::vector<int>& faces, std::map<int, int>& vmap, std::map<int, int>& fmap)
 	{
 		if (faces.size() < 4096)
-			this->faces.reserve(8192);
+			this->faces.reserve(8192 * 200);
 		else
-			this->faces.reserve((unsigned)(faces.size() * 1.5));
+			this->faces.reserve((unsigned)(faces.size() * 3.5));
 		if (faces.size()*3 < 4096)
-			this->vertices.reserve(8192);
+			this->vertices.reserve(8192 * 200);
 		else
-			this->vertices.reserve((unsigned)(faces.size() * 4.5));
+			this->vertices.reserve((unsigned)(faces.size() * 8.5));
 
 		std::vector<int> vertexIndex;
 		for (int i = 0; i < faces.size(); i++)
