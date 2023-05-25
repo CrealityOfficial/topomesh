@@ -131,7 +131,7 @@ namespace topomesh
 		getEmbedingPoint(wordPos, viewMatrix, projectionMatrix, wordScrennPos);
 		TransformationMesh(mesh, viewMatrix, projectionMatrix);
 		std::vector<int> faceIndex;
-		embedingAndCutting(mesh, wordScrennPos,faceIndex);
+		//embedingAndCutting(mesh, wordScrennPos,faceIndex);
 		std::vector<int> facesIndex;
 		//polygonInnerFaces(mesh, wordScrennPos, facesIndex, camera);
 		//concaveOrConvexOfFaces(mesh, facesIndex);
@@ -868,8 +868,12 @@ namespace topomesh
 		for (int fi : infaceIndex)if (!mt->faces[fi].IsD())
 		{		
 			MMeshFace& f = mt->faces[fi];
-			trimesh::point c = (f.V0(0)->p + f.V0(1)->p + f.V0(2)->p) / 3.0;
-			c.y += FLOATERR;
+			if ((f.V0(0)->p.y/ f.V0(0)->p.x) == (f.V0(1)->p.y / f.V0(1)->p.x) == (f.V0(2)->p.y / f.V0(2)->p.x))
+			{
+				outfaceIndex.push_back(f.index);
+				continue;
+			}
+			trimesh::point c = (f.V0(0)->p + f.V0(1)->p + f.V0(2)->p) / 3.0;			
 			int rayCorssPoint = 0;	
 			int equalPoint = 0;
 			for (int i = 0; i < poly.size(); i++)
@@ -988,14 +992,9 @@ namespace topomesh
 	{								
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
 		*newmesh = *mesh;		
-		if (newmesh->faces.empty()) return newmesh;
+		if (newmesh->faces.empty()|| polygons.empty()) return newmesh;
 
-		size_t process=0;	
-		if (tracer)
-		{
-			process += 0.1f;
-			tracer->progress(process);
-		}
+		size_t process=0;			
 		newmesh->need_adjacentfaces();
 		if (tracer)
 		{			
@@ -1016,10 +1015,10 @@ namespace topomesh
 		cp.fov = camera.fov; cp.aspect = camera.aspect;
 
 		/*cp.lookAt = trimesh::point(0, 1.90735e-06, 0);
-		cp.pos = trimesh::point(10.9239, -521.498, -110.916);
-		cp.up = trimesh::point(0.00435584, -0.207945, 0.978131);
-		cp.n = 326.242; cp.f = 3740.31;
-		cp.fov = 4.90524; cp.aspect = 1.92965;*/
+		cp.pos = trimesh::point(0.207712, 0.0251372, 27.3197);
+		cp.up = trimesh::point(0.992729, 0.12013, -0.00765826);
+		cp.n = 16.7139; cp.f = 3037.93;
+		cp.fov = 22.5394; cp.aspect = 1.92965;*/
 
 		std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
 			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";
@@ -1054,40 +1053,42 @@ namespace topomesh
 		poly.resize(polygons.size());		
 		for (int i = 0; i < polygons.size(); i++) {
 			for (int j = 0; j < polygons[i].size(); j++)
-			//for (int j = 2; j < 3; j++)
+			//for (int j = 0; j < 1; j++)
 			{
 				std::vector<trimesh::vec2> line;
 				for (int k = polygons[i][j].size() - 1; k >= 0; k--)
 				{
 					if (k != polygons[i][j].size() - 1 && polygons[i][j][k] != polygons[i][j][k+1])
 					{
-						line.push_back(trimesh::vec2(polygons[i][j][k].x, polygons[i][j][k].y));
-						if (polygons[i][j][k].y == -0.0932893753)
-							std::cout << "i :" << i << " j :" << j << " k :" << k << "\n";
+						line.push_back(trimesh::vec2(polygons[i][j][k].x, polygons[i][j][k].y));						
 					}
 				}
 				poly[i].push_back(line);
-			}
-			if (tracer)
-			{
-				process += (float)i*0.05f/polygons.size()*1.0f;
-				tracer->progress(process);
-			}
+			}			
+		}
+		if (tracer)
+		{
+			process += 0.02f;
+			tracer->progress(process);
 		}
 		TransformationMesh(newmesh, viewMatrix, projectionMatrix);		
-		
+		if (tracer)
+		{
+			process += 0.03f;
+			tracer->progress(process);
+		}
 
 		std::vector<int> faceindex;
 		getMeshFaces(newmesh, poly, cp, faceindex);
-		tracer->progress(0.55);
+		tracer->progress(0.35);
 		if (faceindex.empty()) return newmesh;
 		std::map<int, int> vmap;
 		std::map<int, int> fmap;		
 		MMeshT mt(newmesh,faceindex,vmap,fmap);
-		tracer->progress(0.6);
+		tracer->progress(0.37);
 		faceindex.clear();
 		getDisCoverFaces(&mt, faceindex, fmap);
-		tracer->progress(0.65);
+		tracer->progress(0.42);
 		fmap.clear();
 		vmap.clear();
 		MMeshT mt2(newmesh, faceindex, vmap, fmap);		
@@ -1095,7 +1096,7 @@ namespace topomesh
 		mt2.set_VVadjacent(true);
 		mt2.set_FFadjacent(true);
 		faceindex.clear();	
-		tracer->progress(0.70);
+		tracer->progress(0.45);
 		if (polygons.size() >= 8 && mt2.faces.size() > 800)
 		//if (polygons.size() >= 1 )
 		{
@@ -1169,7 +1170,7 @@ namespace topomesh
 		mt.set_VVadjacent(false);*/
 					
 		//mt2.mmesh2trimesh(newmesh);		
-		newmesh->write("visualizationmesh.ply");			
+		//newmesh->write("visualizationmesh.ply");			
 		return newmesh;
 	}
 
@@ -1722,9 +1723,9 @@ namespace topomesh
 	}
 
 	void fillTriangleForTraverse(MMeshT* mesh, std::vector<int>& vindex)
-	{			
+	{				
 		while (!vindex.empty())
-		{		
+		{
 			int before_size = vindex.size();
 			for (int i = 0; i < vindex.size(); i++)
 			{
@@ -1737,49 +1738,36 @@ namespace topomesh
 				}
 				float b = trimesh::point((mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p) % (mesh->vertices[vindex[(i + size - 1) % size]].p - mesh->vertices[vindex[i]].p)).z;
 				float a = trimesh::normalized(trimesh::point(mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p)) ^ trimesh::normalized(trimesh::point(mesh->vertices[vindex[(i + size - 1) % size]].p - mesh->vertices[vindex[i]].p));
-				if (a <= -0.9993f || b <= 0)
+				if (a <= -1.0f || b < 0.0f)
 					continue;
 				std::vector<trimesh::vec2> triangle = { trimesh::vec2(mesh->vertices[vindex[i]].p.x,mesh->vertices[vindex[i]].p.y),trimesh::vec2(mesh->vertices[vindex[(i + 1) % size]].p.x, mesh->vertices[vindex[(i + 1) % size]].p.y),
 				trimesh::vec2(mesh->vertices[vindex[(i + size - 1) % size]].p.x, mesh->vertices[vindex[(i + size - 1) % size]].p.y) };
 				bool pass = false;
 				for (int j = 0; j < size; j++)
 				{
+					int RightrayCorssPoint = 0; int LeftrayCrossPoint = 0;
 					if (j != i && j != ((i + 1) % size) && j != ((i + size - 1) % size))
 					{
-						int rayCorssPoint = 0; float e = 1; bool eq = false;
 						for (int k = 0; k < triangle.size(); k++)
 						{
 							if (std::abs(triangle[k].y - triangle[(k + 1) % 3].y) < FLOATERR) continue;
 							if (mesh->vertices[vindex[j]].p.y < std::min(triangle[k].y, triangle[(k + 1) % 3].y))continue;
 							if (mesh->vertices[vindex[j]].p.y > std::max(triangle[k].y, triangle[(k + 1) % 3].y)) continue;
-							if (triangle[k].y == mesh->vertices[vindex[j]].p.y || triangle[(k + 1) % 3].y == mesh->vertices[vindex[j]].p.y)
-							{
-								eq = true;
-								trimesh::point p1 = trimesh::point(triangle[(k + 1) % 3].x, triangle[(k + 1) % 3].y, 0) - trimesh::point(triangle[k].x, triangle[k].y, 0);
-								trimesh::point p2 = mesh->vertices[vindex[j]].p - trimesh::point(triangle[k].x, triangle[k].y, 0);
-								e = e * (p1 % p2).z;
-							}
 							double x = (mesh->vertices[vindex[j]].p.y - triangle[k].y) * (triangle[(k + 1) % 3].x - triangle[k].x) / (triangle[(k + 1) % 3].y - triangle[k].y) + triangle[k].x;
-							if (x - mesh->vertices[vindex[j]].p.x >= 0)
+							if (x - mesh->vertices[vindex[j]].p.x <= 0)
 							{
-								rayCorssPoint++;
+								RightrayCorssPoint++;
 							}
-						}
-						if (rayCorssPoint == 1)
-						{
-							pass = true;
-							break;
-						}
-						else if (rayCorssPoint == 2)
-						{
-							if (eq)
-								if (e > 0)
-								{
-									pass = true; break;
-								}
+							else if (x - mesh->vertices[vindex[j]].p.x >= 0)
+							{
+								LeftrayCrossPoint++;
+							}
 						}
 					}
-
+					if (RightrayCorssPoint > 0 && LeftrayCrossPoint > 0)
+					{
+						pass = true; break;
+					}
 				}
 				if (pass)
 					continue;
@@ -1791,13 +1779,22 @@ namespace topomesh
 			}
 			if (before_size == vindex.size())
 			{
-				for (int i = 0; i < vindex.size()-2; i++)
+				std::cout << "while :" << vindex.size() <<"\n";
+				float k= mesh->vertices[vindex[0]].p.y / mesh->vertices[vindex[0]].p.x;
+				std::vector<int> triangle(vindex.size(), 0);
+				triangle[0] = 1;
+				for (int i = 1; i < vindex.size(); i++)
 				{
-					mesh->appendFace(vindex[i], vindex[(i + 1) % vindex.size()], vindex.back());
+					if (k - (mesh->vertices[vindex[i]].p.y / mesh->vertices[vindex[i]].p.x) < 1e-7)					
+						triangle[i] = 1;				
+				}
+				for (int i = 1; i < triangle.size()-1; i++)
+				{
+					if (triangle[i] == 1 && triangle[i + 1] == 1)
+						mesh->appendFace(vindex[0], vindex[i], vindex[i + 1]);
 				}
 				break;
 			}
 		}
-
 	}
 }
