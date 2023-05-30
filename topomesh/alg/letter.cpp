@@ -965,6 +965,12 @@ namespace topomesh
 			Eigen::Vector4f point = ProjectionMatrix * ViewMatrix * vPoint;
 			v = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 		}
+		Eigen::Vector4f vPoint = { mesh->bbox.max.x,mesh->bbox.max.y ,mesh->bbox.max.z ,1.0 };
+		Eigen::Vector4f point= ProjectionMatrix * ViewMatrix * vPoint;
+		mesh->bbox.max= trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
+		vPoint = { mesh->bbox.min.x,mesh->bbox.min.y ,mesh->bbox.min.z ,1.0 };
+		point = ProjectionMatrix * ViewMatrix * vPoint;
+		mesh->bbox.min = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 	}
 
 	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix)
@@ -985,6 +991,12 @@ namespace topomesh
 			Eigen::Vector4f point = ViewMatrix.inverse() * ProjectionMatrix.inverse() * vPoint;
 			v = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 		}
+		Eigen::Vector4f vPoint = { mesh->bbox.max.x,mesh->bbox.max.y ,mesh->bbox.max.z ,1.0 };
+		Eigen::Vector4f point = ViewMatrix.inverse() * ProjectionMatrix.inverse() * vPoint;
+		mesh->bbox.max = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
+		vPoint = { mesh->bbox.min.x,mesh->bbox.min.y ,mesh->bbox.min.z ,1.0 };
+		point = ViewMatrix.inverse() * ProjectionMatrix.inverse() * vPoint;
+		mesh->bbox.min = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 	}
 
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons,
@@ -1779,7 +1791,7 @@ namespace topomesh
 			}
 			if (before_size == vindex.size())
 			{
-				std::cout << "while :" << vindex.size() <<"\n";
+				//std::cout << "while :" << vindex.size() <<"\n";
 				float k= mesh->vertices[vindex[0]].p.y / mesh->vertices[vindex[0]].p.x;
 				std::vector<int> triangle(vindex.size(), 0);
 				triangle[0] = 1;

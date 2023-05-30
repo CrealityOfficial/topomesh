@@ -158,6 +158,44 @@ namespace topomesh
 		}
 	}
 
+	MMeshT::MMeshT(MMeshT* mt, std::vector<int>& faceindex)
+	{
+		for (int i = 0; i < faceindex.size(); i++)
+		{
+			mt->faces[faceindex[i]].V0(0)->SetS();
+			mt->faces[faceindex[i]].V0(1)->SetS();
+			mt->faces[faceindex[i]].V0(2)->SetS();
+		}
+		std::map<int,int> vv;
+		for (int i = 0; i < mt->vertices.size(); i++)
+		{
+			if (mt->vertices[i].IsS())
+			{
+				this->appendVertex(mt->vertices[i].p);				
+				vv[i] = this->vertices.back().index;
+			}
+		}
+		for (int i = 0; i < faceindex.size(); i++)
+		{
+			this->appendFace(vv[mt->faces[faceindex[i]].V0(0)->index], vv[mt->faces[faceindex[i]].V0(1)->index], vv[mt->faces[faceindex[i]].V0(2)->index]);
+		}
+		for (int i = 0; i < faceindex.size(); i++)
+		{
+			mt->faces[faceindex[i]].V0(0)->ClearS();
+			mt->faces[faceindex[i]].V0(1)->ClearS();
+			mt->faces[faceindex[i]].V0(2)->ClearS();
+		}
+	}
+
+	MMeshT::MMeshT(const MMeshT& mt)
+	{
+		std::cout << "" << "\n";
+	}
+
+	//MMeshT::MMeshT(MMeshT&& mt)
+	//{
+	//	std::cout << "" << "\n";
+	//}
 
 	void MMeshT::mmesh2trimesh(trimesh::TriMesh* currentMesh)
 	{
@@ -323,6 +361,16 @@ namespace topomesh
 				tc.push_back(std::make_pair(t, trimesh::ivec2(e.x, e.y)));				
 			}
 		}		
+	}
+
+	void MMeshT::initFacePolygon()
+	{
+		for (int i = 0; i < this->faces.size(); i++)
+		{
+			std::vector<int> triangle = { this->faces[i].V0(0)->index ,this->faces[i].V0(1)->index ,this->faces[i].V0(2)->index };
+			this->faces[i].polygons.push_back(triangle);
+		}
+		this->FacePolygon = true;
 	}
 
 	void MMeshT::deleteVertex(MMeshVertex& v)
@@ -558,4 +606,31 @@ namespace topomesh
 		}
 		this->FacesNormals = true;
 	}
+
+	void  MMeshT::CuttingFaces(std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex, const std::vector<std::pair<int, int>>& corssPoints)
+	{
+		if (!this->is_FacePolygon()) this->initFacePolygon();
+		for (int i = 0; i < lines.size(); i++)
+		{
+			for (int j = 0; j < lines[i].size(); j++)
+			{
+				for (int fi = 0; fi < facesIndex.size(); fi++)
+				{
+					if (this->faces[fi].innerFace(trimesh::point(lines[i][j].x, lines[i][j].y, 0)))
+					{
+
+						for (int ci = 0; ci < corssPoints.size(); ci++)
+						{
+							if (corssPoints[ci].first == j || corssPoints[ci].second == j)
+							{
+								this->faces[fi].SetL();
+								break;
+							}
+						}
+					}
+				}
+			}
+		}
+	}
+
 }

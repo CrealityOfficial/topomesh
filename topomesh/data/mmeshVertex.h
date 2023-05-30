@@ -33,7 +33,7 @@ namespace topomesh
 			MV_VISITED= 0x00000008,
 			MV_ACCUMULATE = 0x00000ff0,
 			MV_LIMITING = 0x00001000,
-			MV_USER	  = 0x00ff0000
+			MV_USER	  = 0xffff0000
 		};
 		int flag = 0;
 	public:
@@ -63,7 +63,7 @@ namespace topomesh
 		inline void ClearA() { flag &= ~MV_ACCUMULATE; }
 		inline int GetA() { int copy = flag & MV_ACCUMULATE; copy = copy >> 4; return copy; }
 
-		inline bool SetU(int user) { if (user > 255) return false; flag &= ~MV_USER; int copy = user << 16; flag |= copy; return true; }
+		inline bool SetU(int user) { if (user > 65536) return false; flag &= ~MV_USER; int copy = user << 16; flag |= copy; return true; }
 		inline bool IsU(int i) { int copy = flag & MV_USER; copy = copy >> 16; if (i == copy)return true; return false; }
 		inline void ClearU() { flag &= !MV_USER; }
 		inline int GetU() { int copy = flag & MV_USER; copy = copy >> 16; return copy; }
