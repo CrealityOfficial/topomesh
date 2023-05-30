@@ -11,8 +11,10 @@ namespace topomesh
 	{
 	public:
 		MMeshT() :VVadjacent(true), VFadjacent(true), FFadjacent(true) { faces.reserve(1024); vertices.reserve(3000); };//单个加入限制在1000以内
-		MMeshT(const MMeshT& mt) {};
-		MMeshT(MMeshT& mt) {};
+		MMeshT(const MMeshT& mt);
+		MMeshT(MMeshT&& mt) = default;
+		//MMeshT(MMeshT& mt) {};
+		MMeshT(MMeshT* mt,std::vector<int>& faceindex);
 		MMeshT(trimesh::TriMesh* currentMesh);
 		MMeshT(trimesh::TriMesh* currentMesh,std::vector<int>& faces,std::map<int,int>& vmap, std::map<int, int>& fmap);
 		MMeshT& operator=(MMeshT mt) {};
@@ -20,7 +22,7 @@ namespace topomesh
 
 		std::vector<MMeshVertex> vertices;
 		std::vector<MMeshFace> faces;
-
+		
 	public:
 		static inline double det(trimesh::point& p0, trimesh::point& p1, trimesh::point& p2)
 		{
@@ -56,7 +58,7 @@ namespace topomesh
 		void getMeshBoundary();
 		void getMeshBoundaryFaces();
 		void getEdge(std::vector<trimesh::ivec2>& edge, bool is_select = false);
-		void calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::pair<trimesh::point,trimesh::point>& line, std::vector<std::pair<float,trimesh::ivec2>>& tc);
+		
 		void getFacesNormals();
 
 		inline bool is_VVadjacent() { return VVadjacent; }
@@ -64,6 +66,7 @@ namespace topomesh
 		inline bool is_FFadjacent() { return FFadjacent; }
 		inline bool is_VertexNormals() { return VertexNormals; }
 		inline bool is_FaceNormals() { return FacesNormals; }
+		inline bool is_FacePolygon() { return FacePolygon; }
 
 		inline void set_VVadjacent(bool b) { VVadjacent = b; }
 		inline void set_VFadjacent(bool b) { VFadjacent = b; }
@@ -71,12 +74,14 @@ namespace topomesh
 		inline void set_VertexNormals(bool b) { VertexNormals = b; }
 		inline void set_FacesNormals(bool b) { FacesNormals = b; }
 
-		inline void clear() { vertices.clear(); faces.clear();
-		}
+		inline void clear() { vertices.clear(); faces.clear();}
 
 		inline int VN() const { return vn; }
 		inline int FN() const { return fn; }
 
+		void calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
+		void initFacePolygon();
+		void CuttingFaces(std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex,const std::vector<std::pair<int,int>>& corssPoints);
 	private:
 		int vn = 0;
 		int fn = 0;
@@ -85,6 +90,7 @@ namespace topomesh
 		bool FFadjacent = false;
 		bool VertexNormals = false;
 		bool FacesNormals = false;
+		bool FacePolygon = false;
 	};
 
 	double  getTotalArea(std::vector<trimesh::point>& inVertices);

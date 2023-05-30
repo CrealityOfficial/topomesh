@@ -28,6 +28,7 @@ namespace topomesh
 
 		std::vector<trimesh::vec4> uv_coord;
 		std::vector<trimesh::vec4> inner_vertex;
+		std::vector<std::vector<int>> polygons;
 	private:
 		enum faceflag
 		{
@@ -37,7 +38,7 @@ namespace topomesh
 			MF_VISITED= 0x00000008,
 			MF_ACCUMULATE   = 0x00000ff0,
 			MF_LIMITING   = 0x00001000,
-			MF_USER = 0x00ff0000
+			MF_USER = 0xffff0000
 		};
 		int flag=0;
 	public:
@@ -67,7 +68,7 @@ namespace topomesh
 		inline bool IsL() { return (MF_LIMITING & flag) != 0 ? 1 : 0; }
 		inline void ClearL() { flag &= ~MF_LIMITING; }
 
-		inline bool SetU(int user) { if (user > 255) return false; flag &= ~MF_USER; int copy = user << 16; flag |= copy; return true; }
+		inline bool SetU(int user) { if (user > 65536) return false; flag &= ~MF_USER; int copy = user << 16; flag |= copy; return true; }
 		inline bool IsU(int i) { int copy = flag & MF_USER; copy = copy >> 16; if (i == copy)return true; return false; }
 		inline void ClearU() { flag &= !MF_USER; }
 		inline int GetU() { int copy = flag & MF_USER; copy = copy >> 16; return copy; }
@@ -109,5 +110,7 @@ namespace topomesh
 					return i;
 			return -1;
 		}
+
+		bool innerFace(trimesh::point v);	
 	};
 }
