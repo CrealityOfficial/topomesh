@@ -999,12 +999,16 @@ namespace topomesh
 		mesh->bbox.min = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 	}
 
-	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons,
+	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{								
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
 		*newmesh = *mesh;		
-		if (newmesh->faces.empty()|| polygons.empty()) return newmesh;
+		if (newmesh->faces.empty() || polygons.empty())
+		{
+			letterOpState = false;
+			return newmesh;
+		}
 
 		size_t process=0;			
 		newmesh->need_adjacentfaces();
@@ -1093,7 +1097,11 @@ namespace topomesh
 		std::vector<int> faceindex;
 		getMeshFaces(newmesh, poly, cp, faceindex);
 		tracer->progress(0.35);
-		if (faceindex.empty()) return newmesh;
+		if (faceindex.empty())
+		{
+			letterOpState = false;
+			return newmesh;
+		}
 		std::map<int, int> vmap;
 		std::map<int, int> fmap;		
 		MMeshT mt(newmesh,faceindex,vmap,fmap);
@@ -1182,7 +1190,8 @@ namespace topomesh
 		mt.set_VVadjacent(false);*/
 					
 		//mt2.mmesh2trimesh(newmesh);		
-		//newmesh->write("visualizationmesh.ply");			
+		//newmesh->write("visualizationmesh.ply");
+		letterOpState = true;
 		return newmesh;
 	}
 
