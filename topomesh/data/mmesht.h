@@ -78,13 +78,16 @@ namespace topomesh
 
 		inline int VN() const { return vn; }
 		inline int FN() const { return fn; }
+		inline int EN() const { return en; }
 
 		void calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
 		void initFacePolygon();
 		void CuttingFaces(std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex,const std::vector<std::pair<int,int>>& corssPoints);
+		void getEdgeNumber();
 	private:
 		int vn = 0;
 		int fn = 0;
+		int en = 0;
 		bool VVadjacent = false;
 		bool VFadjacent = false;
 		bool FFadjacent = false;

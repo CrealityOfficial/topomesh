@@ -111,6 +111,7 @@ namespace topomesh
 			return -1;
 		}
 
-		bool innerFace(trimesh::point v);	
+		bool innerFace(trimesh::point v);
+		std::pair<int, int> commonEdge(MMeshFace* f);
 	};
 }

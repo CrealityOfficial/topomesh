@@ -7,7 +7,7 @@ namespace topomesh {
 	bool MMeshFace::innerFace(trimesh::point v)
 	{
 		int RightrayCorssPoint = 0,LeftrayCrossPoint = 0;
-		for (int k = 0; k < this->connect_vertex.size(); k++)
+		for (size_t k = 0; k < this->connect_vertex.size(); k++)
 		{
 			if (std::abs(this->connect_vertex[k]->p.y - this->connect_vertex[k+1]->p.y) < FLOATERR) continue;
 			if (v.y < std::min(this->connect_vertex[k]->p.y, this->connect_vertex[k + 1]->p.y))continue;
@@ -29,5 +29,20 @@ namespace topomesh {
 		return false;
 	}
 
+	std::pair<int, int> MMeshFace::commonEdge(MMeshFace* f)
+	{
+		std::vector<int> id;
+		for (int i = 0; i < this->connect_vertex.size(); i++)
+		{
+			for (int j = 0; j < f->connect_vertex.size(); j++)
+			{
+				if (this->connect_vertex[i]->index == f->connect_vertex[j]->index)
+				{
+					id.push_back(this->connect_vertex[i]->index);
+				}
+			}
+		}
+		return std::make_pair(id[0], id[1]);
+	}
 
 };

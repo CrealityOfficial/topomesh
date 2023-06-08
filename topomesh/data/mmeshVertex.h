@@ -68,5 +68,7 @@ namespace topomesh
 		inline void ClearU() { flag &= !MV_USER; }
 		inline int GetU() { int copy = flag & MV_USER; copy = copy >> 16; return copy; }
 
+		bool is_neighbor(MMeshVertex* v);
+
 	};
 }

@@ -164,14 +164,16 @@ namespace topomesh
 		{
 			mt->faces[faceindex[i]].V0(0)->SetS();
 			mt->faces[faceindex[i]].V0(1)->SetS();
-			mt->faces[faceindex[i]].V0(2)->SetS();
+			mt->faces[faceindex[i]].V0(2)->SetS();		
 		}
 		std::map<int,int> vv;
 		for (int i = 0; i < mt->vertices.size(); i++)
 		{
 			if (mt->vertices[i].IsS())
 			{
-				this->appendVertex(mt->vertices[i].p);				
+				this->appendVertex(mt->vertices[i].p);
+				if (mt->vertices[i].inner.size() > 0)
+					this->vertices.back().SetU(mt->vertices[i].inner[0]);
 				vv[i] = this->vertices.back().index;
 			}
 		}
@@ -189,7 +191,7 @@ namespace topomesh
 
 	MMeshT::MMeshT(const MMeshT& mt)
 	{
-		std::cout << "" << "\n";
+		//std::cout << "" << "\n";
 	}
 
 	//MMeshT::MMeshT(MMeshT&& mt)
@@ -288,7 +290,7 @@ namespace topomesh
 	void MMeshT::getMeshBoundary()
 	{
 		if (!this->is_VVadjacent()) return;
-		for (MMeshVertex& v : this->vertices)
+		for (MMeshVertex& v : this->vertices)if(!v.IsD())
 		{
 			for (int i = 0; i < v.connected_face.size(); i++)
 			{
@@ -311,13 +313,13 @@ namespace topomesh
 	void MMeshT::getMeshBoundaryFaces()
 	{
 		if (!this->is_FFadjacent()) return;
-		for (MMeshFace& f : this->faces)
+		for (MMeshFace& f : this->faces)if(!f.IsD())
 		{
 			int fn = 0;
 			for (int i = 0; i < f.connect_face.size(); i++)
 				if (!f.connect_face[i]->IsD())
 					fn++;
-			if (fn == 3)
+			if (fn != 3)
 				f.SetB();
 		}
 	}
@@ -332,6 +334,24 @@ namespace topomesh
 			{
 				if (v.connected_vertex[i]->IsV()) continue;
 				edge.push_back(trimesh::ivec2(v.index, v.connected_vertex[i]->index));
+			}
+			v.SetV();
+		}
+		for (MMeshVertex& v : this->vertices)
+		{
+			v.ClearV();
+		}
+	}
+
+	void MMeshT::getEdgeNumber()
+	{
+		this->en = 0;
+		for (MMeshVertex& v : this->vertices)if(!v.IsD())
+		{
+			for (int i = 0; i < v.connected_vertex.size(); i++)
+			{
+				if (v.connected_vertex[i]->IsD()|| v.connected_vertex[i]->IsV()) continue;
+				this->en++;
 			}
 			v.SetV();
 		}
