@@ -174,6 +174,8 @@ namespace topomesh
 				this->appendVertex(mt->vertices[i].p);
 				if (mt->vertices[i].inner.size() > 0)
 					this->vertices.back().SetU(mt->vertices[i].inner[0]);
+				if (mt->vertices[i].IsL())
+					this->vertices.back().SetL();
 				vv[i] = this->vertices.back().index;
 			}
 		}

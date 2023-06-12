@@ -28,15 +28,15 @@ namespace topomesh
 			}
 		}
 		std::vector<std::vector<trimesh::vec2>> lines(1);
-		/*for (int i = 0; i < paths.size(); i++)
+		for (int i = 0; i < paths.size(); i++)
 		{
 			lines[0].push_back(trimesh::vec2(paths[i].x, paths[i].y));
-		}*/
+		}
 
-		lines[0].push_back(trimesh::vec2(-0.01417, -0.125));
+		/*lines[0].push_back(trimesh::vec2(-0.01417, -0.125));
 		lines[0].push_back(trimesh::vec2(0.01417, -0.125));
 		lines[0].push_back(trimesh::vec2(0.01417, 0.125));
-		lines[0].push_back(trimesh::vec2(-0.01417, 0.125));		
+		lines[0].push_back(trimesh::vec2(-0.01417, 0.125));	*/	
 
 		std::vector<MMeshT> newMeshs;
 		for (int i = 0; i < meshts.size(); i++)
@@ -46,7 +46,7 @@ namespace topomesh
 			{							
 				faceindex.emplace_back(fi);
 			}
-			embedingAndCutting(&meshts[i], lines, faceindex);			
+			embedingAndCutting(&meshts[i], lines, faceindex);				
 			faceindex.clear();
 			for (int fi = 0; fi < meshts[i].faces.size(); fi++)
 			{
@@ -62,45 +62,19 @@ namespace topomesh
 		
 			MMeshT mt(&meshts[i], outfacesIndex);
 			MMeshT mt1(&meshts[i], otherfaces);	
-			std::vector <std::pair<int, int>> doubleVertex;
-			for (int u = 0; u < 4; u++)
-			{
-				int u1 = -1, u2 = -1;
-				for (int vi = 0; vi < mt.vertices.size(); vi++)
-				{
-					if (mt.vertices[vi].IsU(u+1))
-					{
-						if (u1 == -1)
-							u1 = vi;
-						else
-						{
-							u2 = vi; break;
-						}
-					}
-				}
-				if (u1 != -1 && u2 != -1)
-				{
-					if (mt.vertices[u1].p.z > mt.vertices[u2].p.z)
-						doubleVertex.push_back(std::make_pair(u1, u2));
-					else
-						doubleVertex.push_back(std::make_pair(u2, u1));
-				}
-			}
 			
-			for (int ii = 0; ii < doubleVertex.size(); ii++)
-			{
-				mt.appendFace(doubleVertex[ii].first, doubleVertex[ii].second, doubleVertex[(ii + 1) % doubleVertex.size()].first);
-				mt.appendFace(doubleVertex[(ii + 1) % doubleVertex.size()].first, doubleVertex[(ii + 1) % doubleVertex.size()].second, doubleVertex[ii].second);
-			}
-
+			ConnectMeshFace(&mt);
+			ConnectMeshFace(&mt1);
 			trimesh::TriMesh* trimesh = new trimesh::TriMesh();
 			trimesh::TriMesh* trimesh1 = new trimesh::TriMesh();
 			mt.mmesh2trimesh(trimesh);
 			mt1.mmesh2trimesh(trimesh1);
 			unTransformationMesh(trimesh, viewMatrix, projectionMatrix);
 			unTransformationMesh(trimesh1, viewMatrix, projectionMatrix);
-			trimesh->write("trimesh.ply");
-			trimesh1->write("trimesh1.ply");
+			outMesh.push_back(trimesh);
+			outMesh.push_back(trimesh1);
+			//trimesh->write("trimesh.ply");
+			//trimesh1->write("trimesh1.ply");
 		}
 		if (meshts.empty()) return false;
 
@@ -357,4 +331,40 @@ namespace topomesh
 		//		order.push_back(outContainer[0][j]);
 	}
 
+	void ConnectMeshFace(MMeshT* mesh)
+	{		
+		std::vector<int> userVertex;
+		for (int vi = 0; vi < mesh->vertices.size(); vi++)
+		{
+			int u = mesh->vertices[vi].GetU();
+			if (u > 0&&mesh->vertices[vi].IsL())
+				userVertex.push_back(u);
+		}
+		std::sort(userVertex.begin(), userVertex.end());
+		auto last = std::unique(userVertex.begin(), userVertex.end());
+		userVertex.erase(last, userVertex.end());
+		std::vector<std::vector<int>> ConnectVertex(userVertex.size());
+		for (int i = 0; i < userVertex.size(); i++)
+			for (int vi = 0; vi < mesh->vertices.size(); vi++)
+				if (mesh->vertices[vi].GetU() == userVertex[i]&&mesh->vertices[vi].IsL())
+					ConnectVertex[i].push_back(vi);
+		
+		for (int i = 0; i < ConnectVertex.size(); i++)
+		{
+			std::sort(ConnectVertex[i].begin(), ConnectVertex[i].end(), [&](int a,int b)->bool {
+				return mesh->vertices[a].p.z < mesh->vertices[b].p.z;
+				});
+		}
+		for (int i = 0; i < ConnectVertex.size(); i++)
+		{
+			std::vector<int> connect;
+			std::vector<int> element= ConnectVertex[i];
+			std::vector<int> next_element = ConnectVertex[(i + 1) % ConnectVertex.size()];
+			std::reverse(next_element.begin(), next_element.end());
+			connect.insert(connect.end(), element.begin(), element.end());
+			connect.insert(connect.end(), next_element.begin(), next_element.end());
+			fillTriangleForTraverse(mesh, connect);
+		}
+		
+	}
 }

@@ -240,8 +240,7 @@ namespace topomesh
 						{
 							mesh->appendVertex(trimesh::point(f.V0(0)->p + x.x() * vv01 + x.y() * vv02)); 								
 							mesh->vertices.back().inner.push_back(j+1);								
-							
-							/*std::cout << " inner : " << mesh->vertices.size() - 1 << "j : " << j << "fi :" << fi << "\n";*/
+							mesh->vertices.back().SetL();
 						}
 						f.uv_coord.push_back(trimesh::vec4(-1, mesh->vertices.back().index, j, i));
 					}					
@@ -274,7 +273,7 @@ namespace topomesh
 #endif // _OPENMP
 						{
 							mesh->appendVertex(trimesh::point(mesh->vertices[cp.second.x].p + cp.first * d));							
-							//mesh->vertices.back().inner.push_back(j);																						
+							mesh->vertices.back().inner.push_back(j);																						
 						}					
 						dis.push_back(trimesh::vec4(index, mesh->vertices.size() - 1, j, i));
 						push_lines.push_back(trimesh::ivec3(std::min(cp.second.x, cp.second.y), std::max(cp.second.x, cp.second.y), mesh->vertices.size() - 1));
@@ -1173,6 +1172,8 @@ namespace topomesh
 			tracer->progress(0.9);
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
 			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);
+			for (int i = 0; i < mt.vertices.size(); i++)
+				mt.vertices[i].ClearS();
 			concaveOrConvexOfFaces(&mt2, outfacesIndex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
 			tracer->progress(0.95);
 			mapping(&mt2, newmesh, vmap, fmap);

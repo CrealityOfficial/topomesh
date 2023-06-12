@@ -33,6 +33,7 @@ namespace topomesh
 			MV_VISITED= 0x00000008,
 			MV_ACCUMULATE = 0x00000ff0,
 			MV_LIMITING = 0x00001000,
+			MV_MARKED = 0x00002000,
 			MV_USER	  = 0xffff0000
 		};
 		int flag = 0;
@@ -57,6 +58,10 @@ namespace topomesh
 		inline bool IsL() { return (MV_LIMITING & flag) != 0 ? 1 : 0; }
 		inline void ClearL() { flag &= ~MV_LIMITING; }
 
+		inline void SetM() { flag |= MV_MARKED; }
+		inline bool IsM() { return (MV_MARKED & flag) != 0 ? 1 : 0; }
+		inline void ClearM() { flag &= ~MV_MARKED; }
+
 		//0 - 255
 		inline bool SetA() { int copy = flag & MV_ACCUMULATE; copy = copy >> 4;	copy += 1; if (copy > 255) return false; copy = copy << 4; flag&=~MV_ACCUMULATE; flag |= copy; return true; }
 		inline bool IsA(int i) { int copy = flag & MV_ACCUMULATE; copy = copy >> 4; if (i == copy) return true; return false; }
@@ -65,7 +70,7 @@ namespace topomesh
 
 		inline bool SetU(int user) { if (user > 65536) return false; flag &= ~MV_USER; int copy = user << 16; flag |= copy; return true; }
 		inline bool IsU(int i) { int copy = flag & MV_USER; copy = copy >> 16; if (i == copy)return true; return false; }
-		inline void ClearU() { flag &= !MV_USER; }
+		inline void ClearU() { flag &= ~MV_USER; }
 		inline int GetU() { int copy = flag & MV_USER; copy = copy >> 16; return copy; }
 
 		bool is_neighbor(MMeshVertex* v);
