@@ -912,7 +912,7 @@ namespace topomesh
 
 	void getScreenWidthAndHeight(const CameraParam& camera, std::pair<float, float>& wh)
 	{
-		wh.first = 2.0f * camera.n * std::tanf(camera.fov * M_PIf / 2.0f / 180.0f);
+		wh.first = 2.0f * camera.n * std::tan(camera.fov * M_PIf / 2.0f / 180.0f);
 		wh.second = wh.first * camera.aspect;
 	}
 
