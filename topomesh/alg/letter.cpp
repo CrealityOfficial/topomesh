@@ -121,7 +121,7 @@ namespace topomesh
 		//concaveOrConvexOfFaces(mesh, facesIndex);
 		unTransformationMesh(mesh, viewMatrix, projectionMatrix);
 	}
-	void embedingAndCutting(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex, bool is_close)
+	void embedingAndCutting(MMeshT* mesh,const std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex, bool is_close)
 	{			
 		auto crossProduct = [=](trimesh::vec2 p1, trimesh::vec2 p2) ->float {
 			return p1.x * p2.y - p1.y * p2.x;

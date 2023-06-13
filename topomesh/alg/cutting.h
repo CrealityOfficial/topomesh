@@ -9,6 +9,12 @@
 
 namespace topomesh {
 
+	struct VVertex
+	{
+		MMeshVertex* pri;
+		MMeshVertex* next;
+	};
+
 	bool ModleCutting(const std::vector<trimesh::TriMesh*>& inMesh, std::vector<trimesh::TriMesh*>& outMesh, const SimpleCamera& camera,
 		const TriPolygon& paths, ccglobal::Tracer* tracer = nullptr);
 	bool JudgeCloseOfPath(const TriPolygon& paths);

@@ -41,8 +41,8 @@ namespace topomesh
 		}
 		void mmesh2trimesh(trimesh::TriMesh* currentMesh);
 
-		void appendVertex(MMeshVertex& v);
-		void appendVertex(trimesh::point& v);
+		void appendVertex(const MMeshVertex& v);
+		void appendVertex(const trimesh::point& v);
 
 		//inline void appendFace(MMeshFace& f);
 		void appendFace(MMeshVertex& v0, MMeshVertex& v1, MMeshVertex& v2);
@@ -80,7 +80,7 @@ namespace topomesh
 		inline int FN() const { return fn; }
 		inline int EN() const { return en; }
 
-		void calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
+		void calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
 		void initFacePolygon();
 		void CuttingFaces(std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex,const std::vector<std::pair<int,int>>& corssPoints);
 		void getEdgeNumber();

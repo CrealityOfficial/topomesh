@@ -9,6 +9,7 @@
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
 #include "omp.h"
+#include "cmath"
 #include <vector>
 #include <queue>
 #include <numeric>
@@ -20,7 +21,7 @@ namespace topomesh
 	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths,  CameraParam& camera, const LetterParam& Letter, std::vector<int>* faceindex = nullptr);
 	void concaveOrConvexOfFaces(MMeshT* mt,std::vector<int>& faces, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix ,bool concave=false,float deep=1.0);
 	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori);	
-	void embedingAndCutting(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& lines,std::vector<int>& facesIndex,bool is_close=true);
+	void embedingAndCutting(MMeshT* mesh,const std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex,bool is_close=true);
 	void wordToWorldPoint(const CameraParam& camera,const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths,std::vector<std::vector<trimesh::point>>& points);
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);

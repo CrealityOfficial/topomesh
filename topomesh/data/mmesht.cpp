@@ -363,9 +363,9 @@ namespace topomesh
 		}
 	}
 
-	void MMeshT::calculateCrossPoint(std::vector<trimesh::ivec2>& edge, std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc)
+	void MMeshT::calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc)
 	{		
-		for (trimesh::ivec2& e : edge)
+		for (trimesh::ivec2 e : edge)
 		{
 			trimesh::point b1 = trimesh::point(this->vertices[e.x].p.x, this->vertices[e.x].p.y, 0);
 			trimesh::point b2 = trimesh::point(this->vertices[e.y].p.x, this->vertices[e.y].p.y, 0);			
@@ -493,14 +493,14 @@ namespace topomesh
 		deleteFace(this->faces[i]);
 	}
 
-	void MMeshT::appendVertex(MMeshVertex& v)
+	void MMeshT::appendVertex(const MMeshVertex& v)
 	{
 		this->vertices.push_back(v);
 		this->vertices.back().index = this->vertices.size()-1;
 		this->vn++;
 	}
 
-	void MMeshT::appendVertex(trimesh::point& v)
+	void MMeshT::appendVertex(const trimesh::point& v)
 	{
 		this->vertices.push_back(v);
 		this->vertices.back().index = this->vertices.size()-1;

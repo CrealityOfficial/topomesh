@@ -71,10 +71,10 @@ namespace topomesh
 			mt1.mmesh2trimesh(trimesh1);
 			unTransformationMesh(trimesh, viewMatrix, projectionMatrix);
 			unTransformationMesh(trimesh1, viewMatrix, projectionMatrix);
-			outMesh.push_back(trimesh);
-			outMesh.push_back(trimesh1);
-			//trimesh->write("trimesh.ply");
-			//trimesh1->write("trimesh1.ply");
+			//outMesh.push_back(trimesh);
+			//outMesh.push_back(trimesh1);
+			trimesh->write("trimesh.ply");
+			trimesh1->write("trimesh1.ply");
 		}
 		if (meshts.empty()) return false;
 
