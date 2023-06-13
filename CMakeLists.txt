@@ -19,7 +19,7 @@ set(SRCS topomesh/data/mmesht.h
 		 )
 		 
 set(ILIBS trimesh2 eigen mmesh clipper)
-set(LIBS vcg)
+set(LIBS vcg boost_system)
 
 set(INCS)
 if(CGAL_INCLUDE_DIRS)
