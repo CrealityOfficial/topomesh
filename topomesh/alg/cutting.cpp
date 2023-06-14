@@ -1,11 +1,22 @@
 #include "cutting.h"
+#define CGAL_USE_BASIC_VIEWER
+#include "CGAL/Simple_cartesian.h"
+#include "CGAL/Surface_mesh.h"
+#include "CGAL/draw_surface_mesh.h"
+
+
+
+typedef CGAL::Simple_cartesian<double> Kernel;
+typedef Kernel::Point_3	Point;
+typedef CGAL::Surface_mesh<Point> cmesh;
 
 namespace topomesh
 {
+
 	bool ModleCutting(const std::vector<trimesh::TriMesh*>& inMesh, std::vector<trimesh::TriMesh*>& outMesh, const SimpleCamera& camera,
 		const TriPolygon& paths, ccglobal::Tracer* tracer)
 	{
-		if (paths.empty()) return false;
+		if (paths.empty()) return false;		
 		CameraParam cp;
 		cp.lookAt = camera.center;
 		cp.pos = camera.pos;
@@ -32,12 +43,7 @@ namespace topomesh
 		{
 			lines[0].push_back(trimesh::vec2(paths[i].x, paths[i].y));
 		}
-
-		/*lines[0].push_back(trimesh::vec2(-0.01417, -0.125));
-		lines[0].push_back(trimesh::vec2(0.01417, -0.125));
-		lines[0].push_back(trimesh::vec2(0.01417, 0.125));
-		lines[0].push_back(trimesh::vec2(-0.01417, 0.125));	*/	
-
+		
 		std::vector<MMeshT> newMeshs;
 		for (int i = 0; i < meshts.size(); i++)
 		{
@@ -370,6 +376,8 @@ namespace topomesh
 
 	void testCgal()
 	{
-
+		
+	
+		return;
 	}
 }

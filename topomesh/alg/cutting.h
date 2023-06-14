@@ -5,10 +5,6 @@
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
 
-#include "CGAL/Simple_cartesian.h"
-#include "CGAL/Surface_mesh.h"
-#include "CGAL/draw_surface_mesh.h"
-
 #include "ccglobal/tracer.h"
 
 

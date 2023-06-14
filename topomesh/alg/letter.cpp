@@ -796,11 +796,11 @@ namespace topomesh
 
 	bool intersectionTriangle(MMeshT* mt, trimesh::point p, trimesh::point normal)
 	{
-		if (!mt->is_FaceNormals()) mt->getFacesNormals();
+		/*if (!mt->is_FaceNormals()) mt->getFacesNormals();*/
 		for (MMeshFace& f : mt->faces)
 		{
-			float a = f.normal ^ normal;
-			if (a > 0) continue;
+			/*float a = f.normal ^ normal;
+			if (a > 0) continue;*/
 			trimesh::point v01 = f.V0(1)->p - f.V0(0)->p;
 			trimesh::point v02 = f.V0(2)->p - f.V0(0)->p;
 			trimesh::point v0p = p - f.V0(0)->p;
@@ -813,12 +813,9 @@ namespace topomesh
 			float v = pq * (pd ^ normal);
 			if (u > 0 && v > 0 && (u + v) < 1)
 			{
-				mt->appendVertex(trimesh::point(f.V0(0)->p + u * v01 + v * v02));
-				f.SetV();
-				//f.inner_vertex.push_back(mt->VN() - 1);
-				//�Ȳ�ɾ������face
-				/*if(!f.IsD())
-					mt->deleteFace(f.index);*/
+				/*mt->appendVertex(trimesh::point(f.V0(0)->p + u * v01 + v * v02));
+				f.SetV();*/		
+				mt->deleteFace(f);
 				return true;
 			}
 		}
