@@ -1,14 +1,16 @@
 #include "cutting.h"
-#define CGAL_USE_BASIC_VIEWER
+
 #include "CGAL/Simple_cartesian.h"
 #include "CGAL/Surface_mesh.h"
-#include "CGAL/draw_surface_mesh.h"
-
+#include "CGAL/Orthogonal_k_neighbor_search.h"
+#include "CGAL//Search_traits_2.h"
 
 
 typedef CGAL::Simple_cartesian<double> Kernel;
-typedef Kernel::Point_3	Point;
-typedef CGAL::Surface_mesh<Point> cmesh;
+typedef Kernel::Point_2	Point;
+typedef CGAL::Search_traits_2<Kernel> TreeTraits;
+typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
+typedef Neighbor_search::Tree Tree;
 
 namespace topomesh
 {
@@ -16,7 +18,15 @@ namespace topomesh
 	bool ModleCutting(const std::vector<trimesh::TriMesh*>& inMesh, std::vector<trimesh::TriMesh*>& outMesh, const SimpleCamera& camera,
 		const TriPolygon& paths, ccglobal::Tracer* tracer)
 	{
-		if (paths.empty()) return false;		
+		if (paths.empty()) return false;
+		for (int vi = 0; vi < inMesh[0]->vertices.size(); vi++)
+			if (inMesh[0]->vertices[vi].z < -10.f)
+				std::cout << "vi :" << vi << "\n";
+		std::vector<int> faceid;
+		faceid.resize(inMesh[0]->faces.size());
+		std::iota(faceid.begin(), faceid.end(), 0);
+		findNeightVertex(inMesh[0],faceid );
+		return false;
 		CameraParam cp;
 		cp.lookAt = camera.center;
 		cp.pos = camera.pos;
@@ -31,7 +41,7 @@ namespace topomesh
 		for (int i = 0; i < inMesh.size(); i++)
 		{
 			inMesh[i]->need_adjacentfaces();
-			inMesh[i]->need_neighbors();
+			inMesh[i]->need_neighbors();			
 			TransformationMesh(inMesh[i], viewMatrix, projectionMatrix);
 			if (JudgeMeshIsVaild(inMesh[i]))
 			{
@@ -376,8 +386,80 @@ namespace topomesh
 
 	void testCgal()
 	{
-		
-	
+		const  int K = 2;
+		std::list<Point> points;
+		points.push_back(Point(1, 1));
+		points.push_back(Point(1, 0));
+		points.push_back(Point(2, 1));
+		points.push_back(Point(-1, 0));
+		points.push_back(Point(0.5,0));
+
+		Tree tree(points.begin(), points.end());
+
+		Point query(0, 0);
+		Neighbor_search search(tree, query, K);
+
+		for (Neighbor_search::iterator it = search.begin(); it != search.end(); it++)
+			std::cout <<"point :"<< it->first << " distance^2 : " << it->second << "\n";
 		return;
+	}
+
+	void findNeightVertex(trimesh::TriMesh* mesh, const std::vector<int>& faceid)
+	{
+		std::vector<int> vertexidx;
+		for (int i = 0; i < faceid.size(); i++)
+		{
+			vertexidx.push_back(mesh->faces[faceid[i]][0]);
+			vertexidx.push_back(mesh->faces[faceid[i]][1]);
+			vertexidx.push_back(mesh->faces[faceid[i]][2]);
+		}
+		std::sort(vertexidx.begin(), vertexidx.end());
+		std::vector<int>::iterator itr= std::unique(vertexidx.begin(), vertexidx.end());
+		vertexidx.resize(std::distance(vertexidx.begin(), itr));
+#if 0
+		const int K = 10;
+		std::list<Point> points;
+		for (int i = 0; i < vertexidx.size(); i++)
+		{
+			points.push_back(Point(mesh->vertices[vertexidx[i]].x, mesh->vertices[vertexidx[i]].y));
+		}
+		Tree kdtree(points.begin(),points.end());
+		Point query(0, 0);
+		Neighbor_search search(kdtree, query, K);
+		for (Neighbor_search::iterator it = search.begin(); it != search.end(); it++)
+			std::cout << "point :" << it->first << " distance^2 : " << it->second << "\n";
+#else
+		const int width = 100, height=100;
+		std::vector<std::vector<float>> mapp(width,std::vector<float>(height,std::numeric_limits<float>::max()));
+		mesh->need_bbox();
+		float length_x = (mesh->bbox.max.x - mesh->bbox.min.x)/(width*1.0f);
+		float length_y = (mesh->bbox.max.y - mesh->bbox.min.y)/(height*1.0f);
+
+		float begin_x = mesh->bbox.min.x;
+		float begin_y = mesh->bbox.min.y;
+
+		for (int i = 0; i < vertexidx.size(); i++)
+		{
+			float x = mesh->vertices[vertexidx[i]].x - begin_x;
+			float y = mesh->vertices[vertexidx[i]].y - begin_y;
+			int x_ind = x / length_x;
+			int y_ind = y / length_y;
+			if (x_ind == width)
+				x_ind--;
+			if (y_ind == height)
+				y_ind--;
+			if (mesh->vertices[vertexidx[i]].z < mapp[x_ind][y_ind])
+			{
+				mapp[x_ind][y_ind] = mesh->vertices[vertexidx[i]].z;
+				std::cout << " x_ind :" <<x_ind<<" y_ind :"<<y_ind << " z :" << mesh->vertices[vertexidx[i]].z << "\n";
+			}
+		}
+
+		trimesh::vec2 v(16.3043,-11.6413);
+		int xi = (v.x - begin_x) / length_x;
+		int yi = (v.y - begin_y) / length_y;
+		if (mapp[xi][yi] != std::numeric_limits<float>::max())
+			std::cout << " z :" << mapp[xi][yi] << "\n";
+#endif
 	}
 }

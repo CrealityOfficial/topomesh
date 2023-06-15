@@ -5,6 +5,8 @@
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
 
+#include <list>
+
 #include "ccglobal/tracer.h"
 
 
@@ -26,4 +28,5 @@ namespace topomesh {
 	void splitMesh(MMeshT* mesh, std::vector<MMeshT>& outmesh,std::vector<int>& order);
 	void ConnectMeshFace(MMeshT* mesh);
 	void testCgal();
+	void findNeightVertex(trimesh::TriMesh* mesh, const std::vector<int>& faceid);
 }
