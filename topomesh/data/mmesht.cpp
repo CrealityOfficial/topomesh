@@ -521,7 +521,7 @@ namespace topomesh
 				v1.connected_face[i]->SetA();
 			for (int i = 0; i < v2.connected_face.size(); i++)
 				v2.connected_face[i]->SetA();
-			//---¿ÉÄÜÖØ¸´Ìí¼Óconnect_face
+			//---ï¿½ï¿½ï¿½ï¿½ï¿½Ø¸ï¿½ï¿½ï¿½ï¿½ï¿½connect_face
 			for (int i = 0; i < v0.connected_face.size(); i++)
 				if (v0.connected_face[i]->IsA(2) && !v0.connected_face[i]->IsL())
 				{
@@ -628,31 +628,5 @@ namespace topomesh
 		}
 		this->FacesNormals = true;
 	}
-
-	void  MMeshT::CuttingFaces(std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex, const std::vector<std::pair<int, int>>& corssPoints)
-	{
-		if (!this->is_FacePolygon()) this->initFacePolygon();
-		for (int i = 0; i < lines.size(); i++)
-		{
-			for (int j = 0; j < lines[i].size(); j++)
-			{
-				for (int fi = 0; fi < facesIndex.size(); fi++)
-				{
-					if (this->faces[fi].innerFace(trimesh::point(lines[i][j].x, lines[i][j].y, 0)))
-					{
-
-						for (int ci = 0; ci < corssPoints.size(); ci++)
-						{
-							if (corssPoints[ci].first == j || corssPoints[ci].second == j)
-							{
-								this->faces[fi].SetL();
-								break;
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-
+			
 }

@@ -869,11 +869,12 @@ namespace topomesh
 		for (int fi : infaceIndex)if (!mt->faces[fi].IsD())
 		{
 			MMeshFace& f = mt->faces[fi];
-			double are = mt->det(fi);
+			/*double are = mt->det(fi);
 			if (are < 0.00000001f)
 			{
+				outfaceIndex.push_back(fi);
 				continue;
-			}
+			}*/
 			trimesh::point c = (f.V0(0)->p + f.V0(1)->p + f.V0(2)->p) / 3.0;
 			int rayCorssPoint = 0;
 			int equalPoint = 0;
@@ -1039,11 +1040,11 @@ namespace topomesh
 		cp.n = camera.n; cp.f = camera.f;
 		cp.fov = camera.fov; cp.aspect = camera.aspect;
 
-		/*cp.lookAt = trimesh::point(0, 1.90735e-06, 0);
-		cp.pos = trimesh::point(0.207712, 0.0251372, 27.3197);
-		cp.up = trimesh::point(0.992729, 0.12013, -0.00765826);
-		cp.n = 16.7139; cp.f = 3037.93;
-		cp.fov = 22.5394; cp.aspect = 1.92965;*/
+		/*cp.lookAt = trimesh::point(41.3689, 63.9879, 3.19678);
+		cp.pos = trimesh::point(38.5965, 63.1403, 30.3631);
+		cp.up = trimesh::point(0.950905, 0.290721, 0.106113);
+		cp.n = 9.86142; cp.f = 3031.09;
+		cp.fov = 30; cp.aspect = 1.92965;*/
 
 		/*std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
 			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";*/
@@ -1717,7 +1718,8 @@ namespace topomesh
 				}
 				float b = trimesh::point((mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p) % (mesh->vertices[vindex[(i + size - 1) % size]].p - mesh->vertices[vindex[i]].p)).z;
 				float a = trimesh::normalized(trimesh::point(mesh->vertices[vindex[(i + 1) % size]].p - mesh->vertices[vindex[i]].p)) ^ trimesh::normalized(trimesh::point(mesh->vertices[vindex[(i + size - 1) % size]].p - mesh->vertices[vindex[i]].p));
-				if (a <= -1.0f || b < 0.0f)
+				//if (a <= -1.0f || b < 0.0f)
+				if(a<=-0.9999f||b<0.f)
 					continue;
 				std::vector<trimesh::vec2> triangle = { trimesh::vec2(mesh->vertices[vindex[i]].p.x,mesh->vertices[vindex[i]].p.y),trimesh::vec2(mesh->vertices[vindex[(i + 1) % size]].p.x, mesh->vertices[vindex[(i + 1) % size]].p.y),
 				trimesh::vec2(mesh->vertices[vindex[(i + size - 1) % size]].p.x, mesh->vertices[vindex[(i + size - 1) % size]].p.y) };
@@ -1733,6 +1735,8 @@ namespace topomesh
 							if (mesh->vertices[vindex[j]].p.y < std::min(triangle[k].y, triangle[(k + 1) % 3].y))continue;
 							if (mesh->vertices[vindex[j]].p.y > std::max(triangle[k].y, triangle[(k + 1) % 3].y)) continue;
 							double x = (mesh->vertices[vindex[j]].p.y - triangle[k].y) * (triangle[(k + 1) % 3].x - triangle[k].x) / (triangle[(k + 1) % 3].y - triangle[k].y) + triangle[k].x;
+							double x_abs = std::abs(x - mesh->vertices[vindex[j]].p.x);
+							if (x_abs < 5*FLOATERR) { pass = true; break; }
 							if (x - mesh->vertices[vindex[j]].p.x <= 0)
 							{
 								RightrayCorssPoint++;
@@ -1755,8 +1759,6 @@ namespace topomesh
 						mesh->appendFace(vindex[i], vindex[(i + size - 1) % size], vindex[(i + 1) % size]);
 					else					
 						mesh->appendFace(vindex[i], vindex[(i + 1) % size], vindex[(i + size - 1) % size]);
-					
-					
 					vindex.erase(vindex.begin() + i);
 					i--;
 				}
