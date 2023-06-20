@@ -80,9 +80,6 @@ namespace topomesh
 		inline int FN() const { return fn; }
 		inline int EN() const { return en; }
 
-		void calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
-		void initFacePolygon();		
-		void getEdgeNumber();
 		
 
 		void calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
