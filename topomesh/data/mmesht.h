@@ -83,9 +83,10 @@ namespace topomesh
 		
 
 		void calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
-		void initFacePolygon();
-		void CuttingFaces(std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex,const std::vector<std::pair<int,int>>& corssPoints);
+		void initFacePolygon();		
 		void getEdgeNumber();
+		
+
 	private:
 		int vn = 0;
 		int fn = 0;

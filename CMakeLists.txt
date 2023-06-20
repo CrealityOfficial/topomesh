@@ -3,6 +3,7 @@ __cc_find(Eigen)
 __cc_find(Clipper)
 __cc_find(VCG)
 __cc_find(cgal)
+__cc_find(cxlog)
 
 set(SRCS topomesh/data/mmesht.h
 		 topomesh/data/mmesht.cpp
@@ -21,7 +22,7 @@ set(SRCS topomesh/data/mmesht.h
 		 )
 		 
 set(ILIBS trimesh2 eigen mmesh clipper)
-set(LIBS vcg boost_system)
+set(LIBS vcg boost_system cxlog)
 
 set(INCS)
 if(CGAL_INCLUDE_DIRS)
