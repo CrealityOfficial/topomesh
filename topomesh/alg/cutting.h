@@ -1,6 +1,9 @@
+#pragma once
 #include "topomesh/data/mmesht.h"
 #include "topomesh/alg/convert.h"
 #include "topomesh/alg/letter.h"
+#include "topomesh/alg/fillhoneycombs.h"
+
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
@@ -26,7 +29,5 @@ namespace topomesh {
 	void getPathOrder(MMeshT* mesh, const TriPolygon& paths,int start,std::vector<std::vector<int>>& order);
 	void setMarkOfCorssPoint(std::vector<MMeshT*>& meshs, const TriPolygon& paths,const std::vector<std::pair<int,int>>& corssPoint );
 	void splitMesh(MMeshT* mesh, std::vector<MMeshT>& outmesh,std::vector<int>& order);
-	void ConnectMeshFace(MMeshT* mesh);
-	void testCgal();
-	void findNeightVertex(trimesh::TriMesh* mesh, const std::vector<int>& faceid);
+	void ConnectMeshFace(MMeshT* mesh);	
 }
