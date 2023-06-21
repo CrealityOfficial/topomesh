@@ -1040,11 +1040,11 @@ namespace topomesh
 		cp.n = camera.n; cp.f = camera.f;
 		cp.fov = camera.fov; cp.aspect = camera.aspect;
 
-		/*cp.lookAt = trimesh::point(41.3689, 63.9879, 3.19678);
-		cp.pos = trimesh::point(38.5965, 63.1403, 30.3631);
-		cp.up = trimesh::point(0.950905, 0.290721, 0.106113);
-		cp.n = 9.86142; cp.f = 3031.09;
-		cp.fov = 30; cp.aspect = 1.92965;*/
+		/*cp.lookAt = trimesh::point(-1.10312, 0.172629, -0.0166779);
+		cp.pos = trimesh::point(-2.05359, -0.781168, 27.2706);
+		cp.up = trimesh::point(0.705012, 0.707481, 0.0492861);
+		cp.n = 16.7296; cp.f = 3037.91;
+		cp.fov = 16.9342; cp.aspect = 1.92965;*/
 
 		/*std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
 			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";*/
@@ -1731,12 +1731,17 @@ namespace topomesh
 					{
 						for (int k = 0; k < triangle.size(); k++)
 						{
+							double ty_abs = std::abs(triangle[k].y - triangle[(k + 1) % 3].y);
+							double yy_abs = std::abs(triangle[k].y - mesh->vertices[vindex[j]].p.y);
+							if (ty_abs < 10 * FLOATERR && yy_abs < 10 * FLOATERR&&
+								mesh->vertices[vindex[j]].p.x>std::min(triangle[k].x, triangle[(k + 1) % 3].x)&&
+								mesh->vertices[vindex[j]].p.x<std::max(triangle[k].x, triangle[(k + 1) % 3].x)) { pass = true; break; }
 							if (std::abs(triangle[k].y - triangle[(k + 1) % 3].y) < FLOATERR) continue;
 							if (mesh->vertices[vindex[j]].p.y < std::min(triangle[k].y, triangle[(k + 1) % 3].y))continue;
 							if (mesh->vertices[vindex[j]].p.y > std::max(triangle[k].y, triangle[(k + 1) % 3].y)) continue;
 							double x = (mesh->vertices[vindex[j]].p.y - triangle[k].y) * (triangle[(k + 1) % 3].x - triangle[k].x) / (triangle[(k + 1) % 3].y - triangle[k].y) + triangle[k].x;
 							double x_abs = std::abs(x - mesh->vertices[vindex[j]].p.x);
-							if (x_abs < 5*FLOATERR) { pass = true; break; }
+							if (x_abs < 10*FLOATERR) { pass = true; break; }
 							if (x - mesh->vertices[vindex[j]].p.x <= 0)
 							{
 								RightrayCorssPoint++;
@@ -1744,7 +1749,7 @@ namespace topomesh
 							else if (x - mesh->vertices[vindex[j]].p.x >= 0)
 							{
 								LeftrayCrossPoint++;
-							}
+							}																						
 						}
 					}
 					if (RightrayCorssPoint > 0 && LeftrayCrossPoint > 0)
