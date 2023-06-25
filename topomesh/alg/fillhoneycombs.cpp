@@ -1,8 +1,16 @@
 #include "fillhoneycombs.h"
 
-#define EPS 1e-8f
+#include "topomesh/data/mmesht.h"
 
+#define EPS 1e-8f
 namespace topomesh {
+
+	trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* mesh, const trimesh::vec3& axisDir, const HoneyCombParam& param,
+		ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
+	{
+		return nullptr;
+	}
+
 	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid,const std::vector<int>& botfaceid)
 	{
 		std::vector<int> vertexidx;

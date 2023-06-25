@@ -1,6 +1,6 @@
 #pragma once
 #include "topomesh/data/mmesht.h"
-#include "topomesh/alg/convert.h"
+#include "topomesh/data/convert.h"
 #include "topomesh/alg/letter.h"
 #include "topomesh/alg/fillhoneycombs.h"
 

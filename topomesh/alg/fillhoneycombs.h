@@ -1,17 +1,30 @@
 #pragma once
-#include "topomesh/data/mmesht.h"
-#include "topomesh/alg/convert.h"
-#include "topomesh/alg/letter.h"
-
+#include "topomesh/data/convert.h"
 #include "ccglobal/tracer.h"
 
-
-typedef trimesh::point vec3;
-typedef trimesh::vec2 vec2;
-
 namespace topomesh {
-	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, vec3 axisDir = vec3(0, 0, 1),
-		vec2 arrayDir = vec2(1, 0), double honeyCombRadius = 3, double nestWidth = 1, double shellThickness = 2);
+
+	struct HoneyCombParam
+	{
+		double honeyCombRadius = 3.0;
+		double nestWidth = 1.0;
+		double shellThickness = 2.0;
+	};
+
+	class HoneyCombDebugger
+	{
+	public:
+		virtual void onGenerateBottomPolygons(const TriPolygons& polygons) = 0;
+		virtual void onGenerateInfillPolygons(const TriPolygons& polygons) = 0;
+	};
+
+	trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* mesh, const trimesh::vec3& axisDir, const HoneyCombParam& param = HoneyCombParam(),
+		ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
+
+
+
+
+	class MMeshT;
 	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid,const std::vector<int>& botfaceid);
 	void innerHex(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& inFace, std::vector<int>& outFace,float len);
 }

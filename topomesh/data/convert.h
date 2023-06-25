@@ -1,7 +1,5 @@
 #pragma once
 #include "trimesh2/TriMesh.h"
-#include "topomesh/data/mmesht.h"
-#include "clipperxyz/clipper.hpp"
 
 namespace topomesh
 {
@@ -37,13 +35,9 @@ namespace topomesh
 	class LetterInput
 	{
 	public:
-		MMeshT mesh;
-		CameraParam cameraparam;
 		LetterParam letterparam;
-		ClipperLibXYZ::Paths paths;
 
 		void save(const std::string& fileName);
-		void save(trimesh::TriMesh* mesh, LetterParam& letterparam, CameraParam& cameraparam, ClipperLibXYZ::Paths& paths);
 		void load(const std::string& fileName);
 	};
 
