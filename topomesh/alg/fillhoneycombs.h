@@ -9,6 +9,9 @@ namespace topomesh {
 		double honeyCombRadius = 3.0;
 		double nestWidth = 1.0;
 		double shellThickness = 2.0;
+
+		//debug
+		int step_return = 9999; // debug quick return
 	};
 
 	class HoneyCombDebugger
