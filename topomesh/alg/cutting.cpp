@@ -32,8 +32,9 @@ namespace topomesh
 		std::vector<int> faceid(inMesh[0]->faces.size());
 		std::iota(faceid.begin(), faceid.end(), 0);
 		std::vector<int> vertexid;
-		findNeighVertex(inMesh[0], faceid, vertexid);
-
+		//findNeighVertex(inMesh[0], faceid, vertexid);
+		trimesh::TriMesh* newMesh = new trimesh::TriMesh();
+		GenerateHoneyCombs(inMesh[0],*newMesh, paths);
 		/*inMesh[0]->need_adjacentfaces();
 		inMesh[0]->need_neighbors();
 		MMeshT mesht(inMesh[0]);

@@ -1,5 +1,7 @@
 #include "letter.h"
 
+#include "ccglobal/log.h"
+
 #include <buildinfo.h>
 
 #define FLOATERR 1e-8f
@@ -8,7 +10,7 @@
 
 namespace topomesh
 {
-	void concaveOrConvexOfFaces(MMeshT* mt, std::vector<int>& faces,Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, bool concave,float deep)
+	void concaveOrConvexOfFaces(MMeshT* mt, std::vector<int>& faces, bool concave,float deep)
 	{
 		mt->getMeshBoundaryFaces();
 		trimesh::point ave_normal;
@@ -1046,8 +1048,11 @@ namespace topomesh
 		cp.n = 16.7296; cp.f = 3037.91;
 		cp.fov = 16.9342; cp.aspect = 1.92965;*/
 
-		/*std::cout << "center : " << camera.center << " pos :" << camera.pos << "up :" << camera.up <<
-			" n :" << camera.n << " f :" << camera.f << " fov :" << camera.fov << " aspect :" << camera.aspect << "\n";*/
+		LOGD("[Letter] camera center %f, %f, %f", camera.center.x, camera.center.y, camera.center.z);
+		LOGD("[Letter] camera pos %f, %f, %f", camera.pos.x, camera.pos.y, camera.pos.z);
+		LOGD("[Letter] camera up %f, %f, %f", camera.up.x, camera.up.y, camera.up.z);
+		LOGD("[Letter] camera n %f,camera f %f,camera fov %f,camera aspect %f", camera.n, camera.f, camera.fov,camera.aspect);
+		
 		loadCameraParam(cp);
 		if (tracer)
 		{
@@ -1061,11 +1066,7 @@ namespace topomesh
 		{
 			process += 0.03f;
 			tracer->progress(process);
-		}		
-		/*std::cout << "ViewMatrix : " << std::endl;
-		std::cout << viewMatrix << std::endl;
-		std::cout << "ProjectionMatrix : " << std::endl;
-		std::cout << projectionMatrix << std::endl;*/
+		}				
 
 		std::vector<std::vector<std::vector<trimesh::vec2>>> poly;
 		poly.resize(polygons.size());		
@@ -1144,7 +1145,7 @@ namespace topomesh
 			polygonInnerFaces(&mt2, poly, facesindex, outfacesIndexs);
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
 			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);			
-			concaveOrConvexOfFaces(&mt2, outfacesIndexs, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
+			concaveOrConvexOfFaces(&mt2, outfacesIndexs, Letter.concave, Letter.deep);
 			mapping(&mt2, newmesh, vmap, fmap,true);			
 		}
 		else
@@ -1172,7 +1173,7 @@ namespace topomesh
 			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);
 			for (int i = 0; i < mt.vertices.size(); i++)
 				mt.vertices[i].ClearS();
-			concaveOrConvexOfFaces(&mt2, outfacesIndex, viewMatrix, projectionMatrix, Letter.concave, Letter.deep);
+			concaveOrConvexOfFaces(&mt2, outfacesIndex, Letter.concave, Letter.deep);
 			tracer->progress(0.95);
 			mapping(&mt2, newmesh, vmap, fmap);
 			tracer->progress(1.0);
