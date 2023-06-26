@@ -1,12 +1,18 @@
 #include "fillhoneycombs.h"
-
+#include "topomesh/alg/letter.h"
 #include "topomesh/data/mmesht.h"
 
 #define EPS 1e-8f
 namespace topomesh {
 
-	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, vec3 axisDir ,
-		vec2 arrayDir, double honeyCombRadius , double nestWidth , double shellThickness)
+	trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* mesh, const trimesh::vec3& axisDir, const HoneyCombParam& param,
+		ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
+	{
+		return nullptr;
+	}
+
+	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir ,
+		trimesh::vec2 arrayDir, double honeyCombRadius , double nestWidth , double shellThickness)
 	{
 		trimesh::TriMesh* newMesh=new trimesh::TriMesh();
 		*newMesh = *mesh;

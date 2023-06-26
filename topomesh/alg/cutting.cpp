@@ -1,4 +1,8 @@
 #include "cutting.h"
+#include "topomesh/data/mmesht.h"
+#include "topomesh/alg/letter.h"
+
+#include "topomesh/alg/fillhoneycombs.h"
 
 #include "CGAL/Simple_cartesian.h"
 #include "CGAL/Surface_mesh.h"

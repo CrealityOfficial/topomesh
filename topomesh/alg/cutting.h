@@ -1,8 +1,6 @@
 #pragma once
-#include "topomesh/data/mmesht.h"
 #include "topomesh/data/convert.h"
-#include "topomesh/alg/letter.h"
-#include "topomesh/alg/fillhoneycombs.h"
+
 
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
@@ -15,12 +13,13 @@
 
 namespace topomesh {
 
+	class MMeshT;
+	class MMeshVertex;	
 	struct VVertex
 	{
 		MMeshVertex* pri;
 		MMeshVertex* next;
 	};
-
 
 	bool ModleCutting(const std::vector<trimesh::TriMesh*>& inMesh, std::vector<trimesh::TriMesh*>& outMesh, const SimpleCamera& camera,
 		const TriPolygon& paths, ccglobal::Tracer* tracer = nullptr);
