@@ -1,13 +1,154 @@
 #include "fillhoneycombs.h"
 
 #include "topomesh/data/mmesht.h"
-
+#include "topomesh/honeycomb/Matrix.h"
+#include "topomesh/honeycomb/Polyline.h"
+#include "topomesh/honeycomb/HoneyComb.h"
+#ifndef EPS
 #define EPS 1e-8f
-namespace topomesh {
+#endif // !EPS
 
-	trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* mesh, const trimesh::vec3& axisDir, const HoneyCombParam& param,
-		ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
-	{
+namespace topomesh {
+    struct honeyLetterOpt {
+        std::vector<int>bottom;
+        std::vector<int>others;
+        struct hexagon {
+            double radius = 1.0;
+            std::vector<trimesh::vec3>borders;
+        };
+        std::vector<hexagon>hexgons;
+    };
+
+    honeycomb::Mesh ConstructFromTriMesh(const trimesh::TriMesh* trimesh)
+    {
+        honeycomb::Mesh mesh;
+        auto& faces = mesh.GetFaces();
+        auto& points = mesh.GetPoints();
+        auto& normals = mesh.GetFaceNormals();
+        auto& indexs = mesh.GetFaceVertexAdjacency();
+        const auto& vertices = trimesh->vertices;
+        const auto& faceVertexs = trimesh->faces;
+        const auto& norms = trimesh->normals;
+        faces.resize(faceVertexs.size());
+        std::iota(faces.begin(), faces.end(), 0);
+        points.reserve(vertices.size());
+        for (const auto& v : vertices) {
+            honeycomb::Point p(v[0], v[1], v[2]);
+            points.emplace_back(std::move(p));
+        }
+        indexs.reserve(faceVertexs.size());
+        for (const auto& fa : faceVertexs) {
+            std::vector<int> vertexs;
+            vertexs.reserve(3);
+            vertexs.emplace_back(fa[0]);
+            vertexs.emplace_back(fa[1]);
+            vertexs.emplace_back(fa[2]);
+            indexs.emplace_back(vertexs);
+        }
+        mesh.GenerateFaceNormals();
+        //mesh.WriteSTLFile("trimesh转mesh");
+        return mesh;
+    }
+
+    trimesh::TriMesh ConstructFromHoneyMesh(const honeycomb::Mesh& honeyMesh)
+    {
+        trimesh::TriMesh triMesh;
+        const auto& bound = honeyMesh.Bound();
+        const auto& points = honeyMesh.GetPoints();
+        const auto& indexs = honeyMesh.GetFaceVertexAdjacency();
+        triMesh.vertices.reserve(points.size());
+        triMesh.faces.reserve(indexs.size());
+        for (const auto& p : points) {
+            const auto& pt = trimesh::vec3((float)p.x, (float)p.y, (float)p.z);
+            triMesh.vertices.emplace_back(pt);
+        }
+        for (const auto& f : indexs) {
+            const auto& fa = trimesh::vec3(f[0], f[1], f[2]);
+            triMesh.faces.emplace_back(fa);
+        }
+        const auto& min = bound.Min();
+        const auto& max = bound.Max();
+        const auto& p1 = trimesh::vec3((float)min.x, (float)min.y, (float)min.z);
+        const auto& p2 = trimesh::vec3((float)max.x, (float)max.y, (float)max.z);
+        triMesh.bbox = trimesh::box3(p1, p2);
+        return triMesh;
+    }
+
+    void GenerateHexagons(honeycomb::Mesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letteropts)
+    {
+        //第1步，寻找底面（最大平面）朝向
+        std::vector<int>bottomFaces;
+        honeycomb::Point dir = honeyMesh.FindBottomDirection(&bottomFaces);
+        honeyMesh.Rotate(dir, honeycomb::Point(0, 0, -1));
+        honeycomb::BoundBox bound = honeyMesh.Bound();
+        honeyMesh.Translate(-bound.Min());
+        letteropts.bottom.resize(bottomFaces.size());
+        letteropts.bottom.assign(bottomFaces.begin(), bottomFaces.end());
+        const auto& honeyFaces = honeyMesh.GetFaces();
+        std::sort(bottomFaces.begin(), bottomFaces.end());
+        std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
+        std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
+        letteropts.others = std::move(otherFaces);
+        //第2步，平移至xoy平面后底面整平
+        honeyMesh.FlatBottomSurface(&bottomFaces);
+        honeycomb::Mesh cutMesh;
+        cutMesh.MiniCopy(honeyMesh);
+        //第3步，剪切掉底面得边界轮廓
+        cutMesh.DeleteFaces(bottomFaces, true);
+        cutMesh.WriteSTLFile("删除底面后剩余面片");
+        std::vector<int> edges;
+        cutMesh.SelectIndividualEdges(edges);
+        //第4步，底面边界轮廓点索引排序
+        std::vector<std::vector<int>>sequentials;
+        cutMesh.GetSequentialPoints(edges, sequentials);
+        //第5步，构建底面平面多边形轮廓
+        std::vector<honeycomb::Poly2d> polys;
+        polys.reserve(sequentials.size());
+        const auto & points = cutMesh.GetPoints();
+        for (const auto& seq : sequentials) {
+            std::vector<honeycomb::Point2d> border;
+            border.reserve(seq.size());
+            for (const auto& v : seq) {
+                const auto& p = points[v];
+                border.emplace_back(p.x, p.y);
+            }
+            honeycomb::Poly2d poly(border);
+            polys.emplace_back(poly);
+        }
+        honeycomb::ExPoly2d boundarys(polys);
+        //第6步，生成六边形网格阵列
+        honeycomb::HexagonOpt opt;
+        opt.nestWidth = honeyparams.nestWidth;
+        opt.hexagonRadius = honeyparams.honeyCombRadius;
+        opt.shellThickness = honeyparams.shellThickness;
+        const auto& edgelist = boundarys.Edges();
+        std::vector<std::vector<honeycomb::Point2d>> hexborders;
+        std::vector<honeycomb::Hexagon>& hexagons = boundarys.GenerateHexagons(opt, hexborders);
+        letteropts.hexgons.reserve(hexagons.size());
+        for (const auto& hex : hexagons) {
+            const auto& border = hex.Border();
+            std::vector<trimesh::vec3> triborders;
+            triborders.reserve(border.size());
+            for (const auto& p : border) {
+                const auto& point = trimesh::vec3(p.x, p.y, 0);
+                triborders.emplace_back(std::move(point));
+            }
+            letteropts.hexgons.emplace_back(std::move(honeyLetterOpt::hexagon{ opt.hexagonRadius, triborders }));
+        }
+        hexborders.insert(hexborders.end(), edgelist.begin(), edgelist.end());
+        const std::vector<std::vector<honeycomb::Point>>& result = WrapToPoints(hexborders);
+        honeycomb::Mesh hexagonMesh;
+        honeycomb::SaveEdgesToMesh(result, hexagonMesh, 0.04, 5);
+        hexagonMesh.WriteSTLFile("六边形网格");
+    }
+
+    trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
+        ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
+	{ 
+        honeyLetterOpt letterOpts;
+        honeycomb::Mesh& inputMesh = ConstructFromTriMesh(trimesh);
+        GenerateHexagons(inputMesh, honeyparams, letterOpts);
+        trimesh::TriMesh& mesh = ConstructFromHoneyMesh(inputMesh);
 		return nullptr;
 	}
 

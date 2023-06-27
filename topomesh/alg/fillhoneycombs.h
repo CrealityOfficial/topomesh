@@ -6,9 +6,12 @@ namespace topomesh {
 
 	struct HoneyCombParam
 	{
-		double honeyCombRadius = 3.0;
-		double nestWidth = 1.0;
-		double shellThickness = 2.0;
+        TriPolygon* polyline = nullptr;
+        trimesh::vec3 axisDir = trimesh::vec3(0, 0, 1);
+        trimesh::vec2 arrayDir = trimesh::vec2(1, 0);
+		double honeyCombRadius = 1.0;
+		double nestWidth = 0.3;
+		double shellThickness = 1.0;
 
 		//debug
 		int step_return = 9999; // debug quick return
@@ -21,8 +24,8 @@ namespace topomesh {
 		virtual void onGenerateInfillPolygons(const TriPolygons& polygons) = 0;
 	};
 
-	trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* mesh, const trimesh::vec3& axisDir, const HoneyCombParam& param = HoneyCombParam(),
-		ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
+    trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh = nullptr, const HoneyCombParam& honeyparams = HoneyCombParam(),
+        ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
 
 
 
