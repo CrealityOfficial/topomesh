@@ -1,4 +1,7 @@
 #include "fillhoneycombs.h"
+#include "topomesh/math/polygon.h"
+#include "topomesh/math/AABB.h"
+#include "topomesh/math/SVG.h"
 #include "topomesh/alg/letter.h"
 #include "topomesh/data/mmesht.h"
 #include "topomesh/honeycomb/Matrix.h"
@@ -10,13 +13,19 @@
 
 namespace topomesh {
     struct honeyLetterOpt {
-        std::vector<int>bottom;
-        std::vector<int>others;
+        trimesh::vec3 dir = trimesh::vec3(0, 0, 1); ///<默认镂空方向为z轴正方向
+        std::vector<int>bottom; ///<底面大块平面的面片索引
+        std::vector<int>others; ///<去掉底面后其余面片索引（已保留原模型对应的索引）
+        /*每个六角网格结构体，
+        包含收缩前的网格边长以及
+        收缩后网格边界点坐标
+        （不一定6个点，默认xoy坐标系逆时针排序）
+        */
         struct hexagon {
             double radius = 1.0;
             std::vector<trimesh::vec3>borders;
         };
-        std::vector<hexagon>hexgons;
+        std::vector<hexagon>hexgons; ///<多个六角网格结构体
     };
 
     honeycomb::Mesh ConstructFromTriMesh(const trimesh::TriMesh* trimesh)
@@ -74,14 +83,18 @@ namespace topomesh {
         return triMesh;
     }
 
-    void GenerateHexagons(honeycomb::Mesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letteropts)
+    void GenerateExHexagons(honeycomb::Mesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letteropts, HoneyCombDebugger* debugger = nullptr)
     {
         //第1步，寻找底面（最大平面）朝向
         std::vector<int>bottomFaces;
         honeycomb::Point dir = honeyMesh.FindBottomDirection(&bottomFaces);
+        //letteropts.dir = trimesh::vec3((float)-dir.x, (float)dir.y, (float)-dir.z);
         honeyMesh.Rotate(dir, honeycomb::Point(0, 0, -1));
         honeycomb::BoundBox bound = honeyMesh.Bound();
-        honeyMesh.Translate(-bound.Min());
+        const auto& center = bound.Centroid();
+        const auto& minPt = bound.Min();
+        const auto& maxPt = bound.Max();
+        honeyMesh.Translate(-minPt);
         letteropts.bottom.resize(bottomFaces.size());
         letteropts.bottom.assign(bottomFaces.begin(), bottomFaces.end());
         const auto& honeyFaces = honeyMesh.GetFaces();
@@ -116,30 +129,116 @@ namespace topomesh {
             polys.emplace_back(poly);
         }
         honeycomb::ExPoly2d boundarys(polys);
-        //第6步，生成六边形网格阵列
-        honeycomb::HexagonOpt opt;
-        opt.nestWidth = honeyparams.nestWidth;
-        opt.hexagonRadius = honeyparams.honeyCombRadius;
-        opt.shellThickness = honeyparams.shellThickness;
-        const auto& edgelist = boundarys.Edges();
-        std::vector<std::vector<honeycomb::Point2d>> hexborders;
-        std::vector<honeycomb::Hexagon>& hexagons = boundarys.GenerateHexagons(opt, hexborders);
-        letteropts.hexgons.reserve(hexagons.size());
-        for (const auto& hex : hexagons) {
-            const auto& border = hex.Border();
-            std::vector<trimesh::vec3> triborders;
-            triborders.reserve(border.size());
-            for (const auto& p : border) {
-                const auto& point = trimesh::vec3(p.x, p.y, 0);
-                triborders.emplace_back(std::move(point));
+        if (debugger) {
+            //底面轮廓可视化
+            TriPolygons polygons;
+            polygons.reserve(polys.size());
+            for (const auto& poly : polys) {
+                const auto& points = poly.Points();
+                TriPolygon polygon;
+                polygon.reserve(points.size());
+                for (const auto& p : points) {
+                    polygon.emplace_back(trimesh::vec3((float)p.x, (float)p.y, 0));
+                }
+                polygons.emplace_back(std::move(polygon));
             }
-            letteropts.hexgons.emplace_back(std::move(honeyLetterOpt::hexagon{ opt.hexagonRadius, triborders }));
+            debugger->onGenerateBottomPolygons(polygons);
         }
-        hexborders.insert(hexborders.end(), edgelist.begin(), edgelist.end());
-        const std::vector<std::vector<honeycomb::Point>>& result = WrapToPoints(hexborders);
-        honeycomb::Mesh hexagonMesh;
-        honeycomb::SaveEdgesToMesh(result, hexagonMesh, 0.04, 5);
-        hexagonMesh.WriteSTLFile("六边形网格");
+        //第6步，生成六边形网格阵列
+        const double resolution = honeyparams.resolution;
+        const double radius = honeyparams.honeyCombRadius;
+        const double thickness = honeyparams.shellThickness;
+        const double side = radius - honeyparams.nestWidth / SQRT3;
+        cxutil::Polygons bpolygons; ///<底面多边形轮廓
+        cxutil::Polygons mpolygons; ///<抽壳后底面轮廓
+        {
+            for (const auto& poly : polys) {
+                const auto& points = poly.Points();
+                ClipperLib::Path path;
+                for (const auto& p : points) {
+                    const auto& x = int(p.x / resolution);
+                    const auto& y = int(p.y / resolution);
+                    path.emplace_back(ClipperLib::IntPoint(x, y));
+                }
+                bpolygons.paths.emplace_back(std::move(path));
+            }
+            cxutil::Polygons cpolygons(bpolygons);
+            mpolygons = cpolygons.offset(-int(thickness / resolution));
+            if (debugger) {
+                std::string svgFile = "底面轮廓多边形.svg";
+                cxutil::AABB box(bpolygons.min(), bpolygons.max());
+                cxutil::SVG svg(svgFile, box, 0.01);
+                svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
+                svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
+            }
+        }
+        const auto& min = boundarys.Bound().Min();
+        const auto& max = boundarys.Bound().Max();
+        trimesh::box3 bbox(trimesh::vec3(min.x, min.y, minPt.z), trimesh::vec3(max.x, max.y, maxPt.z));
+        //第7步，生成底面内部六角网格
+        TriPolygons polygons = GenerateHexagons(bbox, honeyparams);
+        cxutil::Polygons hpolygons; ///<整六角网格多边形
+        cxutil::Polygons opolygons; ///<与抽壳边界求交的六角网格多边形
+        TriPolygons outpolygons; ///<求交后多边形序列
+        {
+            hpolygons.paths.reserve(polygons.size());
+            for (const auto& poly : polygons) {
+                ClipperLib::Path path;
+                path.reserve(poly.size());
+                for (const auto& p : poly) {
+                    const auto& x = int(p.x / resolution);
+                    const auto & y = int(p.y / resolution);
+                    path.emplace_back(ClipperLib::IntPoint(x, y));
+                }
+                hpolygons.paths.emplace_back(std::move(path));
+            }
+            if (debugger) {
+                debugger->onGenerateInfillPolygons(polygons);
+                std::string svgFile = "底面六角网格阵列.svg";
+                cxutil::AABB box(hpolygons.min(), hpolygons.max());
+                cxutil::SVG svg(svgFile, box, 0.01);
+                svg.writePolygons(hpolygons, cxutil::SVG::Color::GREEN, 3.0);
+            }
+            //抽壳后的边界与收缩后六角网格多边形求交
+            cxutil::Polygons ipolygons = mpolygons.intersectionPolyLines(hpolygons);
+            if (debugger) {
+                std::string svgFile = "抽壳边界六角网格求交.svg";
+                cxutil::AABB box(bpolygons.min(), bpolygons.max());
+                cxutil::SVG svg(svgFile, box, 0.01);
+                svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
+                svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
+                svg.writePolygons(ipolygons, cxutil::SVG::Color::BLUE, 3.0);
+            }
+            const double hexarea = 3.0 / 2.0 * SQRT3 * std::pow(side / resolution, 2);
+            for (const auto& path : ipolygons.paths) {
+                cxutil::Polygons polys;
+                TriPolygon tripolygon;
+                polys.paths.emplace_back(std::move(path));
+                if (polys.area() > 0.5 * hexarea) {
+                    opolygons.paths.emplace_back(std::move(path));
+                    for (const auto& p : path) {
+                        const auto& point = trimesh::vec3(p.X * resolution, p.Y * resolution, 0);
+                        tripolygon.emplace_back(std::move(point));
+                    }
+                    outpolygons.emplace_back(std::move(tripolygon));
+                }
+            }
+            if (debugger) {
+                debugger->onGenerateInfillPolygons(outpolygons);
+                std::string svgFile = "生成底面内部六角网格.svg";
+                cxutil::AABB box(bpolygons.min(), bpolygons.max());
+                cxutil::SVG svg(svgFile, box, 0.01);
+                svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
+                svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
+                svg.writePolygons(opolygons, cxutil::SVG::Color::BLUE, 3.0);
+            }
+        }
+        letteropts.hexgons.reserve(opolygons.size());
+        for (const auto& poly : outpolygons) {
+            letteropts.hexgons.emplace_back(std::move(honeyLetterOpt::hexagon{ radius, poly }));
+        }
+        //honeyMesh.Translate(center);
+        //honeyMesh.Rotate(honeycomb::Point(0, 0, -1), dir);
     }
 
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
@@ -147,10 +246,70 @@ namespace topomesh {
 	{ 
         honeyLetterOpt letterOpts;
         honeycomb::Mesh& inputMesh = ConstructFromTriMesh(trimesh);
-        GenerateHexagons(inputMesh, honeyparams, letterOpts);
+        GenerateExHexagons(inputMesh, honeyparams, letterOpts, debugger);
         trimesh::TriMesh& mesh = ConstructFromHoneyMesh(inputMesh);
+
 		return nullptr;
 	}
+
+    TriPolygons GenerateHexagons(const trimesh::box3& box, const HoneyCombParam& honeyparams)
+    {
+        const auto& min = box.min;
+        const auto& max = box.max;
+        const float radius = honeyparams.honeyCombRadius;
+        const float nestWidth = honeyparams.nestWidth;
+        const float thickness = honeyparams.shellThickness;
+        const float xdelta = 3.0 / 2.0 * radius;
+        const float ydelta = SQRT3 / 2.0 * radius;
+        const float side = radius - nestWidth / SQRT3;
+        const int dy = std::ceil(min.y / ydelta);
+        const int uy = std::floor(max.y / ydelta);
+        const int lx = std::ceil(min.x / xdelta);
+        const int rx = std::floor(max.x / xdelta);
+        std::vector<std::vector<trimesh::point>> gridPoints;
+        for (int ynum = uy; ynum >= dy; --ynum) {
+            std::vector<trimesh::point> crossPts;
+            for (int xnum = lx; xnum < rx; ++xnum) {
+                crossPts.emplace_back(xnum * xdelta, ynum * ydelta, 0.0);
+            }
+            gridPoints.emplace_back(crossPts);
+        }
+        const size_t nrows = gridPoints.size();
+        const int nums = (uy - dy + 1) * (rx - lx + 1);
+        TriPolygons polygons;
+        polygons.reserve(nums);
+        //计算六角网格对应边界包围盒坐标奇偶性质
+        for (size_t row = 0; row < nrows; row += 2) {
+            const auto& rowPoints = gridPoints[row];
+            const auto& ncols = rowPoints.size();
+            for (size_t i = 0; i < ncols; ++i) {
+                const auto& cur = rowPoints[i];
+                const int& num = int((cur - min).x / xdelta);
+                if (num % 2 == 0) {
+                    const auto& center = honeycomb::Point2d(cur.x, cur.y);
+                    honeycomb::Hexagon hexagon(center, side);
+                    const auto& border = hexagon.Border();
+                    TriPolygon polygon;
+                    polygon.reserve(border.size());
+                    for (const auto& p : border) {
+                        polygon.emplace_back(trimesh::vec3((float)p.x, (float)p.y, (float)cur.z));
+                    }
+                    polygons.emplace_back(std::move(polygon));
+                } else {
+                    const auto& center = honeycomb::Point2d(cur.x, (double)(cur.y - ydelta));
+                    honeycomb::Hexagon hexagon(center, side);
+                    const auto& border = hexagon.Border();
+                    TriPolygon polygon;
+                    polygon.reserve(border.size());
+                    for (const auto& p : border) {
+                        polygon.emplace_back(trimesh::vec3((float)p.x, (float)p.y, (float)cur.z));
+                    }
+                    polygons.emplace_back(std::move(polygon));
+                }
+            }
+        }
+        return polygons;
+    }
 
 	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir ,
 		trimesh::vec2 arrayDir, double honeyCombRadius , double nestWidth , double shellThickness)
