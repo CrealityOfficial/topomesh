@@ -28,7 +28,14 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh = nullptr, const HoneyCombParam& honeyparams = HoneyCombParam(),
         ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
 
-    TriPolygons GenerateHexagons(const trimesh::box3& box, const HoneyCombParam& honeyparams = HoneyCombParam());
+    struct HexagonArrayParam {
+        trimesh::vec3 pos; ///<阵列左上角起始点
+        int nrows = 2;
+        int ncols = 2;
+        double radius = 2.0; ///<未收缩前蜂窝六边形边长
+        double nestWidth = 0.3; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）
+    };
+    TriPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
 
 
 	class MMeshT;
