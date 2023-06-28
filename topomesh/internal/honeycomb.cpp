@@ -7,7 +7,7 @@ namespace topomesh
 		ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
 	{
 		if (!trimesh)
-			return;
+			return nullptr;
 
 		MMeshT mesh(trimesh);
 

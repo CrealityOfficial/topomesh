@@ -2,7 +2,6 @@
 #include "topomesh/math/polygon.h"
 #include "topomesh/math/AABB.h"
 #include "topomesh/math/SVG.h"
-#include "topomesh/alg/letter.h"
 #include "topomesh/data/mmesht.h"
 #include "topomesh/honeycomb/Matrix.h"
 #include "topomesh/honeycomb/Polyline.h"
@@ -358,11 +357,11 @@ namespace topomesh {
 		findNeighVertex(newMesh, upfaceindex, honeycombs,vd);
 		for (int i = 0; i < vd.size(); i++)
 		{
-			float z = mt.vertices[vd[i].second].p.z-2.0f;
-			if(mt.vertices[vd[i].first].IsV())
-				splitPoint(&mt, &mt.vertices[vd[i].first],trimesh::point(0,0,z));
-			else
-				mt.vertices[vd[i].first].p += trimesh::point(0, 0, z);
+			//float z = mt.vertices[vd[i].second].p.z-2.0f;
+			//if(mt.vertices[vd[i].first].IsV())
+			//	splitPoint(&mt, &mt.vertices[vd[i].first],trimesh::point(0,0,z));
+			//else
+			//	mt.vertices[vd[i].first].p += trimesh::point(0, 0, z);
 		}
 		//concaveOrConvexOfFaces(&mt, honeycombs, true, 20.f);
 		mt.mmesh2trimesh(newMesh);
