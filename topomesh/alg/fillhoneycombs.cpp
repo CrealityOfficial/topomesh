@@ -3,6 +3,7 @@
 #include "topomesh/math/AABB.h"
 #include "topomesh/math/SVG.h"
 #include "topomesh/data/mmesht.h"
+#include "topomesh/alg/letter.h"
 #include "topomesh/honeycomb/Matrix.h"
 #include "topomesh/honeycomb/Polyline.h"
 #include "topomesh/honeycomb/HoneyComb.h"
@@ -88,7 +89,7 @@ namespace topomesh {
         honeycomb::Mesh cutMesh;
         cutMesh.MiniCopy(honeyMesh);
         //��3�������е�����ñ߽�����
-        cutMesh.DeleteFaces(bottomFaces, true);
+        cutMesh.DeleteFaces(letterOpts.bottom, true);
        // cutMesh.WriteSTLFile("ɾ�������ʣ����Ƭ");
         std::vector<int> edges;
         cutMesh.SelectIndividualEdges(edges);
@@ -255,7 +256,7 @@ namespace topomesh {
     {
         honeyLetterOpt letterOpts;
         honeycomb::Mesh& inputMesh = ConstructFromTriMesh(trimesh);
-        //��1����Ѱ�ҵ��棨���ƽ�棩����
+       
         std::vector<int>bottomFaces;
         honeycomb::Point dir = inputMesh.FindBottomDirection(&bottomFaces);
         inputMesh.Rotate(dir, honeycomb::Point(0, 0, -1));
@@ -269,10 +270,9 @@ namespace topomesh {
         std::sort(bottomFaces.begin(), bottomFaces.end());
         std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
         std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
-        letterOpts.others = std::move(otherFaces);
-        //��2����ƽ����xoyƽ��������ƽ
+        letterOpts.others = std::move(otherFaces);      
         inputMesh.FlatBottomSurface(&bottomFaces);
-        //��3����������������
+ 
         GenerateExHexagons(inputMesh, honeyparams, letterOpts, debugger);
         trimesh::TriMesh & mesh = ConstructFromHoneyMesh(inputMesh);
         
@@ -340,8 +340,6 @@ namespace topomesh {
 	}
 
 
-
-     
 
     TriPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams)
     {
