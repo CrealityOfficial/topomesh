@@ -105,24 +105,7 @@ namespace topomesh
 		}
 	}
 
-	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths, CameraParam& camera, const LetterParam& Letter, std::vector<int>* faceindex)
-	{		
-		loadCameraParam(camera);
-		std::vector<std::vector<trimesh::point>> wordPos;
-		wordToWorldPoint(camera, Letter, paths, wordPos);
-		Eigen::Matrix4f viewMatrix;
-		Eigen::Matrix4f projectionMatrix;
-		getViewMatrixAndProjectionMatrix(camera, viewMatrix, projectionMatrix);
-		std::vector<std::vector<trimesh::vec2>> wordScrennPos;
-		getEmbedingPoint(wordPos, viewMatrix, projectionMatrix, wordScrennPos);
-		TransformationMesh(mesh, viewMatrix, projectionMatrix);
-		std::vector<int> faceIndex;
-		//embedingAndCutting(mesh, wordScrennPos,faceIndex);
-		std::vector<int> facesIndex;
-		//polygonInnerFaces(mesh, wordScrennPos, facesIndex, camera);
-		//concaveOrConvexOfFaces(mesh, facesIndex);
-		unTransformationMesh(mesh, viewMatrix, projectionMatrix);
-	}
+	
 	void embedingAndCutting(MMeshT* mesh,const std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex, bool is_close)
 	{			
 		auto crossProduct = [=](trimesh::vec2 p1, trimesh::vec2 p2) ->float {
@@ -439,24 +422,24 @@ namespace topomesh
 					continue;
 				std::vector<int> facelines;
 				int q = 0;
-				for (int i = 0; i < f.uv_coord.size(); i++)
+				for (int ii = 0; ii < f.uv_coord.size(); ii++)
 				{
-					if (i == 0)
-						facelines.push_back(f.uv_coord[i].w);
-					if (f.uv_coord[i].w != facelines.back())
-						facelines.push_back(f.uv_coord[i].w);
-					if (f.uv_coord[i].x != -1)
+					if (ii == 0)
+						facelines.push_back(f.uv_coord[ii].w);
+					if (f.uv_coord[ii].w != facelines.back())
+						facelines.push_back(f.uv_coord[ii].w);
+					if (f.uv_coord[ii].x != -1)
 						q++;
 				}
 				if (q % 2 != 0)
 					continue;
 
-				for (int i = 0; i < facelines.size(); i++)
+				for (int ii = 0; ii < facelines.size(); ii++)
 				{
 					bool corss = false;
 					for (int j = 0; j < f.uv_coord.size(); j++)
 					{
-						if (facelines[i] == f.uv_coord[j].w)
+						if (facelines[ii] == f.uv_coord[j].w)
 							if (f.uv_coord[j].x != -1)
 							{
 								corss = true; break;
@@ -823,36 +806,7 @@ namespace topomesh
 		}
 		return false;
 	}
-
-	void wordToWorldPoint(const CameraParam& camera, const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths, std::vector<std::vector<trimesh::point>>& points)
-	{
-		int len = paths.size();
-		points.resize(paths[0].size());//��ʱ����
-		trimesh::point m1 = getWorldPoint(camera, camera.p1);
-		trimesh::point m2 = getWorldPoint(camera, trimesh::ivec2(camera.p2.x, camera.p1.y));
-		trimesh::point m3 = getWorldPoint(camera, trimesh::ivec2(camera.p1.x, camera.p2.y));
-		trimesh::point m4 = getWorldPoint(camera, camera.p2);
-		trimesh::point ori_x = trimesh::normalized(m2 - m1);
-		trimesh::point ori_y = trimesh::normalized(m3 - m1);
-		float w = trimesh::distance(m1, m2);
-		float h = trimesh::distance(m1, m3);
-		float wordSize = w / (len * 1.0f);
-		//float pointLen = wordSize / (letter.height * 1.0f);
-		float span = (h - wordSize) / 2.0f;
-		for (unsigned i = 0; i < len; i++)
-		{
-			trimesh::point begin = m1 + span * ori_y + i * wordSize * ori_x;
-			for (unsigned j = 0; j < paths[i].size(); j++)
-			{
-				for (unsigned k = 0; k < paths[i][j].size(); k++)
-				{
-					//trimesh::point point = begin + paths[i][j][k].X * pointLen * ori_x + (letter.height - paths[i][j][k].Y) * pointLen * ori_y;
-					//points[j].push_back(point);
-				}
-			}
-
-		}
-	}
+	
 
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p)
 	{
@@ -1116,7 +1070,8 @@ namespace topomesh
 		tracer->progress(0.42);
 		fmap.clear();
 		vmap.clear();
-		MMeshT mt2(newmesh, faceindex, vmap, fmap);		
+		MMeshT mt2(newmesh, faceindex, vmap, fmap);	
+		//MMeshT mt2(newmesh);
 		mt2.set_VFadjacent(true);
 		mt2.set_VVadjacent(true);
 		mt2.set_FFadjacent(true);
@@ -1177,12 +1132,11 @@ namespace topomesh
 			tracer->progress(0.95);
 			mapping(&mt2, newmesh, vmap, fmap);
 			tracer->progress(1.0);
-		}		
-							
+		}								
 		/*trimesh::TriMesh* savemesh = new trimesh::TriMesh();
 		mt2.mmesh2trimesh(savemesh);
 		savemesh->write("savemesh.ply");
-		newmesh->write("visualizationmesh.ply");	*/
+		newmesh->write("visualizationmesh.ply");*/	
 		letterOpState = true;
 		return newmesh;
 	}

@@ -4,7 +4,6 @@
 #include "mmesh/util/mnode.h"
 #include "topomesh/data/mmesht.h"
 #include "topomesh/data/convert.h"
-#include "clipperxyz/clipper.hpp"
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
@@ -17,12 +16,10 @@
 #include "ccglobal/tracer.h"
 
 namespace topomesh
-{	
-	void lettering(MMeshT* mesh, const std::vector<ClipperLibXYZ::Paths>& paths,  CameraParam& camera, const LetterParam& Letter, std::vector<int>* faceindex = nullptr);
+{		
 	void concaveOrConvexOfFaces(MMeshT* mt,std::vector<int>& faces,bool concave=false,float deep=2.0);
 	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori);	
-	void embedingAndCutting(MMeshT* mesh,const std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex,bool is_close=true);
-	void wordToWorldPoint(const CameraParam& camera,const LetterParam& letter, const std::vector<ClipperLibXYZ::Paths>& paths,std::vector<std::vector<trimesh::point>>& points);
+	void embedingAndCutting(MMeshT* mesh,const std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex,bool is_close=true);	
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);
 	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex);

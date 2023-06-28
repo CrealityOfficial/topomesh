@@ -32,22 +32,7 @@ namespace topomesh
 		loadCameraParam(cp);
 		Eigen::Matrix4f viewMatrix;
 		Eigen::Matrix4f projectionMatrix;
-		getViewMatrixAndProjectionMatrix(cp, viewMatrix, projectionMatrix);
-		std::vector<int> faceid(inMesh[0]->faces.size());
-		std::iota(faceid.begin(), faceid.end(), 0);
-		std::vector<int> vertexid;
-		//findNeighVertex(inMesh[0], faceid, vertexid);
-		trimesh::TriMesh* newMesh = new trimesh::TriMesh();
-		GenerateHoneyCombs(inMesh[0],*newMesh, paths);
-		/*inMesh[0]->need_adjacentfaces();
-		inMesh[0]->need_neighbors();
-		MMeshT mesht(inMesh[0]);
-		std::vector<int> faceid = {48460,47836,47207,46597,47208,47837,48461,49103};
-		concaveOrConvexOfFaces(&mesht,faceid, viewMatrix, projectionMatrix,true,18.0f);
-		trimesh::TriMesh* ms = new trimesh::TriMesh();
-		mesht.mmesh2trimesh(ms);
-		ms->write("testply.ply");*/
-		return false;
+		getViewMatrixAndProjectionMatrix(cp, viewMatrix, projectionMatrix);		
 		std::vector<MMeshT> meshts;
 		for (int i = 0; i < inMesh.size(); i++)
 		{

@@ -201,6 +201,26 @@ namespace topomesh
 	//	std::cout << "" << "\n";
 	//}
 
+	void MMeshT::getBoundingBox()
+	{
+		this->bbox = true;
+		for (MMeshVertex& vi : this->vertices)
+		{
+			if (vi.p.x < this->boundingbox.min_x)
+				this->boundingbox.min_x = vi.p.x;
+			if (vi.p.x > this->boundingbox.max_x)
+				this->boundingbox.max_x = vi.p.x;
+			if (vi.p.y < this->boundingbox.min_y)
+				this->boundingbox.min_y = vi.p.y;
+			if (vi.p.y > this->boundingbox.max_y)
+				this->boundingbox.max_y = vi.p.y;
+			if (vi.p.z < this->boundingbox.min_z)
+				this->boundingbox.min_z = vi.p.z;
+			if (vi.p.z > this->boundingbox.max_z)
+				this->boundingbox.max_z = vi.p.z;
+		}
+	}
+
 	void MMeshT::mmesh2trimesh(trimesh::TriMesh* currentMesh)
 	{
 		shrinkMesh();
@@ -237,6 +257,36 @@ namespace topomesh
 				//.....
 			}
 		}
+	}
+
+	void MMeshT::quickTransform(trimesh::TriMesh* currentMesh)
+	{
+		currentMesh->clear();
+		int deleteVNum = 0;
+		int deleteFNum = 0;
+		for (MMeshVertex& v : this->vertices)
+		{
+			if (v.IsD())
+			{
+				deleteVNum++; continue;
+			}
+			else
+			{
+				currentMesh->vertices.emplace_back(v.p);
+			}
+			v.index -= deleteVNum;
+		}
+		for (MMeshFace& f : this->faces)
+		{
+			if (!f.IsD())
+			{
+				currentMesh->faces.emplace_back(trimesh::TriMesh::Face(f.connect_vertex[0]->index,
+					f.connect_vertex[1]->index,
+					f.connect_vertex[2]->index));
+			}
+		
+		}
+
 	}
 
 	void MMeshT::shrinkMesh()

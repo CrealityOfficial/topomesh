@@ -12,19 +12,19 @@
 
 namespace topomesh {
     struct honeyLetterOpt {
-        trimesh::vec3 dir = trimesh::vec3(0, 0, 1); ///<Ä¬ÈÏïÎ¿Õ·½ÏòÎªzÖáÕý·½Ïò
-        std::vector<int>bottom; ///<µ×Ãæ´ó¿éÆ½ÃæµÄÃæÆ¬Ë÷Òý
-        std::vector<int>others; ///<È¥µôµ×ÃæºóÆäÓàÃæÆ¬Ë÷Òý£¨ÒÑ±£ÁôÔ­Ä£ÐÍ¶ÔÓ¦µÄË÷Òý£©
-        /*Ã¿¸öÁù½ÇÍø¸ñ½á¹¹Ìå£¬
-        °üº¬ÊÕËõÇ°µÄÍø¸ñ±ß³¤ÒÔ¼°
-        ÊÕËõºóÍø¸ñ±ß½çµã×ø±ê
-        £¨²»Ò»¶¨6¸öµã£¬Ä¬ÈÏxoy×ø±êÏµÄæÊ±ÕëÅÅÐò£©
+        trimesh::vec3 dir = trimesh::vec3(0, 0, 1); ///<Ä¬ï¿½ï¿½ï¿½Î¿Õ·ï¿½ï¿½ï¿½Îªzï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        std::vector<int>bottom; ///<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¬ï¿½ï¿½ï¿½ï¿½
+        std::vector<int>others; ///<È¥ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñ±ï¿½ï¿½ï¿½Ô­Ä£ï¿½Í¶ï¿½Ó¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        /*Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹ï¿½å£¬
+        ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç°ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½Ô¼ï¿½
+        ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½6ï¿½ï¿½ï¿½ã£¬Ä¬ï¿½ï¿½xoyï¿½ï¿½ï¿½ï¿½Ïµï¿½ï¿½Ê±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         */
         struct hexagon {
             double radius = 1.0;
             std::vector<trimesh::vec3>borders;
         };
-        std::vector<hexagon>hexgons; ///<¶à¸öÁù½ÇÍø¸ñ½á¹¹Ìå
+        std::vector<hexagon>hexgons; ///<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½á¹¹ï¿½ï¿½
     };
 
     honeycomb::Mesh ConstructFromTriMesh(const trimesh::TriMesh* trimesh)
@@ -84,18 +84,18 @@ namespace topomesh {
 
     void GenerateExHexagons(honeycomb::Mesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr)
     {
-        //¿½±´Ò»·ÝÊý¾Ý
+        //ï¿½ï¿½ï¿½ï¿½Ò»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         honeycomb::Mesh cutMesh;
         cutMesh.MiniCopy(honeyMesh);
-        //µÚ3²½£¬¼ôÇÐµôµ×ÃæµÃ±ß½çÂÖÀª
-        cutMesh.DeleteFaces(letterOpts.bottom, true);
-        //cutMesh.WriteSTLFile("É¾³ýµ×ÃæºóÊ£ÓàÃæÆ¬");
+        //ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ðµï¿½ï¿½ï¿½ï¿½ï¿½Ã±ß½ï¿½ï¿½ï¿½ï¿½ï¿½
+        cutMesh.DeleteFaces(bottomFaces, true);
+       // cutMesh.WriteSTLFile("É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ê£ï¿½ï¿½ï¿½ï¿½Æ¬");
         std::vector<int> edges;
         cutMesh.SelectIndividualEdges(edges);
-        //µÚ4²½£¬µ×Ãæ±ß½çÂÖÀªµãË÷ÒýÅÅÐò
+        //ï¿½ï¿½4ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         std::vector<std::vector<int>>sequentials;
         cutMesh.GetSequentialPoints(edges, sequentials);
-        //µÚ5²½£¬¹¹½¨µ×ÃæÆ½Ãæ¶à±ßÐÎÂÖÀª
+        //ï¿½ï¿½5ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         std::vector<honeycomb::Poly2d> polys;
         polys.reserve(sequentials.size());
         const auto& points = cutMesh.GetPoints();
@@ -111,7 +111,7 @@ namespace topomesh {
         }
         honeycomb::ExPoly2d boundarys(polys);
         if (debugger) {
-            //µ×ÃæÂÖÀª¿ÉÊÓ»¯
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó»ï¿½
             TriPolygons polygons;
             polygons.reserve(polys.size());
             for (const auto& poly : polys) {
@@ -125,13 +125,13 @@ namespace topomesh {
             }
             debugger->onGenerateBottomPolygons(polygons);
         }
-        //µÚ6²½£¬Éú³ÉÁù±ßÐÎÍø¸ñÕóÁÐ
+        //ï¿½ï¿½6ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         const double resolution = honeyparams.resolution;
         const double radius = honeyparams.honeyCombRadius;
         const double thickness = honeyparams.shellThickness;
         const double side = radius - honeyparams.nestWidth / SQRT3;
-        cxutil::Polygons bpolygons; ///<µ×Ãæ¶à±ßÐÎÂÖÀª
-        cxutil::Polygons mpolygons; ///<³é¿Çºóµ×ÃæÂÖÀª
+        cxutil::Polygons bpolygons; ///<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        cxutil::Polygons mpolygons; ///<ï¿½ï¿½Çºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         {
             for (const auto& poly : polys) {
                 const auto& points = poly.Points();
@@ -146,14 +146,14 @@ namespace topomesh {
             cxutil::Polygons cpolygons(bpolygons);
             mpolygons = cpolygons.offset(-int(thickness / resolution));
             if (debugger) {
-                std::string svgFile = "µ×ÃæÂÖÀª¶à±ßÐÎ.svg";
+                std::string svgFile = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.svg";
                 cxutil::AABB box(bpolygons.min(), bpolygons.max());
                 cxutil::SVG svg(svgFile, box, 0.01);
                 svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
                 svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
             }
         }
-        //µÚ7²½£¬Éú³Éµ×ÃæÄÚ²¿Áù½ÇÍø¸ñ
+        //ï¿½ï¿½7ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         auto& min = boundarys.Bound().Min();
         auto& max = boundarys.Bound().Max();
         if (honeyparams.polyline) {
@@ -180,9 +180,9 @@ namespace topomesh {
         hexagonparams.ncols = std::ceil((max.x - min.x) / xdist);
         hexagonparams.nrows = (std::ceil((max.y - min.y) / ydist) + 1) / 2;
         TriPolygons polygons = GenerateHexagons(hexagonparams);
-        cxutil::Polygons hpolygons; ///<ÕûÁù½ÇÍø¸ñ¶à±ßÐÎ
-        cxutil::Polygons opolygons; ///<Óë³é¿Ç±ß½çÇó½»µÄÁù½ÇÍø¸ñ¶à±ßÐÎ
-        TriPolygons outpolygons; ///<Çó½»ºó¶à±ßÐÎÐòÁÐ
+        cxutil::Polygons hpolygons; ///<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        cxutil::Polygons opolygons; ///<ï¿½ï¿½ï¿½Ç±ß½ï¿½ï¿½ó½»µï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        TriPolygons outpolygons; ///<ï¿½ó½»ºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         {
             hpolygons.paths.reserve(polygons.size());
             for (const auto& poly : polygons) {
@@ -197,17 +197,17 @@ namespace topomesh {
             }
             if (debugger) {
                 debugger->onGenerateInfillPolygons(polygons);
-                std::string svgFile = "Áù½ÇÍø¸ñÕóÁÐ.svg";
+                std::string svgFile = "ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.svg";
                 cxutil::AABB box(hpolygons.min(), hpolygons.max());
                 cxutil::SVG svg(svgFile, box, 0.01);
                 svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
                 svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
                 svg.writePolygons(hpolygons, cxutil::SVG::Color::BLUE, 3.0);
             }
-            //³é¿ÇºóµÄ±ß½çÓëÊÕËõºóÁù½ÇÍø¸ñ¶à±ßÐÎÇó½»
+            //ï¿½ï¿½Çºï¿½Ä±ß½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             cxutil::Polygons ipolygons = mpolygons.intersectionPolyLines(hpolygons);
             if (debugger) {
-                std::string svgFile = "³é¿Ç±ß½çÁù½ÇÍø¸ñÇó½».svg";
+                std::string svgFile = "ï¿½ï¿½Ç±ß½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.svg";
                 cxutil::AABB box(bpolygons.min(), bpolygons.max());
                 cxutil::SVG svg(svgFile, box, 0.01);
                 svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
@@ -236,7 +236,7 @@ namespace topomesh {
             }
             if (debugger) {
                 debugger->onGenerateInfillPolygons(outpolygons);
-                std::string svgFile = "Éú³Éµ×ÃæÄÚ²¿Áù½ÇÍø¸ñ.svg";
+                std::string svgFile = "ï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½Ú²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½.svg";
                 cxutil::AABB box(bpolygons.min(), bpolygons.max());
                 cxutil::SVG svg(svgFile, box, 0.01);
                 svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
@@ -255,7 +255,7 @@ namespace topomesh {
     {
         honeyLetterOpt letterOpts;
         honeycomb::Mesh& inputMesh = ConstructFromTriMesh(trimesh);
-        //µÚ1²½£¬Ñ°ÕÒµ×Ãæ£¨×î´óÆ½Ãæ£©³¯Ïò
+        //ï¿½ï¿½1ï¿½ï¿½ï¿½ï¿½Ñ°ï¿½Òµï¿½ï¿½æ£¨ï¿½ï¿½ï¿½Æ½ï¿½æ£©ï¿½ï¿½ï¿½ï¿½
         std::vector<int>bottomFaces;
         honeycomb::Point dir = inputMesh.FindBottomDirection(&bottomFaces);
         inputMesh.Rotate(dir, honeycomb::Point(0, 0, -1));
@@ -270,18 +270,78 @@ namespace topomesh {
         std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
         std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
         letterOpts.others = std::move(otherFaces);
-        //µÚ2²½£¬Æ½ÒÆÖÁxoyÆ½Ãæºóµ×ÃæÕûÆ½
+        //ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½ï¿½ï¿½xoyÆ½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ½
         inputMesh.FlatBottomSurface(&bottomFaces);
-        //µÚ3²½£¬Éú³ÉÁù½ÇÍø¸ñ
+        //ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         GenerateExHexagons(inputMesh, honeyparams, letterOpts, debugger);
         trimesh::TriMesh & mesh = ConstructFromHoneyMesh(inputMesh);
+        
+		mesh.need_adjacentfaces();
+		mesh.need_neighbors();
+		MMeshT mt(&mesh);
+		std::vector<std::vector<trimesh::vec2>> honeycombs;
+		for (int i = 0; i < letterOpts.hexgons.size(); i++)
+		{
+			std::vector<trimesh::vec2> tmp;
+			for (int j = 0; j < letterOpts.hexgons[i].borders.size(); j++)
+			{
+				tmp.push_back(trimesh::vec2(letterOpts.hexgons[i].borders[j].x, letterOpts.hexgons[i].borders[j].y));
+			}
+			honeycombs.emplace_back(tmp);
+		}	
+		int old_face_size = mt.faces.size();
+		embedingAndCutting(&mt,honeycombs,letterOpts.bottom);
+		std::vector<std::vector<std::vector<trimesh::vec2>>> container;
+		container.push_back(honeycombs);
+		std::vector<int> outfacesIndex;
+		int face_size = mt.faces.size();
+		std::vector<int> faceindex;
+		for (int i = 0; i < letterOpts.bottom.size(); i++)
+			faceindex.push_back(letterOpts.bottom[i]);
+		for (int i = old_face_size; i < face_size; i++)
+			faceindex.push_back(i);
+		polygonInnerFaces(&mt, container, faceindex, outfacesIndex);
+		//concaveOrConvexOfFaces(&mt, outfacesIndex, true, 10.0f);
+		for (int i = 0; i < outfacesIndex.size(); i++)
+		{
+			mt.faces[outfacesIndex[i]].V0(0)->SetS();
+			mt.faces[outfacesIndex[i]].V1(0)->SetS();
+			mt.faces[outfacesIndex[i]].V2(0)->SetS();
+			mt.faces[outfacesIndex[i]].SetS();
+		}		
+		for (int vi = 0; vi < mt.vertices.size(); vi++)if(!mt.vertices[vi].IsD())
+		{
+			if (mt.vertices[vi].IsS())
+			{
+				for (MMeshFace* f : mt.vertices[vi].connected_face)
+				{
+					if (!f->IsS())
+					{
+						mt.vertices[vi].SetV(); break;
+					}
+				}
+			}
+		}
+		std::vector<std::pair<int, int>> vd;
+		findNeighVertex(&mt, letterOpts.others, outfacesIndex, vd);
+		for (int i = 0; i < vd.size(); i++)
+		{
+			float z = mt.vertices[vd[i].second].p.z - 2.0f;
+			if (mt.vertices[vd[i].first].IsV())
+				splitPoint(&mt, &mt.vertices[vd[i].first], trimesh::point(0, 0, z));				
+			else
+				mt.vertices[vd[i].first].p += trimesh::point(0, 0, z);
+		}		
+		trimesh::TriMesh* newMesh = new trimesh::TriMesh();
+		//mt.mmesh2trimesh(newMesh);
+		mt.quickTransform(newMesh);
+		newMesh->write("honeycombs.ply");
+		return newMesh;
+	}
 
 
 
-        //×îºó£¬Ä£ÐÍÐèÒªÆ½ÒÆÔÙÐý×ª»ØÈ¥
-
-        return nullptr;
-    }
+     
 
     TriPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams)
     {
@@ -305,7 +365,7 @@ namespace topomesh {
         const size_t nums = (2 * nrows - 1) * ncols;
         TriPolygons polygons;
         polygons.reserve(nums);
-        //¼ÆËãÁù½ÇÍø¸ñ¶ÔÓ¦±ß½ç°üÎ§ºÐ×ø±êÆæÅ¼ÐÔÖÊ
+        //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ó¦ï¿½ß½ï¿½ï¿½Î§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Å¼ï¿½ï¿½ï¿½ï¿½
         for (size_t i = 0; i < 2 * nrows - 1; i += 2) {
             const auto& rowPoints = gridPoints[i];
             for (size_t j = 0; j < ncols; ++j) {
@@ -393,6 +453,92 @@ namespace topomesh {
 		newMesh->write("botmesh.ply");	
 	}
 
+
+	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance)
+	{
+		std::vector<int> vertexidx;
+		std::vector<int> compara_vertex;
+		for (int i = 0; i < upfaceid.size(); i++)
+		{
+			vertexidx.push_back(mesh->faces[upfaceid[i]].V0(0)->index);
+			vertexidx.push_back(mesh->faces[upfaceid[i]].V1(0)->index);
+			vertexidx.push_back(mesh->faces[upfaceid[i]].V2(0)->index);
+		}
+		std::sort(vertexidx.begin(), vertexidx.end());
+		std::vector<int>::iterator itr = std::unique(vertexidx.begin(), vertexidx.end());
+		vertexidx.resize(std::distance(vertexidx.begin(), itr));
+
+		for (int i = 0; i < botfaceid.size(); i++)
+		{
+			compara_vertex.push_back(mesh->faces[botfaceid[i]].V0(0)->index);
+			compara_vertex.push_back(mesh->faces[botfaceid[i]].V1(0)->index);
+			compara_vertex.push_back(mesh->faces[botfaceid[i]].V2(0)->index);
+		}
+		std::sort(compara_vertex.begin(), compara_vertex.end());
+		std::vector<int>::iterator it = std::unique(compara_vertex.begin(), compara_vertex.end());
+		compara_vertex.resize(std::distance(compara_vertex.begin(), it));
+
+		const int width = 100, height = 100;
+		std::vector<std::vector<float>> mapp(width, std::vector<float>(height, std::numeric_limits<float>::max()));
+		std::vector<std::vector<int>> mapind(width, std::vector<int>(height, -1));
+		
+		mesh->getBoundingBox();
+		float length_x = (mesh->boundingbox.max_x - mesh->boundingbox.min_x) / (width * 1.0f);
+		float length_y = (mesh->boundingbox.max_y - mesh->boundingbox.min_y) / (height * 1.0f);
+
+		float begin_x = mesh->boundingbox.min_x;
+		float begin_y = mesh->boundingbox.min_y;
+
+		for (int i = 0; i < vertexidx.size(); i++)
+		{
+			float x = mesh->vertices[vertexidx[i]].p.x - begin_x;
+			float y = mesh->vertices[vertexidx[i]].p.y - begin_y;
+			int x_ind = x / length_x;
+			int y_ind = y / length_y;
+			if (x_ind == width)
+				x_ind--;
+			if (y_ind == height)
+				y_ind--;
+			if (mesh->vertices[vertexidx[i]].p.z < mapp[x_ind][y_ind])
+			{
+				mapp[x_ind][y_ind] = mesh->vertices[vertexidx[i]].p.z;				
+				mapind[x_ind][y_ind] = vertexidx[i];
+			}
+		}
+
+		for (int vi = 0; vi < compara_vertex.size(); vi++)
+		{
+			int xi = (mesh->vertices[compara_vertex[vi]].p.x - begin_x) / length_x;
+			int yi = (mesh->vertices[compara_vertex[vi]].p.y - begin_y) / length_y;
+			if (mapp[xi][yi] != std::numeric_limits<float>::max())
+			{				
+				vertex_distance.push_back(std::make_pair(compara_vertex[vi], mapind[xi][yi]));
+			}
+			else {
+				float max = std::numeric_limits<float>::max();
+				int xi_x, yi_y;
+				for (int i = 1; i < width; i++)
+				{
+					for (int ii = xi - i; ii <= xi + i; ii++)
+						for (int jj = yi - i; jj <= yi + i; jj++)
+						{
+							if (std::abs(ii - xi) != i && std::abs(jj - yi) != i) continue;
+							if (mapp[ii][jj] < max)
+							{
+								max = mapp[ii][jj];
+								xi_x = ii; yi_y = jj;
+							}
+						}
+					if (max != std::numeric_limits<float>::max())
+					{						
+						vertex_distance.push_back(std::make_pair(compara_vertex[vi], mapind[xi_x][yi_y]));
+						break;
+					}
+				}
+			}
+		}
+	}
+
 	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid,const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance)
 	{
 		std::vector<int> vertexidx;
@@ -466,7 +612,7 @@ namespace topomesh {
 				std::cout << "mapind :" << mapind[xi][yi] << " z : " << mapp[xi][yi] << "\n";
 				vertex_distance.push_back(std::make_pair(compara_vertex[vi], mapind[xi][yi]));
 			}
-			else {//----------------ï¿½ï¿½ï¿½ï¿½ï¿½Õ°×±ï¿½ï¿½ï¿½ï¿½ï¿½Î§ï¿½ï¿½Ôªï¿½ï¿½
+			else {
 				float max = std::numeric_limits<float>::min();
 				int xi_x, yi_y;
 				for (int i = 1; i < width; i++)
@@ -494,7 +640,6 @@ namespace topomesh {
 #endif
 	}
 
-	//Ö»Ö§ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î¿ï¿½ï¿½Ù²ï¿½ï¿½ï¿½
 	void innerHex(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& inFace, std::vector<int>& outFace, float len)
 	{
 		std::vector<trimesh::vec2> center(poly.size());

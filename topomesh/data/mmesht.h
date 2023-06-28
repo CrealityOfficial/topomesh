@@ -7,6 +7,14 @@
 
 namespace topomesh
 {
+	struct BoundingBox
+	{
+		float max_x = std::numeric_limits<float>::min(), min_x = std::numeric_limits<float>::max();
+		float max_y = std::numeric_limits<float>::min(), min_y = std::numeric_limits<float>::max();
+		float max_z = std::numeric_limits<float>::min(), min_z = std::numeric_limits<float>::max();
+	};
+
+
 	class MMeshT
 	{
 	public:
@@ -22,7 +30,7 @@ namespace topomesh
 
 		std::vector<MMeshVertex> vertices;
 		std::vector<MMeshFace> faces;
-		
+		BoundingBox boundingbox;
 	public:
 		static inline double det(trimesh::point& p0, trimesh::point& p1, trimesh::point& p2)
 		{
@@ -54,6 +62,7 @@ namespace topomesh
 		void deleteVertex(MMeshVertex& v);
 		void deleteVertex(int i);
 
+		void quickTransform(trimesh::TriMesh* currentMesh);
 		void shrinkMesh();
 		void getMeshBoundary();
 		void getMeshBoundaryFaces();
@@ -67,12 +76,14 @@ namespace topomesh
 		inline bool is_VertexNormals() { return VertexNormals; }
 		inline bool is_FaceNormals() { return FacesNormals; }
 		inline bool is_FacePolygon() { return FacePolygon; }
+		inline bool is_BoundingBox() { return bbox; }
 
 		inline void set_VVadjacent(bool b) { VVadjacent = b; }
 		inline void set_VFadjacent(bool b) { VFadjacent = b; }
 		inline void set_FFadjacent(bool b) { FFadjacent = b; }
 		inline void set_VertexNormals(bool b) { VertexNormals = b; }
 		inline void set_FacesNormals(bool b) { FacesNormals = b; }
+		inline void set_BoundingBox(bool b) { bbox = b; }
 
 		inline void clear() { vertices.clear(); faces.clear();}
 
@@ -85,7 +96,7 @@ namespace topomesh
 		void calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
 		void initFacePolygon();		
 		void getEdgeNumber();
-		
+		void getBoundingBox();
 
 	private:
 		int vn = 0;
@@ -97,6 +108,7 @@ namespace topomesh
 		bool VertexNormals = false;
 		bool FacesNormals = false;
 		bool FacePolygon = false;
+		bool bbox = false;
 	};
 
 	double  getTotalArea(std::vector<trimesh::point>& inVertices);
