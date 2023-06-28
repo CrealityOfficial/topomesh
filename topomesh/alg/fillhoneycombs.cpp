@@ -13,19 +13,18 @@
 
 namespace topomesh {
     struct honeyLetterOpt {
-        trimesh::vec3 dir = trimesh::vec3(0, 0, 1); ///<Ĭ���οշ���Ϊz��������
-        std::vector<int>bottom; ///<������ƽ�����Ƭ����
-        std::vector<int>others; ///<ȥ�������������Ƭ�������ѱ���ԭģ�Ͷ�Ӧ��������
-        /*ÿ����������ṹ�壬
-        ��������ǰ������߳��Լ�
-        ����������߽������
-        ����һ��6���㣬Ĭ��xoy����ϵ��ʱ������
+        std::vector<int>bottom; ///<底面大块平面的面片索引
+        std::vector<int>others; ///<去掉底面后其余面片索引（已保留原模型对应的索引）
+        /*每个六角网格结构体，
+        包含收缩前的网格边长以及
+        收缩后网格边界点坐标
+        （不一定6个点，默认xoy坐标系逆时针排序）
         */
         struct hexagon {
             double radius = 1.0;
             std::vector<trimesh::vec3>borders;
         };
-        std::vector<hexagon>hexgons; ///<�����������ṹ��
+        std::vector<hexagon>hexgons; ///
     };
 
     honeycomb::Mesh ConstructFromTriMesh(const trimesh::TriMesh* trimesh)
@@ -85,18 +84,18 @@ namespace topomesh {
 
     void GenerateExHexagons(honeycomb::Mesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr)
     {
-        //����һ������
+        //拷贝一份数据
         honeycomb::Mesh cutMesh;
         cutMesh.MiniCopy(honeyMesh);
-        //��3�������е�����ñ߽�����
+        //第3步，剪切掉底面得边界轮廓
         cutMesh.DeleteFaces(letterOpts.bottom, true);
-       // cutMesh.WriteSTLFile("ɾ�������ʣ����Ƭ");
+        //cutMesh.WriteSTLFile("删除底面后剩余面片");
         std::vector<int> edges;
         cutMesh.SelectIndividualEdges(edges);
-        //��4��������߽���������������
+        //第4步，底面轮廓边界所有边排序
         std::vector<std::vector<int>>sequentials;
         cutMesh.GetSequentialPoints(edges, sequentials);
-        //��5������������ƽ����������
+        //第5步，构建底面边界轮廓多边形
         std::vector<honeycomb::Poly2d> polys;
         polys.reserve(sequentials.size());
         const auto& points = cutMesh.GetPoints();
@@ -112,7 +111,7 @@ namespace topomesh {
         }
         honeycomb::ExPoly2d boundarys(polys);
         if (debugger) {
-            //�����������ӻ�
+            //显示底面边界轮廓多边形
             TriPolygons polygons;
             polygons.reserve(polys.size());
             for (const auto& poly : polys) {
@@ -124,15 +123,15 @@ namespace topomesh {
                 }
                 polygons.emplace_back(std::move(polygon));
             }
-            debugger->onGenerateBottomPolygons(polygons);
+            debugger->onGenerateInfillPolygons(polygons);
         }
-        //��6����������������������
+        //第6步，底面边界轮廓抽壳
         const double resolution = honeyparams.resolution;
         const double radius = honeyparams.honeyCombRadius;
         const double thickness = honeyparams.shellThickness;
         const double side = radius - honeyparams.nestWidth / SQRT3;
-        cxutil::Polygons bpolygons; ///<������������
-        cxutil::Polygons mpolygons; ///<��Ǻ��������
+        cxutil::Polygons bpolygons; ///<底面边界轮廓多边形
+        cxutil::Polygons mpolygons; ///<地面边界抽壳多边形
         {
             for (const auto& poly : polys) {
                 const auto& points = poly.Points();
@@ -146,15 +145,23 @@ namespace topomesh {
             }
             cxutil::Polygons cpolygons(bpolygons);
             mpolygons = cpolygons.offset(-int(thickness / resolution));
-            if (debugger) {
-                std::string svgFile = "�������������.svg";
-                cxutil::AABB box(bpolygons.min(), bpolygons.max());
-                cxutil::SVG svg(svgFile, box, 0.01);
-                svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
-                svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
-            }
         }
-        //��7�������ɵ����ڲ���������
+        if (debugger) {
+            //显示底面轮廓抽壳多边形
+            TriPolygons polygons;
+            ClipperLib::Paths paths = mpolygons.paths;
+            polygons.reserve(paths.size());
+            for (const auto& path : paths) {
+                TriPolygon poly;
+                poly.reserve(path.size());
+                for (const auto& p : path) {
+                    poly.emplace_back(trimesh::vec3(p.X * resolution, p.Y * resolution, 0));
+                }
+                polygons.emplace_back(std::move(poly));
+            }
+            debugger->onGenerateBottomPolygons(polygons);
+        }
+        //第7步，底面边界抽壳同时，生成六角网格阵列
         auto& min = boundarys.Bound().Min();
         auto& max = boundarys.Bound().Max();
         if (honeyparams.polyline) {
@@ -181,9 +188,13 @@ namespace topomesh {
         hexagonparams.ncols = std::ceil((max.x - min.x) / xdist);
         hexagonparams.nrows = (std::ceil((max.y - min.y) / ydist) + 1) / 2;
         TriPolygons polygons = GenerateHexagons(hexagonparams);
-        cxutil::Polygons hpolygons; ///<��������������
-        cxutil::Polygons opolygons; ///<���Ǳ߽��󽻵�������������
-        TriPolygons outpolygons; ///<�󽻺���������
+        if (debugger) {
+            //显示六角网格阵列
+            debugger->onGenerateBottomPolygons(polygons);
+        }
+        //第8步，计算网格阵列与抽壳轮廓交集
+        cxutil::Polygons hpolygons; ///<整六角网格多边形
+        cxutil::Polygons opolygons; ///<与抽壳边界求交的六角网格多边形
         {
             hpolygons.paths.reserve(polygons.size());
             for (const auto& poly : polygons) {
@@ -196,54 +207,60 @@ namespace topomesh {
                 }
                 hpolygons.paths.emplace_back(std::move(path));
             }
-            if (debugger) {
-                debugger->onGenerateInfillPolygons(polygons);
-                std::string svgFile = "������������.svg";
-                cxutil::AABB box(hpolygons.min(), hpolygons.max());
-                cxutil::SVG svg(svgFile, box, 0.01);
-                svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
-                svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
-                svg.writePolygons(hpolygons, cxutil::SVG::Color::BLUE, 3.0);
+        }
+        cxutil::Polygons ipolygons = mpolygons.intersectionPolyLines(hpolygons);
+        if (debugger) {
+            //显示初始求交结果
+            TriPolygons polygons;
+            ClipperLib::Paths paths = ipolygons.paths;
+            polygons.reserve(paths.size());
+            for (const auto& path : paths) {
+                TriPolygon poly;
+                poly.reserve(path.size());
+                for (const auto& p : path) {
+                    poly.emplace_back(trimesh::vec3(p.X * resolution, p.Y * resolution, 0));
+                }
+                polygons.emplace_back(std::move(poly));
             }
-            //��Ǻ�ı߽�����������������������
-            cxutil::Polygons ipolygons = mpolygons.intersectionPolyLines(hpolygons);
-            if (debugger) {
-                std::string svgFile = "��Ǳ߽�����������.svg";
-                cxutil::AABB box(bpolygons.min(), bpolygons.max());
-                cxutil::SVG svg(svgFile, box, 0.01);
-                svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
-                svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
-                svg.writePolygons(ipolygons, cxutil::SVG::Color::BLUE, 3.0);
-            }
-            const double hexarea = 3.0 / 2.0 * SQRT3 * std::pow(side / resolution, 2);
-            for (const auto& path : ipolygons.paths) {
-                cxutil::Polygons polys;
-                TriPolygon tripolygon;
+            debugger->onGenerateBottomPolygons(polygons);
+            /*std::string svgFile = "bottom_fill_in_hexagon.svg";
+            cxutil::AABB box(bpolygons.min(), bpolygons.max());
+            cxutil::SVG svg(svgFile, box, 0.01);
+            svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
+            svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
+            svg.writePolygons(ipolygons, cxutil::SVG::Color::BLUE, 3.0);*/
+        }
+        //第9步，筛选符合需求的网格多边形
+        TriPolygons outpolygons; ///<求交后网格多边形序列
+        const double hexarea = 3.0 / 2.0 * SQRT3 * std::pow(side / resolution, 2);
+        for (const auto& path : ipolygons.paths) {
+            cxutil::Polygons polys;
+            TriPolygon tripolygon;
+            polys.paths.emplace_back(std::move(path));
+            if (polys.area() < 0) {
+                polys.clear();
+                ClipperLib::Path tmp = std::move(path);
+                std::reverse(tmp.begin(), tmp.end());
                 polys.paths.emplace_back(std::move(path));
-                if (polys.area() < 0) {
-                    polys.clear();
-                    ClipperLib::Path tmp = std::move(path);
-                    std::reverse(tmp.begin(), tmp.end());
-                    polys.paths.emplace_back(std::move(path));
-                }
-                if (polys.area() > 0.5 * hexarea) {
-                    opolygons.paths.emplace_back(std::move(path));
-                    for (const auto& p : path) {
-                        const auto& point = trimesh::vec3(p.X * resolution, p.Y * resolution, 0);
-                        tripolygon.emplace_back(std::move(point));
-                    }
-                    outpolygons.emplace_back(std::move(tripolygon));
-                }
             }
-            if (debugger) {
-                debugger->onGenerateInfillPolygons(outpolygons);
-                std::string svgFile = "���ɵ����ڲ���������.svg";
-                cxutil::AABB box(bpolygons.min(), bpolygons.max());
-                cxutil::SVG svg(svgFile, box, 0.01);
-                svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
-                svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
-                svg.writePolygons(opolygons, cxutil::SVG::Color::BLUE, 3.0);
+            if (polys.area() >= 1.0 / 3.0 * hexarea) {
+                opolygons.paths.emplace_back(std::move(path));
+                for (const auto& p : path) {
+                    const auto& point = trimesh::vec3(p.X * resolution, p.Y * resolution, 0);
+                    tripolygon.emplace_back(std::move(point));
+                }
+                outpolygons.emplace_back(std::move(tripolygon));
             }
+        }
+        if (debugger) {
+            //显示最终符合需求的网格多边形
+            debugger->onGenerateBottomPolygons(outpolygons);
+            /*std::string svgFile = "bottom_in_result_hexagon.svg";
+            cxutil::AABB box(bpolygons.min(), bpolygons.max());
+            cxutil::SVG svg(svgFile, box, 0.01);
+            svg.writePolygons(bpolygons, cxutil::SVG::Color::RED, 3.0);
+            svg.writePolygons(mpolygons, cxutil::SVG::Color::GREEN, 3.0);
+            svg.writePolygons(opolygons, cxutil::SVG::Color::BLUE, 3.0);*/
         }
         letterOpts.hexgons.reserve(opolygons.size());
         for (const auto& poly : outpolygons) {
@@ -256,7 +273,7 @@ namespace topomesh {
     {
         honeyLetterOpt letterOpts;
         honeycomb::Mesh& inputMesh = ConstructFromTriMesh(trimesh);
-       
+        //第1步，寻找底面（最大平面）朝向
         std::vector<int>bottomFaces;
         honeycomb::Point dir = inputMesh.FindBottomDirection(&bottomFaces);
         inputMesh.Rotate(dir, honeycomb::Point(0, 0, -1));
@@ -270,12 +287,30 @@ namespace topomesh {
         std::sort(bottomFaces.begin(), bottomFaces.end());
         std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
         std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
-        letterOpts.others = std::move(otherFaces);      
+        letterOpts.others = std::move(otherFaces);
+        //第2步，平移至xoy平面后底面整平
         inputMesh.FlatBottomSurface(&bottomFaces);
- 
+        if (debugger) {
+            //显示底面区域
+            TriPolygons polygons;
+            const auto& inPoints = inputMesh.GetPoints();
+            const auto& inIndexs = inputMesh.GetFaceVertexAdjacency();
+            polygons.reserve(bottomFaces.size());
+            for (const auto& f : bottomFaces) {
+                TriPolygon poly;
+                poly.reserve(3);
+                for (int i = 0; i < 3; ++i) {
+                    const auto& p = inPoints[inIndexs[f][i]];
+                    poly.emplace_back(trimesh::vec3(p.x, p.y, 0));
+                }
+                polygons.emplace_back(std::move(poly));
+            }
+            debugger->onGenerateBottomPolygons(polygons);
+        }
+        //第3步，生成六角网格
         GenerateExHexagons(inputMesh, honeyparams, letterOpts, debugger);
-        trimesh::TriMesh & mesh = ConstructFromHoneyMesh(inputMesh);
-        
+        trimesh::TriMesh& mesh = ConstructFromHoneyMesh(inputMesh);
+
 		mesh.need_adjacentfaces();
 		mesh.need_neighbors();
 		MMeshT mt(&mesh);
@@ -339,8 +374,6 @@ namespace topomesh {
 		return newMesh;
 	}
 
-
-
     TriPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams)
     {
         const float radius = hexagonparams.radius;
@@ -348,8 +381,8 @@ namespace topomesh {
         const float xdelta = 3.0 / 2.0 * radius;
         const float ydelta = SQRT3 / 2.0 * radius;
         const float side = radius - nestWidth / SQRT3;
-        const int nrows = hexagonparams.nrows;
-        const int ncols = hexagonparams.ncols;
+        const size_t nrows = hexagonparams.nrows;
+        const size_t ncols = hexagonparams.ncols;
         const auto& p0 = hexagonparams.pos;
         std::vector<std::vector<trimesh::point>> gridPoints;
         for (size_t i = 0; i < 2 * nrows - 1; ++i) {
@@ -363,7 +396,7 @@ namespace topomesh {
         const size_t nums = (2 * nrows - 1) * ncols;
         TriPolygons polygons;
         polygons.reserve(nums);
-        //�������������Ӧ�߽��Χ��������ż����
+        //计算六角网格对应边界包围盒坐标奇偶性质
         for (size_t i = 0; i < 2 * nrows - 1; i += 2) {
             const auto& rowPoints = gridPoints[i];
             for (size_t j = 0; j < ncols; ++j) {
