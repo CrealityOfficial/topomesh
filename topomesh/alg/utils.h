@@ -1,6 +1,7 @@
 #ifndef TOPOMESH_UTILS_1687934636754_H
 #define TOPOMESH_UTILS_1687934636754_H
 #include "topomesh/data/convert.h"
+#include "topomesh/data/mmesht.h"
 
 namespace topomesh
 {
@@ -11,6 +12,7 @@ namespace topomesh
 	};
 
 	trimesh::TriMesh* generateColumnar(const TriPolygons& polys, const ColumnarParam& param);
+	void extendPoint(MMeshT* mesh,std::vector<int>& vertex_index, const ColumnarParam& param);
 }
 
 #endif // TOPOMESH_UTILS_1687934636754_H

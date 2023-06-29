@@ -7,6 +7,9 @@
 #include "topomesh/honeycomb/Matrix.h"
 #include "topomesh/honeycomb/Polyline.h"
 #include "topomesh/honeycomb/HoneyComb.h"
+
+#include "topomesh/alg/utils.h"
+
 #ifndef EPS
 #define EPS 1e-8f
 #endif // !EPS
@@ -263,6 +266,11 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {
+
+		TriPolygons polys;
+		ColumnarParam para;
+		generateColumnar(polys,para);
+		return nullptr;
         honeyLetterOpt letterOpts;
         honeycomb::Mesh& inputMesh = ConstructFromTriMesh(trimesh);
         //第1步，寻找底面（最大平面）朝向
@@ -353,7 +361,7 @@ namespace topomesh {
 		findNeighVertex(&mt, letterOpts.others, outfacesIndex, vd);
 		for (int i = 0; i < vd.size(); i++)
 		{
-			float z = vd[i].second - 2.0f;
+			float z = vd[i].second - honeyparams.shellThickness;
 			if (z < mt.vertices[vd[i].first].p.z) continue;;
 			if (mt.vertices[vd[i].first].IsV())
 				splitPoint(&mt, &mt.vertices[vd[i].first], trimesh::point(0, 0, z));				
