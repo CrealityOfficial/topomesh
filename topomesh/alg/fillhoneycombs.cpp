@@ -315,7 +315,7 @@ namespace topomesh {
 		mesh.need_neighbors();
 		MMeshT mt(&mesh);
 		std::vector<std::vector<trimesh::vec2>> honeycombs;
-		for (int i = 0; i < letterOpts.hexgons.size(); i++)
+		for (int i = 0; i < letterOpts.hexgons.size(); i++)		
 		{
 			std::vector<trimesh::vec2> tmp;
 			for (int j = 0; j < letterOpts.hexgons[i].borders.size(); j++)
@@ -357,11 +357,12 @@ namespace topomesh {
 				}
 			}
 		}
-		std::vector<std::pair<int, int>> vd;
+		std::vector<std::pair<int, float>> vd;
 		findNeighVertex(&mt, letterOpts.others, outfacesIndex, vd);
 		for (int i = 0; i < vd.size(); i++)
 		{
-			float z = mt.vertices[vd[i].second].p.z - 2.0f;
+			float z = vd[i].second - 2.0f;
+			if (z < mt.vertices[vd[i].first].p.z) continue;;
 			if (mt.vertices[vd[i].first].IsV())
 				splitPoint(&mt, &mt.vertices[vd[i].first], trimesh::point(0, 0, z));				
 			else
@@ -485,20 +486,10 @@ namespace topomesh {
 	}
 
 
-	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance)
-	{
-		std::vector<int> vertexidx;
-		std::vector<int> compara_vertex;
-		for (int i = 0; i < upfaceid.size(); i++)
-		{
-			vertexidx.push_back(mesh->faces[upfaceid[i]].V0(0)->index);
-			vertexidx.push_back(mesh->faces[upfaceid[i]].V1(0)->index);
-			vertexidx.push_back(mesh->faces[upfaceid[i]].V2(0)->index);
-		}
-		std::sort(vertexidx.begin(), vertexidx.end());
-		std::vector<int>::iterator itr = std::unique(vertexidx.begin(), vertexidx.end());
-		vertexidx.resize(std::distance(vertexidx.begin(), itr));
-
+	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, float>>& vertex_distance)
+	{		
+		
+		std::vector<int> compara_vertex;		
 		for (int i = 0; i < botfaceid.size(); i++)
 		{
 			compara_vertex.push_back(mesh->faces[botfaceid[i]].V0(0)->index);
@@ -510,8 +501,8 @@ namespace topomesh {
 		compara_vertex.resize(std::distance(compara_vertex.begin(), it));
 
 		const int width = 100, height = 100;
-		std::vector<std::vector<float>> mapp(width, std::vector<float>(height, std::numeric_limits<float>::max()));
-		std::vector<std::vector<int>> mapind(width, std::vector<int>(height, -1));
+		//std::vector<std::vector<float>> mapp(width, std::vector<float>(height, std::numeric_limits<float>::max()));
+		std::vector<std::vector<std::vector<int>>> mapind(width, std::vector<std::vector<int>>(height));
 		
 		mesh->getBoundingBox();
 		float length_x = (mesh->boundingbox.max_x - mesh->boundingbox.min_x) / (width * 1.0f);
@@ -520,7 +511,55 @@ namespace topomesh {
 		float begin_x = mesh->boundingbox.min_x;
 		float begin_y = mesh->boundingbox.min_y;
 
-		for (int i = 0; i < vertexidx.size(); i++)
+
+		for (int i = 0; i < upfaceid.size(); i++)
+		{
+			float max_x=std::numeric_limits<float>::min(), max_y = std::numeric_limits<float>::min();
+			float min_x = std::numeric_limits<float>::max(), min_y = std::numeric_limits<float>::max();
+			for (int j = 0; j < 3; j++)
+			{
+				if (mesh->faces[upfaceid[i]].V0(j)->p.x > max_x)
+					max_x = mesh->faces[upfaceid[i]].V0(j)->p.x;
+				if (mesh->faces[upfaceid[i]].V0(j)->p.x < min_x)
+					min_x = mesh->faces[upfaceid[i]].V0(j)->p.x;
+				if (mesh->faces[upfaceid[i]].V0(j)->p.y > max_y)
+					max_y = mesh->faces[upfaceid[i]].V0(j)->p.y;
+				if (mesh->faces[upfaceid[i]].V0(j)->p.y < min_y)
+					min_y = mesh->faces[upfaceid[i]].V0(j)->p.y;
+			}
+			int x_min_id =(min_x - begin_x) / length_x;
+			int y_min_id = (min_y - begin_y) / length_y;
+			int x_max_id = (max_x - begin_x) / length_x;
+			int y_max_id = (max_y - begin_y) / length_y;
+
+			if (x_max_id == width)
+				x_max_id--;
+			if (y_max_id == height)
+				y_max_id--;
+
+			for (int y = y_min_id; y <= y_max_id; y++)
+				for (int x = x_min_id; x <= x_max_id; x++)
+					mapind[x][y].push_back(upfaceid[i]);
+		}
+
+		for (int vi = 0; vi < compara_vertex.size(); vi++)
+		{
+			int xi = (mesh->vertices[compara_vertex[vi]].p.x - begin_x) / length_x;
+			int yi = (mesh->vertices[compara_vertex[vi]].p.y - begin_y) / length_y;
+			float min_z = std::numeric_limits<float>::max();
+			for (int ii = 0; ii < mapind[xi][yi].size(); ii++)
+			{
+				for (int k = 0; k < 3; k++)
+				{
+					if (mesh->faces[mapind[xi][yi][ii]].V0(k)->p.z < min_z)
+						min_z = mesh->faces[mapind[xi][yi][ii]].V0(k)->p.z;
+				}
+			}
+			vertex_distance.push_back(std::make_pair(compara_vertex[vi], min_z));
+		}
+
+
+		/*for (int i = 0; i < vertexidx.size(); i++)
 		{
 			float x = mesh->vertices[vertexidx[i]].p.x - begin_x;
 			float y = mesh->vertices[vertexidx[i]].p.y - begin_y;
@@ -567,7 +606,7 @@ namespace topomesh {
 					}
 				}
 			}
-		}
+		}*/
 	}
 
 	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid,const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance)
