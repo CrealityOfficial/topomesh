@@ -266,11 +266,6 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {
-
-		TriPolygons polys;
-		ColumnarParam para;
-		generateColumnar(polys,para);
-		return nullptr;
         honeyLetterOpt letterOpts;
         honeycomb::Mesh& inputMesh = ConstructFromTriMesh(trimesh);
         //第1步，寻找底面（最大平面）朝向
