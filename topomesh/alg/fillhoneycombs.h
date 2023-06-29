@@ -13,7 +13,7 @@ namespace topomesh {
 		double honeyCombRadius = 2.0; ///<未收缩前蜂窝六边形边长
 		double nestWidth = 0.3; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）
 		double shellThickness = 1.0; ///<抽壳厚度
-
+        double keepHexagonRate = 0.1; ///允许保留网格的最小面积比例
 		//debug
 		int step_return = 9999; // debug quick return
 	};
