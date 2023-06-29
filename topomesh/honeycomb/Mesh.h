@@ -1045,7 +1045,7 @@ namespace honeycomb {
                 current.emplace_back(e);
                 int count = Queues.size();
                 int times = 0;
-                while (true) {
+                while (!Queues.empty()) {
                     const auto& front = current.front();
                     const auto& back = current.back();
                     const auto& ef = Queues.front();
