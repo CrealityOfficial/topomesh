@@ -18,7 +18,7 @@ namespace topomesh
 	class MMeshT
 	{
 	public:
-		MMeshT() :VVadjacent(true), VFadjacent(true), FFadjacent(true) { faces.reserve(8096); vertices.reserve(8096); };//��������������1000����
+		MMeshT() :VVadjacent(true), VFadjacent(true), FFadjacent(true) { faces.reserve(81920); vertices.reserve(81920); };//��������������1000����
 		MMeshT(const MMeshT& mt);
 		MMeshT(MMeshT&& mt) = default;
 		//MMeshT(MMeshT& mt) {};

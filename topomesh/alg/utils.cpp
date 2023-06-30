@@ -19,9 +19,15 @@ namespace topomesh
 				vertex_index.push_back(mt.vertices.back().index);
 			}			
 			std::vector<int> copy_vertex = vertex_index;
-			mt.appendFace(vertex_index[0], vertex_index[vertex_index.size() - 1], vertex_index[1]);
-			vertex_index.erase(vertex_index.begin());
+			int before_face_index = mt.faces.size();			
+			if (vertex_index.size() < 3) continue;		
 			fillTriangleForTraverse(&mt, vertex_index);
+			int after_face_index = mt.faces.size();
+			for (int fi = before_face_index; fi < after_face_index; fi++)
+			{
+				if(((mt.faces[fi].V0(1)->p - mt.faces[fi].V0(0)->p)%(mt.faces[fi].V0(2)->p - mt.faces[fi].V0(0)->p)).z>0)
+					std::swap(mt.faces[fi].connect_vertex[1], mt.faces[fi].connect_vertex[2]);
+			}
 			int before_vertex_index = mt.vertices.size();
 			extendPoint(&mt, copy_vertex, param);
 			int after_vertex_index = mt.vertices.size();
