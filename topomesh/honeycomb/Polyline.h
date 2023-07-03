@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 
 #include <vector>
 #include "Point.h"
@@ -65,7 +65,7 @@ namespace honeycomb {
                 p /= factor;
             }
         }
-        //¼ÆËã¶à±ßĞÎµÄÎïÖÊÖĞĞÄ
+        //è®¡ç®—å¤šè¾¹å½¢çš„ç‰©è´¨ä¸­å¿ƒ
         Point2d MassCentroid()const
         {
             double area = 0;
@@ -199,7 +199,7 @@ namespace honeycomb {
             }
             return plys;
         }
-        //°´ÕÕÂÖÀª´óĞ¡×÷ÅÅĞò£¬Ä¬ÈÏ½µĞò
+        //æŒ‰ç…§è½®å»“å¤§å°ä½œæ’åºï¼Œé»˜è®¤é™åº
         void SortPoly2d(bool descend = true)
         {
             std::sort(polys.begin(), polys.end());
@@ -232,7 +232,7 @@ namespace honeycomb {
         bool InExPoly2d(const Point2d& p)
         {
             bool inside = false;
-            BoundBox2d& bound = Bound();
+            const BoundBox2d& bound = Bound();
             Point2d min = bound.Min(), max = bound.Max();
             if (p.x <= min.x || p.x >= max.x || p.y <= min.y || p.y >= max.y) {
                 return inside;
@@ -280,7 +280,7 @@ namespace honeycomb {
             return polys.size();
         }
         
-        //ÕıÖµÏòÄÚÆ«ÒÆ£¬¸ºÖµÏòÍâÆ«ÒÆ
+        //æ­£å€¼å‘å†…åç§»ï¼Œè´Ÿå€¼å‘å¤–åç§»
         ExPoly2d Offset(const double offset = 0.2)const
         {
             std::vector<Poly2d> newPolys;
@@ -348,9 +348,9 @@ namespace honeycomb {
                     if (a.y == b.y) continue;
                     if (pt.y <= Min(a.y, b.y)) continue;
                     if (pt.y >= Max(a.y, b.y)) continue;
-                    // Çó½»µãµÄx×ø±ê£¨ÓÉÖ±ÏßÁ½µãÊ½·½³Ì×ª»¯¶øÀ´£©  
+                    // æ±‚äº¤ç‚¹çš„xåæ ‡ï¼ˆç”±ç›´çº¿ä¸¤ç‚¹å¼æ–¹ç¨‹è½¬åŒ–è€Œæ¥ï¼‰  
                     double x = (double)(pt.y - a.y) * (double)(b.x - a.x) / (double)(b.y - a.y) + a.x;
-                    // Í³¼Æp1p2ÓëpÏòÓÒÉäÏßµÄ½»µã¼°×óÉäÏßµÄ½»µã  
+                    // ç»Ÿè®¡p1p2ä¸på‘å³å°„çº¿çš„äº¤ç‚¹åŠå·¦å°„çº¿çš„äº¤ç‚¹  
                     if (pt.x < x) {
                         rightXs.push_back(x);
                         inside = !inside;
@@ -407,8 +407,8 @@ namespace honeycomb {
             const Point2d& min = bound.Min();
             const auto& dy = std::ceil(min.y / ydelta);
             const auto& uy = std::floor(max.y / ydelta);
-            const auto& lx = std::ceil(min.x / xdelta);
-            const auto& rx = std::floor(max.x / xdelta);
+            //const auto& lx = std::ceil(min.x / xdelta);
+            //const auto& rx = std::floor(max.x / xdelta);
             const auto& xmedim = (max.x + min.x) / 2.0;
             const auto& xnums = std::ceil(xmedim / xdelta);
             const auto& x = xnums * xdelta;
@@ -419,7 +419,7 @@ namespace honeycomb {
                     crossPts.emplace_back(xnum * xdelta, ynum * ydelta);
                 }*/
                 const std::vector<Point2d>& crossPts = GenerateCrossPoints(Point2d(x, ynum * ydelta), xdelta);
-                //ÔÚ¶à±ßĞÎÄÚ²¿ºá×İÖá·Ö±ğ¾ùÔÈ²ÉÑù
+                //åœ¨å¤šè¾¹å½¢å†…éƒ¨æ¨ªçºµè½´åˆ†åˆ«å‡åŒ€é‡‡æ ·
                 gridPoints.emplace_back(crossPts);
             }
             return gridPoints;
@@ -434,20 +434,20 @@ namespace honeycomb {
             const double ydist = SQRT3 / 2.0 * radius;
             const double side = radius - nestWidth / SQRT3;
             const double offdist = Min(xdist, thickness);
-            ExPoly2d polys = Offset(xdist + thickness);
+            ExPoly2d poly2d = Offset(xdist + thickness);
             if (true) {
                 Mesh polyMesh;
                 ExPoly2d tempPolys;
-                tempPolys.Copy(polys);
+                tempPolys.Copy(poly2d);
                 tempPolys.Add(*this);
                 tempPolys.SavePolysToMesh(polyMesh);
-                polyMesh.WriteSTLFile("ÏòÄÚÆ«ÒÆ¶à±ßĞÎ");
+                polyMesh.WriteSTLFile("boundary_offset");
             }
-            const auto& gridPoints = polys.GenerateGridPoints(xdist, ydist);
+            const auto& gridPoints = poly2d.GenerateGridPoints(xdist, ydist);
             std::cout << xdist << " " << ydist <<" "<<radius << std::endl;
             const size_t nrows = gridPoints.size();
             hexagons.reserve(nrows);
-            //¼ÆËãÁù½ÇÍø¸ñ¶ÔÓ¦±ß½ç°üÎ§ºĞ×ø±êÆæÅ¼ĞÔÖÊ
+            //è®¡ç®—å…­è§’ç½‘æ ¼å¯¹åº”è¾¹ç•ŒåŒ…å›´ç›’åæ ‡å¥‡å¶æ€§è´¨
             const BoundBox2d bound = Bound();
             const Point2d& min = bound.Min();
             for (size_t row = 0; row < nrows; row += 2) {
@@ -488,7 +488,7 @@ namespace honeycomb {
                 const auto& a = edgePoints[i][0];
                 const auto& b = edgePoints[i][1];
                 const auto& n = (b - a).Normalized();
-                auto & x = std::move(z.Cross(n));
+                auto x = z.Cross(n);
                 if (x.Norm() < EPS) {
                     x = Point(1, 0, 0);
                 }
@@ -558,7 +558,7 @@ namespace honeycomb {
                 const auto& a = points[i];
                 const auto& b = points[i + 1];
                 const auto& n = (b - a).Normalized();
-                auto & x = std::move(z.Cross(n));
+                auto x = z.Cross(n);
                 if (x.Norm() < EPS) {
                     x = Point(1, 0, 0);
                 }

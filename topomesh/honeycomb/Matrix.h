@@ -149,7 +149,7 @@ namespace honeycomb {
             }
             return mat;
         }
-        Point2d operator*(const Point2d& p) const
+        inline Point2d operator*(const Point2d& p) const
         {
             std::vector<double> datas;
             datas.reserve(rows);
@@ -372,7 +372,7 @@ namespace honeycomb {
             }
             return mat;
         }
-        Point operator*(const Point& p) const
+        inline Point operator*(const Point& p) const
         {
             std::vector<double> datas;
             datas.reserve(rows);
@@ -381,7 +381,7 @@ namespace honeycomb {
             }
             return Point(datas);
         }
-        void operator*=(Point& p) const
+        inline void operator*=(Point& p) const
         {
             const auto& x = Row(0).Dot(p);
             const auto& y = Row(1).Dot(p);

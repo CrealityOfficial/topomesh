@@ -137,11 +137,11 @@ namespace cxutil
         auto parts = polygons.splitIntoParts();
         for (auto part_it = parts.rbegin(); part_it != parts.rend(); ++part_it)
         {
-            PolygonsPart& parts = *part_it;
-            for (unsigned int j = 0; j < parts.size(); j++)
+            PolygonsPart& newparts = *part_it;
+            for (unsigned int j = 0; j < newparts.size(); j++)
             {
                 fprintf(out, "<polygon points=\"");
-                for (Point& p : parts[j])
+                for (Point& p : newparts[j])
                 {
                     FPoint3 fp = transformF(p);
                     fprintf(out, "%f,%f ", fp.x, fp.y);

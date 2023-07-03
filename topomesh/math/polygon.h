@@ -680,8 +680,8 @@ namespace cxutil
         }
         void deletePaths()
         {
-	    ClipperLib::Paths paths;	
-            paths.swap(paths);
+            ClipperLib::Paths newpaths;
+            newpaths.swap(paths);
         }
         void add(ConstPolygonRef& poly)
         {

@@ -1314,7 +1314,7 @@ namespace cxutil
 		for (int i = 0; i < pathNum; i++)
 		{
 			int pathPoint = 0;
-			std::getline(ifs, line);///??��?pathPoint
+			std::getline(ifs, line);
 			std::stringstream ss(line);
 			if (!(ss >> pathPoint) || pathPoint <= 0)
 			{

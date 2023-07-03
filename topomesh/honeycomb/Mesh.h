@@ -72,7 +72,6 @@ namespace honeycomb {
                 // ReadASCII
                 fid.open(filename, std::ios::in);
                 // Read the STL header
-                std::string header;
                 std::getline(fid, header);
                 std::string linestr;
                 size_t np1, np2;
@@ -345,9 +344,7 @@ namespace honeycomb {
 
         void Merge(const Mesh& mesh)
         {
-            const auto& points = mesh.GetPoints();
-            const auto& indexs = mesh.GetFaceVertexAdjacency();
-
+            return;
         }
 
         void PointsReserve(size_t num)
@@ -469,7 +466,7 @@ namespace honeycomb {
             for (size_t i = 0; i < facenums; ++i) {
                 std::vector<int>elist;
                 elist.reserve(3);
-                auto& vertexs = std::move(indexs[i]);
+                auto& vertexs = indexs[i];
                 std::sort(vertexs.begin(), vertexs.end());
                 // µÚ1 2Ìõ±ß
                 for (size_t j = 0; j < 2; ++j) {
@@ -574,30 +571,27 @@ namespace honeycomb {
             std::vector<Edge>().swap(edges_);
         }
 
-        void Translate(const Point& trans)
+        inline void Translate(const Point& trans)
         {
             for (auto& pt : points_) {
                 pt += trans;
             }
         }
 
-        void Rotate(const Point& axis, const double& angle)
+        inline void Rotate(const Point& axis, const double& angle)
         {
             const auto& mat = Matrix3d::GetMatrix(axis, angle);
             Rotate(mat);
         }
 
-        void Rotate(const Matrix3d& mat)
+        inline void Rotate(const Matrix3d& mat)
         {
-            std::vector<Point> points;
-            points.reserve(points_.size());
-            for (auto& pt : points_) {
-                points.emplace_back(mat * pt);
+            for (auto& p : points_) {
+                mat *= p;
             }
-            points_.swap(points);
         }
 
-        void Rotate(const Point& a, const Point& b)
+        inline void Rotate(const Point& a, const Point& b)
         {
             const auto& mat = Matrix3d::GetMatrix(a, b);
             Rotate(mat);
@@ -772,7 +766,6 @@ namespace honeycomb {
         Point FindBottomDirection(std::vector<int>* bottomfaces = nullptr, double threshold = 0.95)
         {
             *bottomfaces = SelectLargetPlanar(threshold);
-            GenerateFaceNormals(true, true);
             const auto& areas = GetFaceAreas();
             const auto& normals = GetFaceNormals();
             Point normal(0, 0, 0);
@@ -859,7 +852,7 @@ namespace honeycomb {
                 const auto& a = points_[edges_[edgeIndexs[i]].a];
                 const auto& b = points_[edges_[edgeIndexs[i]].b];
                 const auto& n = (b - a).Normalized();
-                auto & x = std::move(z.Cross(n));
+                auto x = z.Cross(n);
                 if (x.Norm() < EPS) {
                     x = Point(1, 0, 0);
                 }

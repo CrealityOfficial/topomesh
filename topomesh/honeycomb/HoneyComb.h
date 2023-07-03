@@ -34,7 +34,7 @@ namespace honeycomb {
             const auto& a = saveEdges[i][0];
             const auto& b = saveEdges[i][1];
             const auto& n = (b - a).Normalized();
-            auto & x = std::move(z.Cross(n));
+            auto x = std::move(z.Cross(n));
             if (x.Norm() < EPS) {
                 x = Point(1, 0, 0);
             }
