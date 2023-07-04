@@ -6,8 +6,8 @@ namespace topomesh
 {
 	trimesh::TriMesh* generateColumnar(const TriPolygons& polys, const ColumnarParam& param)
 	{
-		/*TriPolygon poly = { trimesh::vec3(1.0f,0.0f,0.0f),trimesh::vec3(2.0f,0.0f,0),trimesh::vec3(3.0f,1.0f,0.0f),trimesh::vec3(2.0f,2.0f,0.0),
-			trimesh::vec3(1.0f,2.0f,0.0),trimesh::vec3(0.0f,1.0f,0.0) };
+		/*TriPolygon poly = { trimesh::vec3(0.5f,0.0f,0.0f),trimesh::vec3(1.0f,0.0f,0),trimesh::vec3(1.5f,0.5f,0.0f),trimesh::vec3(1.0f,1.0f,0.0),
+			trimesh::vec3(0.5f,1.0f,0.0),trimesh::vec3(0.0f,0.5f,0.0) };
 		TriPolygons polys1 = {poly};*/
 		MMeshT mt;
 		for (int i = 0; i < polys.size(); i++)
@@ -53,5 +53,30 @@ namespace topomesh
 			mesh->appendFace(vertex_index[vi], copy_vertex_index[(vi + size - 1) % size], mesh->vertices.back().index);
 			copy_vertex_index[vi] = mesh->vertices.back().index;
 		}
+	}
+
+
+	void findNeighborFacesOfSameAsNormal(MMeshT* mesh, int indicate, std::vector<int>& faceIndexs, float angle_threshold)
+	{
+		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		trimesh::point normal=mesh->faces[indicate].normal;	
+		std::queue<int> queue;
+		queue.push(indicate);
+		while (!queue.empty())
+		{
+			faceIndexs.push_back(queue.front());
+			mesh->faces[queue.front()].SetS();
+			for (int i = 0; i < mesh->faces[queue.front()].connect_face.size(); i++)
+			{
+				if (!mesh->faces[queue.front()].connect_face[i]->IsS())
+				{
+					mesh->faces[queue.front()].connect_face[i]->SetS();
+					float arc = trimesh::normalized(mesh->faces[indicate].normal) ^ trimesh::normalized(mesh->faces[queue.front()].connect_face[i]->normal);
+					if ((std::acos(arc) * 180 / M_PI) < angle_threshold)
+						queue.push(mesh->faces[queue.front()].connect_face[i]->index);
+				}
+			}
+			queue.pop();
+		}	
 	}
 }

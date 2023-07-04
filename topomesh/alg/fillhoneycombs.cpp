@@ -354,7 +354,8 @@ namespace topomesh {
 			float z = vd[i].second - honeyparams.shellThickness;
 			if (z < mt.vertices[vd[i].first].p.z) continue;;
 			if (mt.vertices[vd[i].first].IsV())
-				splitPoint(&mt, &mt.vertices[vd[i].first], trimesh::point(0, 0, z));				
+				splitPoint(&mt, &mt.vertices[vd[i].first], trimesh::point(0, 0, z));	
+				//mt.appendVertex(trimesh::point(mt.vertices[vd[i].first].p + trimesh::point(0, 0, z)));
 			else
 				mt.vertices[vd[i].first].p += trimesh::point(0, 0, z);
 		}		
