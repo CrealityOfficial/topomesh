@@ -792,4 +792,20 @@ namespace topomesh {
 		}
 
 	}
+
+
+	HoneyCombContext::HoneyCombContext(trimesh::TriMesh* mesh)
+	{
+		innerMesh.reset(new MMeshT(mesh));
+	}
+
+	HoneyCombContext::~HoneyCombContext()
+	{
+
+	}
+
+	void HoneyCombContext::checkNeigbour(int indicate, std::vector<int>& faceIndexs, float angle_threshold)
+	{
+		findNeighborFacesOfSameAsNormal(innerMesh.get(), indicate, faceIndexs, angle_threshold);
+	}
 }
