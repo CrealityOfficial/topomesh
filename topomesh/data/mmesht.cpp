@@ -376,6 +376,31 @@ namespace topomesh
 		}
 	}
 
+	void MMeshT::init_halfedge()
+	{
+		if (!this->is_FFadjacent()) return;
+		for (MMeshFace& f : this->faces)
+		{
+			f.connect_halfedge.push_back(MMeshHalfEdge(f.V0(0),f.V1(0)));
+			f.connect_halfedge.back().indication_face = &f;
+			f.connect_halfedge.push_back(MMeshHalfEdge(f.V1(0), f.V2(0)));
+			f.connect_halfedge.back().indication_face = &f;
+			f.connect_halfedge.push_back(MMeshHalfEdge(f.V2(0), f.V0(0)));
+			f.connect_halfedge.back().indication_face = &f;
+			f.connect_halfedge[0].next = &f.connect_halfedge[1];
+			f.connect_halfedge[1].next = &f.connect_halfedge[2];
+			f.connect_halfedge[2].next = &f.connect_halfedge[0];
+		}
+		for (MMeshFace& f : this->faces)
+		{		
+			for (MMeshFace* ff : f.connect_face)
+			{
+				std::pair<int, int> edge = f.commonEdge(ff);
+				//....
+			}			
+		}
+	}
+
 
 	void MMeshT::getEdge(std::vector<trimesh::ivec2>& edge, bool is_select)
 	{

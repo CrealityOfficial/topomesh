@@ -8,7 +8,7 @@
 #include "topomesh/honeycomb/Polyline.h"
 #include "topomesh/honeycomb/HoneyComb.h"
 
-#include "topomesh/alg/utils.h"
+//#include "topomesh/alg/subdivision.h"
 
 #ifndef EPS
 #define EPS 1e-8f
@@ -260,7 +260,7 @@ namespace topomesh {
     }
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
-    {
+    {				
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
@@ -300,7 +300,7 @@ namespace topomesh {
         //第3步，生成六角网格
         GenerateExHexagons(inputMesh, honeyparams, letterOpts, debugger);
         trimesh::TriMesh&& mesh = ConstructFromHoneyMesh(inputMesh);
-
+		
 		mesh.need_adjacentfaces();
 		mesh.need_neighbors();
 		MMeshT mt(&mesh);

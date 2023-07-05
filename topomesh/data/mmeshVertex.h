@@ -7,15 +7,14 @@
 namespace topomesh
 {
 	class MMeshFace;
-
+	
 	class MMeshVertex
 	{
 	public:
 		MMeshVertex() {};
 		MMeshVertex(trimesh::point p) :p(p) {  connected_vertex.reserve(8); connected_face.reserve(8); };
 		virtual ~MMeshVertex() {};
-		MMeshFace* mf;
-
+		MMeshFace* mf;		
 		bool operator==(MMeshVertex* v) const { return this == v ? true : false; };
 
 		int index = -1;

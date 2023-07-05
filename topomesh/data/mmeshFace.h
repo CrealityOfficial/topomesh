@@ -2,12 +2,13 @@
 #include "trimesh2/Vec.h"
 #include "trimesh2/TriMesh.h"
 #include "mmeshVertex.h"
+#include "mmeshHalfEdge.h"
 
 
 namespace topomesh
 {
 	//class MMesh
-
+	//class MMeshHalfEdge;
 
 	class MMeshFace
 	{
@@ -25,6 +26,7 @@ namespace topomesh
 		trimesh::point normal;
 		std::vector<MMeshVertex*> connect_vertex;
 		std::vector<MMeshFace*> connect_face;
+		std::vector<MMeshHalfEdge> connect_halfedge;
 
 		std::vector<trimesh::vec4> uv_coord;
 		std::vector<trimesh::vec4> inner_vertex;

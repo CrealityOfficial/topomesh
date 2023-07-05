@@ -3,6 +3,7 @@
 #include "trimesh2/Vec.h"
 #include "mmeshFace.h"
 #include "mmeshVertex.h"
+#include "mmeshHalfEdge.h"
 #include <map>
 
 namespace topomesh
@@ -97,6 +98,7 @@ namespace topomesh
 		void initFacePolygon();		
 		void getEdgeNumber();
 		void getBoundingBox();
+		void init_halfedge();
 
 	private:
 		int vn = 0;
