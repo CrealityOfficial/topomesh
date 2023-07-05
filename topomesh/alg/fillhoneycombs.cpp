@@ -9,6 +9,7 @@
 #include "topomesh/honeycomb/HoneyComb.h"
 
 //#include "topomesh/alg/subdivision.h"
+#include "topomesh/alg/utils.h"
 
 #ifndef EPS
 #define EPS 1e-8f
