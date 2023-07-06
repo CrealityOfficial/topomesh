@@ -61,6 +61,7 @@ namespace topomesh
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		for (MMeshFace& f : mesh->faces)
 			f.ClearS();
+		if (indicate >= mesh->faces.size() || mesh->faces[indicate].IsD()) return;
 		trimesh::point normal=mesh->faces[indicate].normal;	
 		std::queue<int> queue;
 		queue.push(indicate);

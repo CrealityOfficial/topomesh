@@ -695,10 +695,11 @@ namespace topomesh
 		for (MMeshFace& f : this->faces)
 		{
 			trimesh::point ave_normal;
-			ave_normal += f.V0(0)->normal;
+			/*ave_normal += f.V0(0)->normal;
 			ave_normal += f.V0(1)->normal;
 			ave_normal += f.V0(2)->normal;
-			ave_normal /= 3.0f;
+			ave_normal /= 3.0f;*/
+			ave_normal = trimesh::normalized((f.V1(0)->p - f.V0(0)->p) % (f.V2(0)->p - f.V0(0)->p));
 			f.normal = ave_normal;
 		}
 		this->FacesNormals = true;
