@@ -59,6 +59,8 @@ namespace topomesh
 	void findNeighborFacesOfSameAsNormal(MMeshT* mesh, int indicate, std::vector<int>& faceIndexs, float angle_threshold)
 	{
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		for (MMeshFace& f : mesh->faces)
+			f.ClearS();
 		trimesh::point normal=mesh->faces[indicate].normal;	
 		std::queue<int> queue;
 		queue.push(indicate);

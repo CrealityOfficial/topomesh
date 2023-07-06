@@ -797,6 +797,9 @@ namespace topomesh {
 
 	HoneyCombContext::HoneyCombContext(trimesh::TriMesh* mesh)
 	{
+		mesh->need_adjacentfaces();
+		mesh->need_neighbors();
+		mesh->need_normals();
 		innerMesh.reset(new MMeshT(mesh));
 	}
 
