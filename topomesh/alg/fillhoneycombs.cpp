@@ -262,6 +262,12 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {				
+		//trimesh->need_adjacentfaces();
+		//trimesh->need_neighbors();
+		//MMeshT mt1(trimesh);
+		///*mt1.init_halfedge();
+		//std::cout << "opposite face id :" << mt1.faces[31553].connect_halfedge[0].opposite->indication_face->index << "\n";*/		
+		//return nullptr;
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");

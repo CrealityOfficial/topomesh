@@ -75,6 +75,10 @@ namespace topomesh
 				{
 					mesh->faces[queue.front()].connect_face[i]->SetS();
 					float arc = trimesh::normalized(mesh->faces[indicate].normal) ^ trimesh::normalized(mesh->faces[queue.front()].connect_face[i]->normal);
+					if (arc >= 1.f)
+						arc = 1.f;
+					if (arc <= -1.f)
+						arc = -1.f;
 					if ((std::acos(arc) * 180 / M_PI) < angle_threshold)
 						queue.push(mesh->faces[queue.front()].connect_face[i]->index);
 				}

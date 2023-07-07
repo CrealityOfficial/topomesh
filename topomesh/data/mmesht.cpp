@@ -1,4 +1,5 @@
 #include "mmesht.h"
+#include "unordered_map"
 
 namespace topomesh
 {
@@ -379,25 +380,55 @@ namespace topomesh
 	void MMeshT::init_halfedge()
 	{
 		if (!this->is_FFadjacent()) return;
+		int scale = std::pow(10,1+(int)std::log10(this->vertices.size()));	
+		/*struct vertexHash
+		{
+			int operator()(const std::pair<int, int>& v) const {
+				return v.first + v.second;
+			}
+		};
+
+		struct equalHash
+		{
+			bool operator()(const std::pair<int, int>& v1, const std::pair<int, int>& v2) const {
+				return v1.first == v2.first && v1.second == v2.second;
+			}
+		};*/
+
+		std::unordered_map<long long, std::vector<MMeshHalfEdge*>> map;
+		map.reserve(this->faces.size() + this->vertices.size());
 		for (MMeshFace& f : this->faces)
 		{
-			f.connect_halfedge.push_back(MMeshHalfEdge(f.V0(0),f.V1(0)));
+			f.connect_halfedge.clear();
+			f.connect_halfedge.emplace_back(MMeshHalfEdge(f.V0(0),f.V1(0)));
+			long long min = std::min(f.V0(0)->index, f.V1(0)->index);
+			long long max = std::max(f.V0(0)->index, f.V1(0)->index);
+			long long mm = min + max * scale;
 			f.connect_halfedge.back().indication_face = &f;
-			f.connect_halfedge.push_back(MMeshHalfEdge(f.V1(0), f.V2(0)));
+			map[mm].push_back(&f.connect_halfedge[0]);
+			f.connect_halfedge.emplace_back(MMeshHalfEdge(f.V1(0), f.V2(0)));
+			min =std::min(f.V1(0)->index, f.V2(0)->index);
+			max =std::max(f.V1(0)->index, f.V2(0)->index);
+			mm = min + max * scale;
 			f.connect_halfedge.back().indication_face = &f;
-			f.connect_halfedge.push_back(MMeshHalfEdge(f.V2(0), f.V0(0)));
+			map[mm].push_back(&f.connect_halfedge[1]);
+			f.connect_halfedge.emplace_back(MMeshHalfEdge(f.V2(0), f.V0(0)));
+			min = std::min(f.V2(0)->index, f.V0(0)->index);
+			max = std::max(f.V2(0)->index, f.V0(0)->index);
+			mm = min + max * scale;
 			f.connect_halfedge.back().indication_face = &f;
+			map[mm].push_back(&f.connect_halfedge[2]);
 			f.connect_halfedge[0].next = &f.connect_halfedge[1];
 			f.connect_halfedge[1].next = &f.connect_halfedge[2];
-			f.connect_halfedge[2].next = &f.connect_halfedge[0];
-		}
-		for (MMeshFace& f : this->faces)
-		{		
-			for (MMeshFace* ff : f.connect_face)
+			f.connect_halfedge[2].next = &f.connect_halfedge[0];			
+		}			
+		for (auto ii = map.begin(); ii != map.end(); ii++)
+		{
+			if (ii->second.size() == 2)
 			{
-				std::pair<int, int> edge = f.commonEdge(ff);
-				//....
-			}			
+				ii->second[0]->opposite = ii->second[1];
+				ii->second[1]->opposite = ii->second[0];
+			}
 		}
 	}
 

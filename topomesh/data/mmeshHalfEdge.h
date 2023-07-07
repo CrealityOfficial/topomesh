@@ -14,7 +14,7 @@ namespace topomesh {
 		std::pair<MMeshVertex*, MMeshVertex*> edge_vertex;
 		MMeshFace* indication_face;
 		MMeshHalfEdge* next;
-		MMeshHalfEdge* opposite;
+		MMeshHalfEdge* opposite=nullptr;
 	private:
 		enum halfedge_flag
 		{
