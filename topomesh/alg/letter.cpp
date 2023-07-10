@@ -225,7 +225,7 @@ namespace topomesh
 						{
 							mesh->appendVertex(trimesh::point(f.V0(0)->p + x.x() * vv01 + x.y() * vv02)); 								
 							mesh->vertices.back().inner.push_back(j+1);								
-							mesh->vertices.back().SetL();
+							//mesh->vertices.back().SetL();
 						}
 						f.uv_coord.push_back(trimesh::vec4(-1, mesh->vertices.back().index, j, i));
 					}					

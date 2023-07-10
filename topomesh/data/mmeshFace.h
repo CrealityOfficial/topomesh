@@ -2,13 +2,12 @@
 #include "trimesh2/Vec.h"
 #include "trimesh2/TriMesh.h"
 #include "mmeshVertex.h"
-#include "mmeshHalfEdge.h"
 
 
 namespace topomesh
 {
 	//class MMesh
-	//class MMeshHalfEdge;
+	class MMeshHalfEdge;
 
 	class MMeshFace
 	{
@@ -26,7 +25,8 @@ namespace topomesh
 		trimesh::point normal;
 		std::vector<MMeshVertex*> connect_vertex;
 		std::vector<MMeshFace*> connect_face;
-		std::vector<MMeshHalfEdge> connect_halfedge;
+		MMeshHalfEdge* f_mhe;
+
 
 		std::vector<trimesh::vec4> uv_coord;
 		std::vector<trimesh::vec4> inner_vertex;
@@ -79,6 +79,8 @@ namespace topomesh
 		inline bool IsU(int i) { int copy = flag & MF_USER; copy = copy >> 16; if (i == copy)return true; return false; }
 		inline void ClearU() { flag &= ~MF_USER; }
 		inline int GetU() { int copy = flag & MF_USER; copy = copy >> 16; return copy; }
+
+		inline void ClearALL() { flag &= MF_DELETED; }
 
 		inline void open_uv() { uv_coord.reserve(8); }
 

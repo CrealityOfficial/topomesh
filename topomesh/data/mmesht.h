@@ -31,6 +31,7 @@ namespace topomesh
 
 		std::vector<MMeshVertex> vertices;
 		std::vector<MMeshFace> faces;
+		std::vector<MMeshHalfEdge> half_edge;
 		BoundingBox boundingbox;
 	public:
 		static inline double det(trimesh::point& p0, trimesh::point& p1, trimesh::point& p2)

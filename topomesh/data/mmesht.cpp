@@ -379,55 +379,46 @@ namespace topomesh
 
 	void MMeshT::init_halfedge()
 	{
-		if (!this->is_FFadjacent()) return;
-		int scale = std::pow(10,1+(int)std::log10(this->vertices.size()));	
-		/*struct vertexHash
-		{
-			int operator()(const std::pair<int, int>& v) const {
-				return v.first + v.second;
-			}
-		};
-
-		struct equalHash
-		{
-			bool operator()(const std::pair<int, int>& v1, const std::pair<int, int>& v2) const {
-				return v1.first == v2.first && v1.second == v2.second;
-			}
-		};*/
-
-		std::unordered_map<long long, std::vector<MMeshHalfEdge*>> map;
-		map.reserve(this->faces.size() + this->vertices.size());
+		if (!this->is_FFadjacent()||!this->is_VFadjacent()) return;
+		this->half_edge.clear();
+		this->half_edge.reserve(4*this->faces.size());
 		for (MMeshFace& f : this->faces)
 		{
-			f.connect_halfedge.clear();
-			f.connect_halfedge.emplace_back(MMeshHalfEdge(f.V0(0),f.V1(0)));
-			long long min = std::min(f.V0(0)->index, f.V1(0)->index);
-			long long max = std::max(f.V0(0)->index, f.V1(0)->index);
-			long long mm = min + max * scale;
-			f.connect_halfedge.back().indication_face = &f;
-			map[mm].push_back(&f.connect_halfedge[0]);
-			f.connect_halfedge.emplace_back(MMeshHalfEdge(f.V1(0), f.V2(0)));
-			min =std::min(f.V1(0)->index, f.V2(0)->index);
-			max =std::max(f.V1(0)->index, f.V2(0)->index);
-			mm = min + max * scale;
-			f.connect_halfedge.back().indication_face = &f;
-			map[mm].push_back(&f.connect_halfedge[1]);
-			f.connect_halfedge.emplace_back(MMeshHalfEdge(f.V2(0), f.V0(0)));
-			min = std::min(f.V2(0)->index, f.V0(0)->index);
-			max = std::max(f.V2(0)->index, f.V0(0)->index);
-			mm = min + max * scale;
-			f.connect_halfedge.back().indication_face = &f;
-			map[mm].push_back(&f.connect_halfedge[2]);
-			f.connect_halfedge[0].next = &f.connect_halfedge[1];
-			f.connect_halfedge[1].next = &f.connect_halfedge[2];
-			f.connect_halfedge[2].next = &f.connect_halfedge[0];			
-		}			
-		for (auto ii = map.begin(); ii != map.end(); ii++)
+			this->half_edge.push_back(MMeshHalfEdge(f.V0(0), f.V1(0)));
+			this->half_edge.back().index = this->half_edge.size() - 1;
+			this->half_edge.back().indication_face = &f;
+			f.f_mhe=&this->half_edge[this->half_edge.size() - 1];
+			f.V0(0)->v_mhe.push_back(&this->half_edge[this->half_edge.size() - 1]);
+			this->half_edge.push_back(MMeshHalfEdge(f.V1(0), f.V2(0)));
+			this->half_edge.back().index = this->half_edge.size() - 1;
+			this->half_edge.back().indication_face = &f;
+			f.V1(0)->v_mhe.push_back(&this->half_edge[this->half_edge.size() - 1]);
+			this->half_edge.push_back(MMeshHalfEdge(f.V2(0), f.V0(0)));
+			this->half_edge.back().index = this->half_edge.size() - 1;
+			this->half_edge.back().indication_face = &f;
+			f.V2(0)->v_mhe.push_back(&this->half_edge[this->half_edge.size() - 1]);
+
+			this->half_edge[this->half_edge.size() - 3].next = &this->half_edge[this->half_edge.size() - 2];
+			this->half_edge[this->half_edge.size() - 2].next = &this->half_edge[this->half_edge.size() - 1];
+			this->half_edge[this->half_edge.size() - 1].next = &this->half_edge[this->half_edge.size() - 3];
+		}
+		std::unordered_map<unsigned long long,std::vector<int>> map;
+		map.rehash(this->half_edge.size());
+		int scale = std::pow(10, 1 + std::log10(this->vertices.size()));
+		for (int i=0;i<this->half_edge.size();i++)
 		{
-			if (ii->second.size() == 2)
+			MMeshHalfEdge& he = this->half_edge[i];
+			int min = std::min(he.edge_vertex.first->index, he.edge_vertex.second->index);
+			int max = std::max(he.edge_vertex.first->index, he.edge_vertex.second->index);
+			unsigned long long key = min + max * scale;
+			map[key].push_back(i);
+		}
+		for (auto& value : map)
+		{
+			if (value.second.size() == 2)
 			{
-				ii->second[0]->opposite = ii->second[1];
-				ii->second[1]->opposite = ii->second[0];
+				this->half_edge[value.second[0]].opposite = &this->half_edge[value.second[1]];
+				this->half_edge[value.second[1]].opposite = &this->half_edge[value.second[0]];
 			}
 		}
 	}
@@ -441,7 +432,7 @@ namespace topomesh
 			for (int i = 0; i < v.connected_vertex.size(); i++)
 			{
 				if (v.connected_vertex[i]->IsV()) continue;
-				edge.push_back(trimesh::ivec2(v.index, v.connected_vertex[i]->index));
+				edge.push_back(trimesh::ivec2(v.index, v.connected_vertex[i]->index));				
 			}
 			v.SetV();
 		}
@@ -546,10 +537,22 @@ namespace topomesh
 			{
 				for (MMeshFace* vf : v->connected_face)
 				{
-					v->connected_vertex.push_back(vf->V1(v));
-					v->connected_vertex.push_back(vf->V2(v));
+					if (vf->index == f.index) continue;
+					if (!vf->V1(v)->IsL())
+					{
+						v->connected_vertex.push_back(vf->V1(v)); vf->V1(v)->SetL();
+					}
+					if (!vf->V2(v)->IsL())
+					{
+						v->connected_vertex.push_back(vf->V2(v)); vf->V2(v)->SetL();
+					}
+				}
+				for (MMeshFace* vf : v->connected_face)
+				{
+					vf->V0(0)->ClearL(); vf->V1(0)->ClearL(); vf->V2(0)->ClearL();
 				}
 			}
+
 			/*for (int i = 0; i < f.connect_vertex.size(); i++)
 			{
 				if (f.V0(i)->IsB() && f.V1(i)->IsB())

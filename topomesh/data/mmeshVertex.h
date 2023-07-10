@@ -7,6 +7,8 @@
 namespace topomesh
 {
 	class MMeshFace;
+
+	class MMeshHalfEdge;
 	
 	class MMeshVertex
 	{
@@ -14,7 +16,9 @@ namespace topomesh
 		MMeshVertex() {};
 		MMeshVertex(trimesh::point p) :p(p) {  connected_vertex.reserve(8); connected_face.reserve(8); };
 		virtual ~MMeshVertex() {};
-		MMeshFace* mf;		
+		MMeshFace* mf;	
+		MMeshHalfEdge* me;
+		std::vector<MMeshHalfEdge*> v_mhe;
 		bool operator==(MMeshVertex* v) const { return this == v ? true : false; };
 
 		int index = -1;
@@ -53,6 +57,7 @@ namespace topomesh
 		inline bool IsV() { return (MV_VISITED & flag) != 0 ? 1 : 0; }
 		inline void ClearV() { flag &= ~MV_VISITED; }
 
+		//---L是专用于mesh内部
 		inline void SetL() { flag |= MV_LIMITING; }
 		inline bool IsL() { return (MV_LIMITING & flag) != 0 ? 1 : 0; }
 		inline void ClearL() { flag &= ~MV_LIMITING; }
@@ -71,6 +76,8 @@ namespace topomesh
 		inline bool IsU(int i) { int copy = flag & MV_USER; copy = copy >> 16; if (i == copy)return true; return false; }
 		inline void ClearU() { flag &= ~MV_USER; }
 		inline int GetU() { int copy = flag & MV_USER; copy = copy >> 16; return copy; }
+
+		inline void ClearALL() { flag &= MV_DELETE; }
 
 		bool is_neighbor(MMeshVertex* v);
 

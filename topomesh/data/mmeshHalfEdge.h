@@ -11,10 +11,13 @@ namespace topomesh {
 		MMeshHalfEdge(MMeshVertex* v1, MMeshVertex* v2) { edge_vertex.first = v1, edge_vertex.second = v2; };
 		MMeshHalfEdge(int v1, int v2) {};
 
+		int index=-1;
 		std::pair<MMeshVertex*, MMeshVertex*> edge_vertex;
 		MMeshFace* indication_face;
 		MMeshHalfEdge* next;
 		MMeshHalfEdge* opposite=nullptr;
+
+		int attritube;
 	private:
 		enum halfedge_flag
 		{
@@ -63,5 +66,7 @@ namespace topomesh {
 		inline bool IsU(int i) { int copy = flag & ME_USER; copy = copy >> 16; if (i == copy)return true; return false; }
 		inline void ClearU() { flag &= ~ME_USER; }
 		inline int GetU() { int copy = flag & ME_USER; copy = copy >> 16; return copy; }
+
+		inline void ClearALL() { flag &= ME_DELETE; }
 	};
 }

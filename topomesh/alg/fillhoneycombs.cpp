@@ -8,7 +8,7 @@
 #include "topomesh/honeycomb/Polyline.h"
 #include "topomesh/honeycomb/HoneyComb.h"
 
-//#include "topomesh/alg/subdivision.h"
+#include "topomesh/alg/subdivision.h"
 #include "topomesh/alg/utils.h"
 
 #ifndef EPS
@@ -262,12 +262,15 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {				
-		//trimesh->need_adjacentfaces();
-		//trimesh->need_neighbors();
-		//MMeshT mt1(trimesh);
-		///*mt1.init_halfedge();
-		//std::cout << "opposite face id :" << mt1.faces[31553].connect_halfedge[0].opposite->indication_face->index << "\n";*/		
-		//return nullptr;
+		trimesh->need_adjacentfaces();
+		trimesh->need_neighbors();
+		MMeshT mt1(trimesh);
+		std::vector<int> faceindexs = {35633,34960,34287,33614,34288,34961};
+		loopSubdiv(&mt1, faceindexs, 1);
+		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
+		mt1.quickTransform(newmesh);
+		newmesh->write("loopsubdiv.ply");
+		return nullptr;
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
@@ -377,7 +380,7 @@ namespace topomesh {
             p += trimesh::vec3(minPt.x, minPt.y, minPt.z);
             p = mat * p;
         }
-		newMesh->write("honeycombs.ply");
+		//newMesh->write("honeycombs.ply");
 		return newMesh;
 	}
 
