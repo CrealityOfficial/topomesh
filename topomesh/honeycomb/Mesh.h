@@ -431,7 +431,7 @@ namespace honeycomb {
             const auto& points = GetPoints();
             const auto& indexs = GetFaceVertexAdjacency();
             areas_.resize(faces.size());
-            std::transform(faces.begin(), faces.end(), areas_.begin(), [&](const auto & f) {
+            std::transform(faces.begin(), faces.end(), areas_.begin(), [&](const int& f) {
                 const auto& neighbor = indexs[f];
                 const auto& p0 = points[neighbor[0]];
                 const auto& p1 = points[neighbor[1]];
