@@ -1,20 +1,8 @@
 #include "cutting.h"
 #include "topomesh/data/mmesht.h"
 #include "topomesh/alg/letter.h"
-
 #include "topomesh/alg/fillhoneycombs.h"
 
-#include "CGAL/Simple_cartesian.h"
-#include "CGAL/Surface_mesh.h"
-#include "CGAL/Orthogonal_k_neighbor_search.h"
-#include "CGAL//Search_traits_2.h"
-
-
-typedef CGAL::Simple_cartesian<double> Kernel;
-typedef Kernel::Point_2	Point;
-typedef CGAL::Search_traits_2<Kernel> TreeTraits;
-typedef CGAL::Orthogonal_k_neighbor_search<TreeTraits> Neighbor_search;
-typedef Neighbor_search::Tree Tree;
 
 namespace topomesh
 {
