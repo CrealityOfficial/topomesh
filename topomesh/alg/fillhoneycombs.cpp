@@ -255,7 +255,10 @@ namespace topomesh {
         }
         letterOpts.hexgons.reserve(outtripolys.size());
         for (const auto& poly : outtripolys) {
-            letterOpts.hexgons.emplace_back(std::move(honeyLetterOpt::hexagon{ radius, poly }));
+            honeyLetterOpt::hexagon hexa;
+            hexa.borders = poly;
+            hexa.radius = radius;
+            letterOpts.hexgons.emplace_back(std::move(hexa));
         }
         return;
     }
