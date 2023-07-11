@@ -4,6 +4,7 @@
 
 
 namespace topomesh {
-	void SimpleMidSubdiv(MMeshT* mesh, std::vector<int>& faceindexs);
-	void loopSubdiv(MMeshT* mesh, std::vector<int>& faceindexs, int iteration = 1);
+	void SimpleMidSubdivision(MMeshT* mesh, std::vector<int>& faceindexs);
+	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs, int iteration = 1);
+	void sqrt3Subdivision(MMeshT* mesh, std::vector<int>& faceindexs);
 }

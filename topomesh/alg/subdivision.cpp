@@ -2,7 +2,7 @@
 #include "set"
 
 namespace topomesh {
-	void SimpleMidSubdiv(MMeshT* mesh, std::vector<int>& faceindexs)
+	void SimpleMidSubdivision(MMeshT* mesh, std::vector<int>& faceindexs)
 	{
 		for (int fi : faceindexs)
 		{
@@ -15,7 +15,7 @@ namespace topomesh {
 		}
 	}
 
-	void loopSubdiv(MMeshT* mesh, std::vector<int>& faceindexs, int iteration)
+	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs, int iteration)
 	{
 		auto bate = [&](int n)->float {
 			float alpth = 3.0f / 8.0f + 1.f / 4.f * std::cos(2.0f * M_PI / (n * 1.0f));
@@ -117,4 +117,9 @@ namespace topomesh {
 		}
 	}
 
+
+	void sqrt3Subdivision(MMeshT* mesh, std::vector<int>& faceindexs)
+	{
+
+	}
 }
