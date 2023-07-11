@@ -34,15 +34,15 @@ namespace topomesh {
 		{
 			if (mesh->faces[i].f_mhe->opposite == nullptr || !mesh->faces[i].f_mhe->opposite->indication_face->IsS())
 			{
-				 mesh->faces[i].f_mhe->edge_vertex.first->SetB(); mesh->faces[i].f_mhe->edge_vertex.second->SetB();
+				mesh->faces[i].f_mhe->SetB(); mesh->faces[i].f_mhe->edge_vertex.first->SetB(); mesh->faces[i].f_mhe->edge_vertex.second->SetB();
 			}
 			if (mesh->faces[i].f_mhe->next->opposite==nullptr||!mesh->faces[i].f_mhe->next->opposite->indication_face->IsS())
 			{
-				 mesh->faces[i].f_mhe->next->edge_vertex.first->SetB(); mesh->faces[i].f_mhe->next->edge_vertex.second->SetB();
+				mesh->faces[i].f_mhe->next->SetB(); mesh->faces[i].f_mhe->next->edge_vertex.first->SetB(); mesh->faces[i].f_mhe->next->edge_vertex.second->SetB();
 			}
 			if (mesh->faces[i].f_mhe->next->next->opposite==nullptr||!mesh->faces[i].f_mhe->next->next->opposite->indication_face->IsS())
 			{
-				mesh->faces[i].f_mhe->next->next->edge_vertex.first->SetB(); mesh->faces[i].f_mhe->next->next->edge_vertex.second->SetB();
+				mesh->faces[i].f_mhe->next->next->SetB(); mesh->faces[i].f_mhe->next->next->edge_vertex.first->SetB(); mesh->faces[i].f_mhe->next->next->edge_vertex.second->SetB();
 			}
 		}
 		for (int& i : faceindexs)
@@ -60,7 +60,7 @@ namespace topomesh {
 				}
 				halfedge_ptr->SetS();
 				halfedge_ptr->opposite->SetS();
-				if (halfedge_ptr->edge_vertex.first->IsB()&&halfedge_ptr->edge_vertex.second->IsB())
+				if (halfedge_ptr->IsB())
 				{
 					mesh->appendVertex((halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p) / 2.0);
 					mesh->vertices.back().SetB();
