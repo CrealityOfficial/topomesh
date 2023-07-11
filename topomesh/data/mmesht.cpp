@@ -380,6 +380,7 @@ namespace topomesh
 	void MMeshT::init_halfedge()
 	{
 		if (!this->is_FFadjacent()||!this->is_VFadjacent()) return;
+		this->set_HalfEdge(true);
 		this->half_edge.clear();
 		this->half_edge.reserve(4*this->faces.size());
 		for (MMeshFace& f : this->faces)

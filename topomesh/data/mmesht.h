@@ -79,6 +79,7 @@ namespace topomesh
 		inline bool is_FaceNormals() { return FacesNormals; }
 		inline bool is_FacePolygon() { return FacePolygon; }
 		inline bool is_BoundingBox() { return bbox; }
+		inline bool is_HalfEdge() { return HalfEdge; }
 
 		inline void set_VVadjacent(bool b) { VVadjacent = b; }
 		inline void set_VFadjacent(bool b) { VFadjacent = b; }
@@ -86,6 +87,7 @@ namespace topomesh
 		inline void set_VertexNormals(bool b) { VertexNormals = b; }
 		inline void set_FacesNormals(bool b) { FacesNormals = b; }
 		inline void set_BoundingBox(bool b) { bbox = b; }
+		inline void set_HalfEdge(bool b) { HalfEdge = b; }
 
 		inline void clear() { vertices.clear(); faces.clear();}
 
@@ -112,6 +114,7 @@ namespace topomesh
 		bool FacesNormals = false;
 		bool FacePolygon = false;
 		bool bbox = false;
+		bool HalfEdge = false;
 	};
 
 	double  getTotalArea(std::vector<trimesh::point>& inVertices);
