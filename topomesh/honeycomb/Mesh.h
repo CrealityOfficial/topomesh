@@ -3,6 +3,7 @@
 #include <fstream>
 #include <sstream>
 #include <unordered_map>
+#include <condition_variable>
 #include <thread>
 #include <mutex>
 #include <atomic>
@@ -392,7 +393,7 @@ namespace honeycomb {
             const auto& points = GetPoints();
             const auto& indexs = GetFaceVertexAdjacency();
             normals.resize(faces.size());
-            std::transform(faces.begin(), faces.end(), normals.begin(), [&](const auto & f) {
+            std::transform(faces.begin(), faces.end(), normals.begin(), [&](const int& f) {
                 const auto& neighbor = indexs[f];
                 const auto& p0 = points[neighbor[0]];
                 const auto& p1 = points[neighbor[1]];
@@ -411,7 +412,7 @@ namespace honeycomb {
             }*/
             if (calculateArea) {
                 areas.resize(faces.size());
-                std::transform(normals.begin(), normals.end(), areas.begin(), [&](const auto & n) {
+                std::transform(normals.begin(), normals.end(), areas.begin(), [&](const Point& n) {
                     return n.Norm() / 2.0;
                 });
                 areas_.swap(areas);
@@ -655,7 +656,7 @@ namespace honeycomb {
             return false;
         }
 
-        std::vector<int>& GetFaceNeighbor(const int f)
+        std::vector<int> GetFaceNeighbor(const int f)
         {
             const auto& faces = GetFaces();
             std::vector<int> neighbor;
