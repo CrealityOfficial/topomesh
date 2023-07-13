@@ -5,21 +5,6 @@ __cc_find(VCG)
 __cc_find(cgal)
 __cc_find(cxlog)
 
-#set(SRCS topomesh/data/mmesht.h
-#		 topomesh/data/mmesht.cpp
-#		 topomesh/data/mmeshFace.h
-#		 topomesh/data/mmeshFace.cpp
-#		 topomesh/data/mmeshVertex.h
-#		 topomesh/data/mmeshVertex.cpp		
-#		 topomesh/alg/letter.h
-#		 topomesh/alg/letter.cpp
-#		 topomesh/alg/convert.h
-#		 topomesh/alg/convert.cpp
-#		 topomesh/alg/cutting.h
-#		 topomesh/alg/cutting.cpp
-#		 topomesh/alg/fillhoneycombs.h
-#		 topomesh/alg/fillhoneycombs.cpp
-#		 )
 __files_group(${CMAKE_CURRENT_SOURCE_DIR}/topomesh/ SRCS)
 		 
 set(ILIBS trimesh2 eigen mmesh clipper rapidjson)
@@ -35,4 +20,5 @@ __add_real_target(topomesh lib SOURCE ${SRCS}
 							   LIB ${LIBS}
 							   INC ${INCS}
 							   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
+							   OPENMP
 							   )

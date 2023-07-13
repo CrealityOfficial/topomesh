@@ -7,17 +7,17 @@
 #include "Hexagon.h"
 
 namespace honeycomb {
-    ////·äÎÑ½á¹¹²ÎÊý
+    ////ï¿½ï¿½ï¿½Ñ½á¹¹ï¿½ï¿½ï¿½ï¿½
     //struct HoneyCombOpt {
-    //    Polygon* polyline = nullptr; ///<·äÎÑÌî³äÇøÓò¶à±ßÐÎ±ß½ç£¬Ä¬ÈÏµ×ÃæÈ«²¿Ìî³ä
-    //    Vec3 axisDir = Vec3(0, 0, 1); ///<ÈýÎ¬ÏòÁ¿£¬·äÎÑÕýÁùÀâÖùµÄÐý×ªÖá·½Ïò£¬Ä¬ÈÏ´¹Ö±ÓÚµ×Ãæ
-    //    Vec2 arrayDir = Vec2(1, 0); ///<¶þÎ¬ÏòÁ¿£¬·äÎÑµ×ÃæÕýÁù±ßÐÎµÄ²¼¾Ö·½Ïò£¬Ä¬ÈÏ¶¥µã³¯yÖá·½Ïò
-    //    double honeyCombRadius = 3; ///<·äÎÑµ×ÃæÕýÁù±ßÐÎÍø¸ñµÄ±ß³¤
-    //    double nestWidth = 1; ///<·äÎÑµ×ÃæÕýÁù±ßÐÎÓëÕýÁù±ßÐÎÖ®¼äµÄ±Úºñ
-    //    double shellThickness = 2; ///<·äÎÑ¶¥²¿ÓëÄ£ÐÍ¶¥²¿±íÃæ¿Õ¼äµÄ³é¿Çºñ¶È
+    //    Polygon* polyline = nullptr; ///<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î±ß½ç£¬Ä¬ï¿½Ïµï¿½ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ï¿½
+    //    Vec3 axisDir = Vec3(0, 0, 1); ///<ï¿½ï¿½Î¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½×ªï¿½á·½ï¿½ï¿½Ä¬ï¿½Ï´ï¿½Ö±ï¿½Úµï¿½ï¿½ï¿½
+    //    Vec2 arrayDir = Vec2(1, 0); ///<ï¿½ï¿½Î¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎµÄ²ï¿½ï¿½Ö·ï¿½ï¿½ï¿½Ä¬ï¿½Ï¶ï¿½ï¿½ã³¯yï¿½á·½ï¿½ï¿½
+    //    double honeyCombRadius = 3; ///<ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ß³ï¿½
+    //    double nestWidth = 1; ///<ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½Ä±Úºï¿½
+    //    double shellThickness = 2; ///<ï¿½ï¿½ï¿½Ñ¶ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½Í¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½Ä³ï¿½Çºï¿½ï¿½
     //};
     ///*
-    //Éú³Éµ×Ãæ·äÎÑÕýÁù±ßÐÎ½á¹¹
+    //ï¿½ï¿½ï¿½Éµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î½á¹¹
     //*/
     //void GenerateHoneyCombs(const TriMesh& mesh, TriMesh& resultMesh, const HoneyCombOpt& opt)
     //{
@@ -90,7 +90,7 @@ namespace honeycomb {
             points.emplace_back(p.x, p.y, p.z - radius);
             const auto & maxInx = points.size() - 1;
             const auto & v0 = k * nums;
-            //ÉÏÏÂµ×²¿Á½²¿·Ö
+            //ï¿½ï¿½ï¿½Âµ×²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             for (size_t i = 0; i < ncolumns; ++i) {
                 const auto& i0 = i + 1 + v0;
                 const auto& i1 = (i + 1) % ncolumns + 1 + v0;
@@ -99,7 +99,7 @@ namespace honeycomb {
                 const auto & j1 = i1 + (nrows - 1) * ncolumns;
                 mesh.AddFace(j1, j0, maxInx);
             }
-            //ÖÐ¼ä²¿·Ö
+            //ï¿½Ð¼ä²¿ï¿½ï¿½
             for (size_t i = 0; i < nrows - 1; ++i) {
                 const auto& j0 = i * ncolumns + 1 + v0;
                 const auto& j1 = (i + 1) * ncolumns + 1 + v0;
@@ -121,34 +121,34 @@ namespace honeycomb {
         using namespace honeycomb;
         Matrix3d mat = Matrix3d::GetMatrix(Point(73, -56, 89), Point(12, 103, 891));
         Mesh mesh;
-        mesh.ReadFromSTL("ÖÖÖ²ÑÀÄ£-ÊµÐÄ.stl");
+        mesh.ReadFromSTL("GenerateBottomHexagons0.stl");
         mesh.GenerateFaceEdgeAdjacency();
         mesh.Rotate(mat);
-        mesh.WriteSTLFile("Ðý×ªºóÄ£ÐÍ");
+        mesh.WriteSTLFile("GenerateBottomHexagons2");
         //std::vector<std::vector<int>>& neighbors = mesh.GetFaceNeighborFaces();
         Mesh bottomMesh;
         std::vector<int> resultFaces;
         /*resultFaces = mesh.SelectLargetPlanar(0.95);
         mesh.SaveFacesToMesh(resultFaces, bottomMesh);
-        bottomMesh.WriteSTLFile("É¸Ñ¡µ×Ãæ");*/
+        bottomMesh.WriteSTLFile("É¸Ñ¡ï¿½ï¿½ï¿½ï¿½");*/
         Point direc = mesh.FindBottomDirection(&resultFaces);
         mesh.Rotate(direc, Point(0, 0, -1));
         BoundBox bound = mesh.Bound();
         mesh.Translate(-bound.Min());
         mesh.FlatBottomSurface(&resultFaces);
-        mesh.WriteSTLFile("Æ½ÒÆÖÁxoyÆ½ÃæÄ£ÐÍ");
+        mesh.WriteSTLFile("GenerateBottomHexagons3");
         Mesh cutMesh;
         cutMesh.MiniCopy(mesh);
         cutMesh.DeleteFaces(resultFaces, true);
-        cutMesh.WriteSTLFile("É¾³ýµ×ÃæºóÊ£ÓàÃæÆ¬");
+        cutMesh.WriteSTLFile("GenerateBottomHexagons4");
         std::vector<int> edges;
         cutMesh.SelectIndividualEdges(edges);
-        //µ×Ãæ±ß½çÂÖÀªµãË÷Òý
+        //ï¿½ï¿½ï¿½ï¿½ß½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         std::vector<std::vector<int>>sequentials;
         cutMesh.GetSequentialPoints(edges, sequentials);
         Mesh pointMesh;
         cutMesh.SavePointsToMesh(sequentials[0], pointMesh, 0.1);
-        pointMesh.WriteSTLFile("µ×Ãæ±ß½çÂÖÀªµã");
+        pointMesh.WriteSTLFile("GenerateBottomHexagons5");
         std::vector<Poly2d> polys;
         polys.reserve(sequentials.size());
         const auto & points = cutMesh.GetPoints();
@@ -172,7 +172,7 @@ namespace honeycomb {
             inside = boundarys.InExPoly2d(p);
             if (!inside)break;
         }
-        hex.WriteTxtFile("ÖÐÐÄÁù½ÇÍø¸ñ");
+        hex.WriteTxtFile("GenerateBottomHexagons6");
         //Point2d centroid = poly.MassCentroid();
     }
 }

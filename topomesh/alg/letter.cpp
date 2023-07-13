@@ -1,6 +1,7 @@
 #include "letter.h"
 
 #include "ccglobal/log.h"
+#include "omp.h"
 
 #include <buildinfo.h>
 

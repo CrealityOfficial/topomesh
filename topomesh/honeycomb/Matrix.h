@@ -87,7 +87,7 @@ namespace honeycomb {
         {
             return Point2d(ma[0][col], ma[1][col]);
         }
-        //余子式,此处没计算行列式
+        //锟斤拷锟斤拷式,锟剿达拷没锟斤拷锟斤拷锟斤拷锟斤拷式
         inline double Minors(int row, int col)const
         {
             if (row < 0 || row >= rows) {
@@ -104,8 +104,9 @@ namespace honeycomb {
                     return M;
                 }
             }
+            return 0.0;
         }
-        //代数余子式
+        //锟斤拷锟斤拷锟斤拷锟斤拷式
         inline double Cofactors(int row, int col) const{
             const auto& k = std::pow(-1, row + col);
             return Minors(row, col)* k;
@@ -311,7 +312,7 @@ namespace honeycomb {
         {
             return Point(ma[0][col], ma[1][col], ma[2][col]);
         }
-        //余子式,此处没计算行列式
+        //锟斤拷锟斤拷式,锟剿达拷没锟斤拷锟斤拷锟斤拷锟斤拷式
         inline Matrix2d Minors(int row, int col)const
         {
             if (row < 0 || row >= rows) {
@@ -332,7 +333,7 @@ namespace honeycomb {
             }
             return Matrix2d(datas);
         }
-        //代数余子式
+        //锟斤拷锟斤拷锟斤拷锟斤拷式
         inline double Cofactors(int row, int col) const
         {
             const auto& k = std::pow(-1, row + col);
@@ -345,8 +346,8 @@ namespace honeycomb {
             }
             return ans;
         }
-        //代数余子式计算矩阵的逆
-        //高斯消元法还未实现
+        //锟斤拷锟斤拷锟斤拷锟斤拷式锟斤拷锟斤拷锟斤拷锟斤拷锟斤拷
+        //锟斤拷斯锟斤拷元锟斤拷锟斤拷未实锟斤拷
         Matrix3d Inverse()
         {
             const auto& d = Determinant();

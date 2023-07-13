@@ -19,7 +19,7 @@ namespace topomesh
 			debugger->onGenerateBottomPolygons(meshPoly);
 
 		honeyCombLetter(mesh, upperIndex, lowerIndex, meshPoly);
-		toTrimesh(mesh);
+		return toTrimesh(mesh);
 	}
 
 	void honeyCombLetter(MMeshT& mesh, const std::vector<int>& upper, const std::vector<int>& lower,

@@ -7,7 +7,6 @@
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
-#include "omp.h"
 #include "cmath"
 #include <vector>
 #include <queue>

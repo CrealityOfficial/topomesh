@@ -2,16 +2,16 @@
 #include "Point.h"
 namespace honeycomb {
     struct HexagonOpt {
-        Point2d arrayDir = Point2d(1, 0); ///<¶þÎ¬ÏòÁ¿£¬·äÎÑµ×ÃæÕýÁù±ßÐÎµÄ²¼¾Ö·½Ïò£¬Ä¬ÈÏ±ß³¯ÉÏ
-        double hexagonRadius = 1; ///<·äÎÑµ×ÃæÕýÁù±ßÐÎÍø¸ñµÄ±ß³¤
-        double nestWidth = 0.2; ///<·äÎÑµ×ÃæÕýÁù±ßÐÎÓëÕýÁù±ßÐÎÖ®¼äµÄ±Úºñ
-        double shellThickness = 1; ///<·äÎÑ¶¥²¿ÓëÄ£ÐÍ¶¥²¿±íÃæ¿Õ¼äµÄ³é¿Çºñ¶È
+        Point2d arrayDir = Point2d(1, 0); ///<ï¿½ï¿½Î¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ÎµÄ²ï¿½ï¿½Ö·ï¿½ï¿½ï¿½Ä¬ï¿½Ï±ß³ï¿½ï¿½ï¿½
+        double hexagonRadius = 1; ///<ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä±ß³ï¿½
+        double nestWidth = 0.2; ///<ï¿½ï¿½ï¿½Ñµï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ö®ï¿½ï¿½Ä±Úºï¿½
+        double shellThickness = 1; ///<ï¿½ï¿½ï¿½Ñ¶ï¿½ï¿½ï¿½ï¿½ï¿½Ä£ï¿½Í¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Õ¼ï¿½Ä³ï¿½Çºï¿½ï¿½
     };
-    //Ä¬ÈÏÁù½ÇÍø¸ñ±ß³¯ÉÏ
+    //Ä¬ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½ï¿½
     class Hexagon {
     private:
         Point2d centroid;
-        double radius = 1; ///<³õÊ¼Íø¸ñ±ß³¤
+        double radius = 1; ///<ï¿½ï¿½Ê¼ï¿½ï¿½ï¿½ï¿½ß³ï¿½
         std::vector<Point2d> border;
     public:
         Hexagon() :centroid(Point2d(0, 0)) {
@@ -96,8 +96,8 @@ namespace honeycomb {
         {
             std::ofstream fs(std::string(filename) + "_hexagon.txt");
             if (!fs) { fs.close(); return false; }
-            fs << "Áù½ÇÍø¸ñÖÐÐÄµã: \n" << (float)centroid.x << " " << (float)centroid.y << std::endl;
-            fs << "Áù½ÇÍø¸ñ±ß½çµã: " << std::endl;
+            fs << "hexagon : \n" << (float)centroid.x << " " << (float)centroid.y << std::endl;
+            fs << "hexagon : " << std::endl;
             for (int i = 0; i < border.size(); ++i) {
                 const auto& p = border[i];
                 fs << (float)p.x << " " << (float)p.y << std::endl;

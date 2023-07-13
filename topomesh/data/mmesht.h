@@ -26,7 +26,7 @@ namespace topomesh
 		MMeshT(MMeshT* mt,std::vector<int>& faceindex);
 		MMeshT(trimesh::TriMesh* currentMesh);
 		MMeshT(trimesh::TriMesh* currentMesh,std::vector<int>& faces,std::map<int,int>& vmap, std::map<int, int>& fmap);
-		MMeshT& operator=(MMeshT mt) {};
+		MMeshT& operator=(MMeshT mt) { return *this; };
 		virtual ~MMeshT() { vertices.clear(); faces.clear(); };
 
 		std::vector<MMeshVertex> vertices;
