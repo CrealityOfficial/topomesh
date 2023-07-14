@@ -18,6 +18,7 @@ namespace topomesh {
 		MMeshHalfEdge* opposite=nullptr;
 
 		int attritube;
+		std::vector<float> attritube_vec;
 	private:
 		enum halfedge_flag
 		{

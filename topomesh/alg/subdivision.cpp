@@ -15,7 +15,7 @@ namespace topomesh {
 		}
 	}
 
-	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs, int iteration)
+	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs, bool is_move , int iteration)
 	{
 		auto bate = [&](int n)->float {
 			float alpth = 3.0f / 8.0f + 1.f / 4.f * std::cos(2.0f * M_PI / (n * 1.0f));
@@ -70,9 +70,15 @@ namespace topomesh {
 				}
 				else
 				{
-					trimesh::point np = 3.0*(halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p)/8.0;
-					trimesh::point tp = 1.0 * (halfedge_ptr->next->edge_vertex.second->p + halfedge_ptr->opposite->next->edge_vertex.second->p) / 8.0;
-					mesh->appendVertex(np + tp);
+					if (is_move)
+					{
+						trimesh::point np = 3.0 * (halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p) / 8.0;
+						trimesh::point tp = 1.0 * (halfedge_ptr->next->edge_vertex.second->p + halfedge_ptr->opposite->next->edge_vertex.second->p) / 8.0;
+						mesh->appendVertex(np + tp);
+					}
+					else					
+						mesh->appendVertex((halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p) / 2.0);
+					
 				}
 				halfedge_ptr->attritube = mesh->vertices.size() - 1;
 				halfedge_ptr->opposite->attritube=mesh->vertices.size() - 1;
@@ -87,26 +93,29 @@ namespace topomesh {
 		
 		}
 		std::set<int>::iterator it;
-		for (it = vertex_container.begin(); it != vertex_container.end(); it++)
+		if (is_move)
 		{
-			MMeshVertex& v = mesh->vertices[*it];
-			trimesh::point cp;
-			int ln = v.connected_vertex.size();
-			float b = bate(ln);
-			trimesh::point vv_p;
-			for (MMeshVertex* vv : v.connected_vertex)
+			for (it = vertex_container.begin(); it != vertex_container.end(); it++)
 			{
-				vv_p += vv->p;
-				if (vv->IsB())
-					cp += vv->p;
-			}
-			if (!v.IsB())
-			{
-				v.p = (1 - (float)ln * b) * v.p + b * vv_p;		
-			}
-			else
-			{
-				v.p = 3.f / 4.f * v.p + 1.f / 8.f * cp;			
+				MMeshVertex& v = mesh->vertices[*it];
+				trimesh::point cp;
+				int ln = v.connected_vertex.size();
+				float b = bate(ln);
+				trimesh::point vv_p;
+				for (MMeshVertex* vv : v.connected_vertex)
+				{
+					vv_p += vv->p;
+					if (vv->IsB())
+						cp += vv->p;
+				}
+				if (!v.IsB())
+				{
+					v.p = (1 - (float)ln * b) * v.p + b * vv_p;
+				}
+				else
+				{
+					v.p = 3.f / 4.f * v.p + 1.f / 8.f * cp;
+				}
 			}
 		}
 		for (it = vertex_container.begin(); it != vertex_container.end(); it++)

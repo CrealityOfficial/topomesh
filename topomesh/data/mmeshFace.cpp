@@ -45,4 +45,15 @@ namespace topomesh {
 		return std::make_pair(id[0], id[1]);
 	}
 
+	float MMeshFace::dihedral(MMeshFace* f)
+	{
+		float arc = this->normal ^ f->normal;
+		arc = arc > 1.f ? 1 : arc;
+		arc = arc < -1.f ? -1.f : arc;
+		float ang = std::acos(arc) * 180 / M_PI;
+		if (arc < 0)
+			return M_PI + ang;
+		else
+			return M_PI - ang;
+	}
 };

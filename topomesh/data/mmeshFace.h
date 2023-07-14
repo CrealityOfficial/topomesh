@@ -122,5 +122,6 @@ namespace topomesh
 
 		bool innerFace(trimesh::point v);
 		std::pair<int, int> commonEdge(MMeshFace* f);
+		float dihedral(MMeshFace* f);
 	};
 }
