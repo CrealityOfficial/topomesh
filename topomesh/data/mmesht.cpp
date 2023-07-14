@@ -5,6 +5,8 @@ namespace topomesh
 {
 	MMeshT::MMeshT(trimesh::TriMesh* currentMesh)
 	{		
+		currentMesh->need_adjacentfaces();
+		currentMesh->need_neighbors();
 		if(currentMesh->faces.size()<4096)
 			this->faces.reserve(8192);
 		else

@@ -15,7 +15,8 @@ namespace topomesh {
 		}
 	}
 
-	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs, bool is_move , int iteration)
+	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs, std::vector<std::tuple<int, trimesh::point>>& vertex,
+		std::vector<std::tuple<int, trimesh::ivec3>>& face_vertex, bool is_move , int iteration)
 	{
 		auto bate = [&](int n)->float {
 			float alpth = 3.0f / 8.0f + 1.f / 4.f * std::cos(2.0f * M_PI / (n * 1.0f));
@@ -64,9 +65,14 @@ namespace topomesh {
 				{
 					mesh->appendVertex((halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p) / 2.0);
 					mesh->vertices.back().SetB();
+					vertex.push_back(std::make_tuple(mesh->vertices.back().index, mesh->vertices.back().p));
 					mesh->deleteFace(halfedge_ptr->opposite->indication_face->index);
 					mesh->appendFace(mesh->vertices.size() - 1, halfedge_ptr->opposite->edge_vertex.second->index, halfedge_ptr->opposite->next->edge_vertex.second->index);
+					face_vertex.push_back(std::make_tuple(mesh->faces.back().index,
+						trimesh::ivec3(mesh->vertices.size() - 1, halfedge_ptr->opposite->edge_vertex.second->index, halfedge_ptr->opposite->next->edge_vertex.second->index)));
 					mesh->appendFace(mesh->vertices.size() - 1, halfedge_ptr->opposite->next->next->edge_vertex.first->index, halfedge_ptr->opposite->next->next->edge_vertex.second->index);
+					face_vertex.push_back(std::make_tuple(mesh->faces.back().index,
+						trimesh::ivec3(mesh->vertices.size() - 1, halfedge_ptr->opposite->next->next->edge_vertex.first->index, halfedge_ptr->opposite->next->next->edge_vertex.second->index)));
 				}
 				else
 				{
@@ -75,9 +81,13 @@ namespace topomesh {
 						trimesh::point np = 3.0 * (halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p) / 8.0;
 						trimesh::point tp = 1.0 * (halfedge_ptr->next->edge_vertex.second->p + halfedge_ptr->opposite->next->edge_vertex.second->p) / 8.0;
 						mesh->appendVertex(np + tp);
+						vertex.push_back(std::make_tuple(mesh->vertices.back().index, mesh->vertices.back().p));
 					}
-					else					
+					else
+					{
 						mesh->appendVertex((halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p) / 2.0);
+						vertex.push_back(std::make_tuple(mesh->vertices.back().index, mesh->vertices.back().p));
+					}
 					
 				}
 				halfedge_ptr->attritube = mesh->vertices.size() - 1;
@@ -87,10 +97,13 @@ namespace topomesh {
 			} while (halfedge_ptr!=mesh->faces[i].f_mhe);		
 			//trimesh::point normal = trimesh::normalized((mesh->faces[i].V1(0)->p - mesh->faces[i].V0(0)->p) % (mesh->faces[i].V2(0)->p - mesh->faces[i].V0(0)->p));
 			mesh->appendFace(mesh->faces[i].V0(0)->index, newVertex[0]->index, newVertex[2]->index);
+			face_vertex.push_back(std::make_tuple(mesh->faces.back().index, trimesh::ivec3(mesh->faces[i].V0(0)->index, newVertex[0]->index, newVertex[2]->index)));
 			mesh->appendFace(mesh->faces[i].V1(0)->index, newVertex[1]->index, newVertex[0]->index);
+			face_vertex.push_back(std::make_tuple(mesh->faces.back().index, trimesh::ivec3(mesh->faces[i].V1(0)->index, newVertex[1]->index, newVertex[0]->index)));
 			mesh->appendFace(mesh->faces[i].V2(0)->index, newVertex[2]->index, newVertex[1]->index);
+			face_vertex.push_back(std::make_tuple(mesh->faces.back().index, trimesh::ivec3(mesh->faces[i].V2(0)->index, newVertex[2]->index, newVertex[1]->index)));
 			mesh->appendFace(newVertex[0]->index, newVertex[1]->index, newVertex[2]->index);
-		
+			face_vertex.push_back(std::make_tuple(mesh->faces.back().index, trimesh::ivec3(newVertex[0]->index, newVertex[1]->index, newVertex[2]->index)));
 		}
 		std::set<int>::iterator it;
 		if (is_move)

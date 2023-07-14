@@ -8,8 +8,8 @@
 #include "topomesh/honeycomb/Polyline.h"
 #include "topomesh/honeycomb/HoneyComb.h"
 
-#include "topomesh/alg/subdivision.h"
 #include "topomesh/alg/utils.h"
+#include "topomesh/data/entrance.h"
 
 #ifndef EPS
 #define EPS 1e-8f
@@ -265,16 +265,15 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {				
-		trimesh->need_adjacentfaces();
-		trimesh->need_neighbors();
-		MMeshT mt1(trimesh);
-		std::vector<int> faceindexs = {38842,39498,38841,40155,39497,40153,40154};
-		//std::vector<int> faceindexs = {35633,34960,34287,33614,34288,34961};
-		loopSubdivision(&mt1, faceindexs);
-		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
-		mt1.quickTransform(newmesh);
-		newmesh->write("loopsubdiv.ply");
-		return nullptr;
+		//topomesh::InternelData indata(trimesh);
+		//std::vector<int> faceindexs = { 38842,39498,38841,40155,39497,40153,40154 };
+		////std::vector<int> faceindexs = {35633,34960,34287,33614,34288,34961};
+		//std::vector<std::tuple<int, trimesh::point>> vertex;
+		//std::vector<std::tuple<int, trimesh::ivec3>> face_vertex;
+		//indata.loopSubdivsion(faceindexs, vertex, face_vertex);
+		//trimesh::TriMesh* newmesh=indata.mmesht2trimesh();
+		//newmesh->write("loopsubdiv.ply");
+		//return nullptr;
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
