@@ -10,6 +10,7 @@
 
 #include "topomesh/alg/utils.h"
 #include "topomesh/data/entrance.h"
+//#include "topomesh/alg/remesh.h"
 
 #ifndef EPS
 #define EPS 1e-8f
@@ -267,13 +268,21 @@ namespace topomesh {
     {				
 		//topomesh::InternelData indata(trimesh);
 		//std::vector<int> faceindexs = { 38842,39498,38841,40155,39497,40153,40154 };
-		////std::vector<int> faceindexs = {35633,34960,34287,33614,34288,34961};
+		//std::vector<int> faceindexs = {35633,34960,34287,33614,34288,34961};
 		//std::vector<std::tuple<int, trimesh::point>> vertex;
 		//std::vector<std::tuple<int, trimesh::ivec3>> face_vertex;
 		//indata.loopSubdivsion(faceindexs, vertex, face_vertex);
 		//trimesh::TriMesh* newmesh=indata.mmesht2trimesh();
 		//newmesh->write("loopsubdiv.ply");
-		//return nullptr;
+		/*std::vector<int> faceindexs = { 35633,34960,34287,33614,34288,34961 };
+		trimesh->need_adjacentfaces();
+		trimesh->need_neighbors();
+		MMeshT mt1(trimesh);
+		SimpleRemeshing(&mt1, faceindexs, 0.4);
+		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
+		mt1.quickTransform(newmesh);
+		newmesh->write("remeshing.ply");
+		return nullptr;*/
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");

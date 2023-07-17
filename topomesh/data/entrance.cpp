@@ -25,4 +25,9 @@ namespace topomesh {
 		topomesh::SimpleMidSubdivision( &this->_mesh,faceindexs);
 		return;
 	}
+
+	void InternelData::chunkedMesh(int n)
+	{
+		this->_mesh.boundingbox;
+	}
 }

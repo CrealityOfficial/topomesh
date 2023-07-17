@@ -25,7 +25,7 @@ namespace topomesh
 		trimesh::point normal;
 		std::vector<MMeshVertex*> connect_vertex;
 		std::vector<MMeshFace*> connect_face;
-		MMeshHalfEdge* f_mhe;
+		MMeshHalfEdge* f_mhe=nullptr;
 
 
 		std::vector<trimesh::vec4> uv_coord;

@@ -340,6 +340,26 @@ namespace topomesh
 				this->faces.erase(this->faces.begin() + i);
 				i--;
 			}
+		if (this->is_HalfEdge())
+		{
+			int deleteHENum = 0;
+			for (MMeshHalfEdge& he : this->half_edge)
+			{
+				if (he.IsD())
+				{
+					deleteHENum++; continue;
+				}
+				he.index -= deleteHENum;
+			}
+			for (int i = 0; i < this->half_edge.size(); i++)
+			{
+				if (this->half_edge[i].IsD())
+				{
+					this->half_edge.erase(this->half_edge.begin() + i);
+					i--;
+				}
+			}
+		}
 	}
 
 	void MMeshT::getMeshBoundary()
@@ -596,6 +616,15 @@ namespace topomesh
 				}
 			}
 		}
+		if (this->is_HalfEdge())
+		{
+			MMeshHalfEdge* halfedge = f.f_mhe;
+			do
+			{
+				halfedge->SetD();
+				halfedge = halfedge->next;
+			} while (halfedge!=f.f_mhe);
+		}
 #pragma omp atomic
 		this->fn--;
 	}
@@ -627,13 +656,30 @@ namespace topomesh
 		
 		if (this->is_FFadjacent())
 		{
+			if (this->is_HalfEdge())
+			{
+				this->half_edge.push_back(MMeshHalfEdge(this->faces.back().V0(0), this->faces.back().V1(0)));
+				this->half_edge.back().indication_face = &this->faces.back();
+				this->half_edge.back().index = this->half_edge.size() - 1;
+				this->faces.back().f_mhe = &this->half_edge.back();
+				this->half_edge.push_back(MMeshHalfEdge(this->faces.back().V1(0), this->faces.back().V2(0)));
+				this->half_edge.back().indication_face = &this->faces.back();
+				this->half_edge.back().index = this->half_edge.size() - 1;
+				this->half_edge.push_back(MMeshHalfEdge(this->faces.back().V2(0), this->faces.back().V0(0)));
+				this->half_edge.back().indication_face = &this->faces.back();
+				this->half_edge.back().index = this->half_edge.size() - 1;
+
+				this->half_edge[this->half_edge.size() - 3].next = &this->half_edge[this->half_edge.size() - 2];
+				this->half_edge[this->half_edge.size() - 2].next = &this->half_edge[this->half_edge.size() - 1];
+				this->half_edge[this->half_edge.size() - 1].next = &this->half_edge[this->half_edge.size() - 3];
+			}
 			for (int i = 0; i < v0.connected_face.size(); i++)
 				v0.connected_face[i]->SetA();
 			for (int i = 0; i < v1.connected_face.size(); i++)
 				v1.connected_face[i]->SetA();
 			for (int i = 0; i < v2.connected_face.size(); i++)
 				v2.connected_face[i]->SetA();
-			//---�����ظ�����connect_face
+			//---�����ظ�����connect_face			
 			for (int i = 0; i < v0.connected_face.size(); i++)
 				if (v0.connected_face[i]->IsA(2) && !v0.connected_face[i]->IsL())
 				{
@@ -641,8 +687,9 @@ namespace topomesh
 					this->faces.back().connect_face.push_back(v0.connected_face[i]);
 					v0.connected_face[i]->connect_face.push_back(&this->faces.back());
 					if (v0.connected_face[i]->V1(&v0) == &v1 || v0.connected_face[i]->V2(&v0) == &v2)
-						invert = true;
+						invert = true;					
 				}
+			
 			for (int i = 0; i < v1.connected_face.size(); i++)
 				if (v1.connected_face[i]->IsA(2) && !v1.connected_face[i]->IsL())
 				{
@@ -650,9 +697,9 @@ namespace topomesh
 					this->faces.back().connect_face.push_back(v1.connected_face[i]);
 					v1.connected_face[i]->connect_face.push_back(&this->faces.back());
 					if (v1.connected_face[i]->V1(&v1) == &v2 && v1.connected_face[i]->V2(&v1) == &v0)
-						invert = true;
-					
+						invert = true;				
 				}
+			
 			for (int i = 0; i < v2.connected_face.size(); i++)
 				if (v2.connected_face[i]->IsA(2) && !v2.connected_face[i]->IsL())
 				{
@@ -661,6 +708,7 @@ namespace topomesh
 					v2.connected_face[i]->connect_face.push_back(&this->faces.back());
 					if (v2.connected_face[i]->V1(&v2) != &v0 && v2.connected_face[i]->V2(&v2) != &v1)
 						invert = true;
+					
 				}
 			for (int i = 0; i < v0.connected_face.size(); i++) {
 				v0.connected_face[i]->ClearL(); v0.connected_face[i]->ClearA();
@@ -705,9 +753,40 @@ namespace topomesh
 			{
 				v1.connected_vertex.push_back(&v2); v2.connected_vertex.push_back(&v1);
 			}
-		}
+		}		
 		if (invert)
 			std::swap(this->faces.back().connect_vertex[1], this->faces.back().connect_vertex[2]);
+
+		if (this->is_HalfEdge())
+		{
+			MMeshHalfEdge* he = this->faces.back().f_mhe;
+			do
+			{
+				he->edge_vertex.first->SetL(); he->edge_vertex.second->SetL();
+				for (MMeshFace* ff : this->faces.back().connect_face)
+				{
+					MMeshHalfEdge* ffhe = ff->f_mhe;
+					bool pass = false;
+					do
+					{
+						if (ffhe->edge_vertex.first->IsL() && ffhe->edge_vertex.second->IsL())
+						{
+							ffhe->opposite = he;
+							he->opposite = ffhe;
+							pass = true;
+							break;
+						}
+						ffhe = ffhe->next;
+					} while (ffhe!=ff->f_mhe);
+					if (pass)
+					{
+						he->edge_vertex.first->ClearL(); he->edge_vertex.second->ClearL();
+						break;
+					}
+				}
+				he = he->next;
+			} while (he!=this->faces.back().f_mhe);
+		}
 		
 		this->fn++;
 	}
