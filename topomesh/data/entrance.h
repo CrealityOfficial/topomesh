@@ -11,18 +11,23 @@ namespace topomesh {
 		InternelData() {};
 		InternelData(trimesh::TriMesh* trimesh) :_mesh(trimesh){};
 		~InternelData() { _mesh.clear(); };
+		
 	private:
 		MMeshT _mesh;
+		std::vector<MMeshT> _ChunkMesh;
 
 	public:
 		void chunkedMesh(int n); //分块
-		void getChunkFaces(int ni, std::vector<int>& faceindexs);
-		int getFaceChunk(int faceindex);
-		void getVertex(const std::vector<int>& faceindexs, std::vector<std::tuple<trimesh::ivec3, trimesh::point, trimesh::point, trimesh::point>>& vertexindexs);
+		void getChunkFaces(int ni, std::vector<int>& faceindexs);//获取块内有哪些面
+		int getFaceChunk(int faceindex);//获取面所属那个块
+		void QuickCombinationMesh();//合并mesh
+		void getVertex(const std::vector<int>& faceindexs,
+			std::vector<std::tuple<trimesh::ivec3, trimesh::point, trimesh::point, trimesh::point>>& vertexindexs);//获取面对应的点索引和坐标
 		trimesh::TriMesh* mmesht2trimesh(bool save = false); //返回trimesh 如果不再对mesh操作 则save为默认值false 如果还存在后续操作 save设为true
 		void loopSubdivsion(std::vector<int>& faceindexs, std::vector<std::tuple<int, trimesh::point>>& vertex,
 			std::vector<std::tuple<int, trimesh::ivec3>>& face_vertex, bool is_move=false,int iteration=1);
 		void SimpleSubdivsion(std::vector<int>& faceindexs);
-		void SimpleRemeshing(const std::vector<int>& faceindexs, float thershold);
+		void SimpleRemeshing(const std::vector<int>& faceindexs, float thershold);//根据阈值细分三角面
+		void ChunkMeshSimpleRemshing(const std::vector<int>& Chunkid,const std::vector<std::vector<int>>& ChunkMeshfaceindexs,float thershold);//多个小mesh做细分
 	};
 }

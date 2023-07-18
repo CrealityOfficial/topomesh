@@ -266,17 +266,20 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {				
-		
-		//std::vector<int> faceindexs = { 38842,39498,40155,38841 };		
-		////std::vector<int> faceindexs = { 35633,34960,34287,33614,34288,34961 };
-		//trimesh->need_adjacentfaces();
-		//trimesh->need_neighbors();
-		//MMeshT mt1(trimesh);
-		//SimpleRemeshing(&mt1, faceindexs, 0.4);
-		//trimesh::TriMesh* newmesh = new trimesh::TriMesh();
-		//mt1.quickTransform(newmesh);
-		//newmesh->write("remeshing.ply");
-		//return nullptr;
+		/*InternelData data(trimesh);
+		data.chunkedMesh(2);
+		std::vector<std::string> names = {"name1.ply","name2.ply","name3.ply","name4.ply"};
+		for (int iii = 0; iii < 4; iii++)
+		{
+			trimesh::TriMesh* nmesh = new trimesh::TriMesh();
+			data._ChunkMesh[iii].quickTransform(nmesh);
+			nmesh->write(names[iii]);
+		}
+		data.QuickCombinationMesh();
+		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
+		newmesh = data.mmesht2trimesh();
+		newmesh->write("total.ply");
+		return nullptr;*/
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
