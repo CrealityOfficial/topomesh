@@ -46,7 +46,7 @@ namespace topomesh {
 		}
 	}
 
-	void InternelData::getChunkFace(int ni ,std::vector<int>& faceindexs)
+	void InternelData::getChunkFaces(int ni ,std::vector<int>& faceindexs)
 	{
 		int deleteFnum = 0;
 		for (MMeshFace& f : this->_mesh.faces)
@@ -72,6 +72,11 @@ namespace topomesh {
 
 	void InternelData::SimpleRemeshing(const std::vector<int>& faceindexs, float thershold)
 	{
-		return topomesh::SimpleRemeshing(&this->_mesh, faceindexs, thershold);
+		topomesh::SimpleRemeshing(&this->_mesh, faceindexs, thershold);
+	}
+
+	int InternelData::getFaceChunk(int faceindex)
+	{
+		return this->_mesh.faces[faceindex].GetU();
 	}
 }
