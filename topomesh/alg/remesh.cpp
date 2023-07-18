@@ -35,11 +35,19 @@ namespace topomesh {
 			switch (splitEdge)
 			{
 			case 1:
+				int appendVertex;
+				do
+				{
+					if (halfedge->IsS())
+						appendVertex = halfedge->attritube;
+					halfedge = halfedge->next;
+				} while (halfedge != mesh->faces[i].f_mhe);
+				halfedge = mesh->faces[i].f_mhe;
 				do
 				{					
 					if(!halfedge->IsS())
 					{
-						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->edge_vertex.second->index, mesh->vertices.back().index);
+						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->edge_vertex.second->index, appendVertex);
 					}
 					halfedge = halfedge->next;
 				} while (halfedge!=mesh->faces[i].f_mhe);
@@ -71,16 +79,16 @@ namespace topomesh {
 				break;
 			}
 
-			halfedge = mesh->faces[i].f_mhe;
+			//halfedge = mesh->faces[i].f_mhe;
 			do
 			{
-				MMeshHalfEdge* heo = halfedge->opposite;
+				/*MMeshHalfEdge* heo = halfedge->opposite;
 				if (halfedge->IsS() && !heo->indication_face->IsS())
 				{
 					mesh->deleteFace(heo->indication_face->index);
 					mesh->appendFace(heo->next->edge_vertex.first->index, heo->next->edge_vertex.second->index, heo->attritube);
 					mesh->appendFace(heo->next->next->edge_vertex.first->index, heo->next->next->edge_vertex.second->index, heo->attritube);
-				}
+				}*/
 				halfedge = halfedge->next;
 			} while (halfedge != mesh->faces[i].f_mhe);
 

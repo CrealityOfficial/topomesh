@@ -266,23 +266,17 @@ namespace topomesh {
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {				
-		//topomesh::InternelData indata(trimesh);
-		//std::vector<int> faceindexs = { 38842,39498,38841,40155,39497,40153,40154 };
-		//std::vector<int> faceindexs = {35633,34960,34287,33614,34288,34961};
-		//std::vector<std::tuple<int, trimesh::point>> vertex;
-		//std::vector<std::tuple<int, trimesh::ivec3>> face_vertex;
-		//indata.loopSubdivsion(faceindexs, vertex, face_vertex);
-		//trimesh::TriMesh* newmesh=indata.mmesht2trimesh();
-		//newmesh->write("loopsubdiv.ply");
-		/*std::vector<int> faceindexs = { 35633,34960,34287,33614,34288,34961 };
-		trimesh->need_adjacentfaces();
-		trimesh->need_neighbors();
-		MMeshT mt1(trimesh);
-		SimpleRemeshing(&mt1, faceindexs, 0.4);
-		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
-		mt1.quickTransform(newmesh);
-		newmesh->write("remeshing.ply");
-		return nullptr;*/
+		
+		//std::vector<int> faceindexs = { 38842,39498,40155,38841 };		
+		////std::vector<int> faceindexs = { 35633,34960,34287,33614,34288,34961 };
+		//trimesh->need_adjacentfaces();
+		//trimesh->need_neighbors();
+		//MMeshT mt1(trimesh);
+		//SimpleRemeshing(&mt1, faceindexs, 0.4);
+		//trimesh::TriMesh* newmesh = new trimesh::TriMesh();
+		//mt1.quickTransform(newmesh);
+		//newmesh->write("remeshing.ply");
+		//return nullptr;
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
