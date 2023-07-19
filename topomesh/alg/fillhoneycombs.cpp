@@ -9,7 +9,7 @@
 #include "topomesh/honeycomb/HoneyComb.h"
 
 #include "topomesh/alg/utils.h"
-#include "topomesh/data/entrance.h"
+//#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
 
 #ifndef EPS
@@ -265,21 +265,7 @@ namespace topomesh {
     }
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
-    {				
-		/*InternelData data(trimesh);
-		data.chunkedMesh(2);
-		std::vector<std::string> names = {"name1.ply","name2.ply","name3.ply","name4.ply"};
-		for (int iii = 0; iii < 4; iii++)
-		{
-			trimesh::TriMesh* nmesh = new trimesh::TriMesh();
-			data._ChunkMesh[iii].quickTransform(nmesh);
-			nmesh->write(names[iii]);
-		}
-		data.QuickCombinationMesh();
-		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
-		newmesh = data.mmesht2trimesh();
-		newmesh->write("total.ply");
-		return nullptr;*/
+    {						
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
@@ -697,7 +683,7 @@ namespace topomesh {
 			int yi = (mesh->vertices[compara_vertex[vi]].y - begin_y) / length_y;
 			if (mapp[xi][yi] != std::numeric_limits<float>::min())
 			{
-				std::cout << "mapind :" << mapind[xi][yi] << " z : " << mapp[xi][yi] << "\n";
+				//std::cout << "mapind :" << mapind[xi][yi] << " z : " << mapp[xi][yi] << "\n";
 				vertex_distance.push_back(std::make_pair(compara_vertex[vi], mapind[xi][yi]));
 			}
 			else {
@@ -717,7 +703,7 @@ namespace topomesh {
 						}
 					if (max != std::numeric_limits<float>::min())
 					{
-						std::cout << "mapind :" << mapind[xi_x][yi_y] << " z : " << max << "\n";
+						//std::cout << "mapind :" << mapind[xi_x][yi_y] << " z : " << max << "\n";
 						vertex_distance.push_back(std::make_pair(compara_vertex[vi], mapind[xi_x][yi_y]));
 						break;
 					}

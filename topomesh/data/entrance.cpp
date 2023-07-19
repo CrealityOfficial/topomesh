@@ -15,6 +15,14 @@ namespace topomesh {
 		return newmesh;
 	}
 
+	trimesh::TriMesh* InternelData::chunkmmesht2trimesh(int i)
+	{
+		if (i > this->_ChunkMesh.size() - 1) return nullptr;
+		trimesh::TriMesh* chunkmesh = new trimesh::TriMesh();
+		this->_ChunkMesh[i].quickTransform(chunkmesh);
+		return chunkmesh;
+	}
+
 	void InternelData::loopSubdivsion(std::vector<int>& faceindexs, std::vector<std::tuple<int, trimesh::point>>& vertex,
 		std::vector<std::tuple<int, trimesh::ivec3>>& face_vertex, bool is_move, int iteration)
 	{
@@ -100,9 +108,18 @@ namespace topomesh {
 
 	void InternelData::QuickCombinationMesh()
 	{
+		struct hash_func {
+			size_t operator()(const trimesh::point& v)const
+			{
+				return (int(v.x * 99971)) ^ (int(v.y * 99989)) ^ (int(v.z * 99991));
+			}
+		};
 		this->_mesh.clear();
+		this->_mesh.set_FFadjacent(false);
+		this->_mesh.set_VVadjacent(false);
+		//this->_mesh.set_VFadjacent(false);
 		int Accface = 0;
-		//std::unordered_map<unsigned long long, int> map;
+		std::unordered_map<trimesh::point, std::vector<int>, hash_func> map;
 		for (MMeshT& m : this->_ChunkMesh)
 		{
 			int deleteVnum = 0;		
@@ -114,8 +131,8 @@ namespace topomesh {
 				}
 				v.index -= deleteVnum;
 				this->_mesh.appendVertex(v.p);
-				//unsigned long long hash_n = (int)(v.p.x * 99971) ^ (int)(v.p.y * 99989) ^ (int)(v.p.z * 99991);
-				//map[hash_n] = this->_mesh.vertices.size() - 1;
+				//unsigned long long hash_n = (int(v.p.x * 99971)) ^ (int(v.p.y * 99989)) ^ (int(v.p.z * 99991));
+				map[v.p].push_back(this->_mesh.vertices.size() - 1);
 			}
 			for (MMeshFace& f : m.faces)
 			{
@@ -126,5 +143,21 @@ namespace topomesh {
 			}
 			Accface = this->_mesh.vertices.size();
 		}
+		for (auto& value : map)
+		{
+			if (value.second.size() > 1)
+			{
+				for (int i = 1; i < value.second.size(); i++)
+				{
+					for (MMeshFace* vf : this->_mesh.vertices[value.second[i]].connected_face)
+					{
+						int vi_index = vf->getVFindex(value.second[i]);
+						vf->connect_vertex[vi_index] = &this->_mesh.vertices[value.second[0]];
+						this->_mesh.deleteVertex(value.second[i]);
+					}
+				}
+			}
+		}
+		this->_mesh.set_VFadjacent(false);
 	}
 }

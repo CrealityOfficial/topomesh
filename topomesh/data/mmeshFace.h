@@ -113,6 +113,13 @@ namespace topomesh
 		}
 						
 		
+		inline int getVFindex(int vi) {
+			for (int i = 0; i < this->connect_vertex.size(); i++)
+				if (this->connect_vertex[i]->index == vi)
+					return i;
+			return -1;
+		}
+
 		inline int getVFindex(MMeshVertex* v) {
 			for (int i = 0; i < this->connect_vertex.size(); i++)
 				if (this->connect_vertex[i] == v)

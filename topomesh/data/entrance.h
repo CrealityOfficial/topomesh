@@ -10,7 +10,7 @@ namespace topomesh {
 	public:
 		InternelData() {};
 		InternelData(trimesh::TriMesh* trimesh) :_mesh(trimesh){};
-		~InternelData() { _mesh.clear(); };
+		~InternelData() { _mesh.clear(); _ChunkMesh.clear(); };
 		
 	private:
 		MMeshT _mesh;
@@ -24,6 +24,7 @@ namespace topomesh {
 		void getVertex(const std::vector<int>& faceindexs,
 			std::vector<std::tuple<trimesh::ivec3, trimesh::point, trimesh::point, trimesh::point>>& vertexindexs);//获取面对应的点索引和坐标
 		trimesh::TriMesh* mmesht2trimesh(bool save = false); //返回trimesh 如果不再对mesh操作 则save为默认值false 如果还存在后续操作 save设为true
+		trimesh::TriMesh* chunkmmesht2trimesh(int i);
 		void loopSubdivsion(std::vector<int>& faceindexs, std::vector<std::tuple<int, trimesh::point>>& vertex,
 			std::vector<std::tuple<int, trimesh::ivec3>>& face_vertex, bool is_move=false,int iteration=1);
 		void SimpleSubdivsion(std::vector<int>& faceindexs);
