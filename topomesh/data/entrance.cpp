@@ -4,6 +4,11 @@
 #include "topomesh/alg/remesh.h"
 #include "unordered_map"
 
+
+#ifndef EPS
+#define EPS 1e-8f
+#endif // !EPS
+
 namespace topomesh {
 	trimesh::TriMesh* InternelData::mmesht2trimesh(bool save)
 	{
@@ -39,21 +44,22 @@ namespace topomesh {
 	void InternelData::chunkedMesh(int n)
 	{
 		if (!this->_mesh.is_BoundingBox()) this->_mesh.getBoundingBox();
-		float x = (this->_mesh.boundingbox.max_x - this->_mesh.boundingbox.min_x)*1.f / n * 1.f;
-		float y = (this->_mesh.boundingbox.max_y - this->_mesh.boundingbox.min_y)*1.f / n * 1.f;
-		float z = (this->_mesh.boundingbox.max_z - this->_mesh.boundingbox.min_z)*1.f / n * 1.f;
+		float x = (this->_mesh.boundingbox.max_x - this->_mesh.boundingbox.min_x) * 1.f / n * 1.f;
+		float y = (this->_mesh.boundingbox.max_y - this->_mesh.boundingbox.min_y) * 1.f / n * 1.f;
+		float z = (this->_mesh.boundingbox.max_z - this->_mesh.boundingbox.min_z) * 1.f / n * 1.f;
 		int Chunknum = std::pow(n, 3);		
 		std::vector<std::vector<int>> chunkface(Chunknum);
 		for (MMeshFace& f : this->_mesh.faces)
 		{
 			if (f.GetU() > 0) continue;
 			trimesh::point c = (f.V0(0)->p + f.V1(0)->p + f.V2(0)->p) / 3.f;
-			int xi = (c.x - this->_mesh.boundingbox.min_x) / x;
-			int yi = (c.y - this->_mesh.boundingbox.min_y) / y;
-			int zi = (c.z - this->_mesh.boundingbox.min_z) / z;
+			int xi = (c.x - this->_mesh.boundingbox.min_x) / (1.01f*x);
+			int yi = (c.y - this->_mesh.boundingbox.min_y) / (1.01f*y);
+			int zi = (c.z - this->_mesh.boundingbox.min_z) / (1.01f*z);
 			int chunked = zi * std::pow(n, 2) + yi * n + xi + 1;
 			f.SetU(chunked);
-			chunkface[chunked-1].push_back(f.index);		
+			chunkface[chunked-1].push_back(f.index);	
+			
 		}
 
 		for (std::vector<int>& vec : chunkface)
