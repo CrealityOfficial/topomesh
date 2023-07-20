@@ -23,6 +23,7 @@ namespace topomesh {
 	trimesh::TriMesh* InternelData::chunkmmesht2trimesh(int i)
 	{
 		if (i > this->_ChunkMesh.size() - 1) return nullptr;
+		if (this->_ChunkMesh[i].faces.empty()) return nullptr;
 		trimesh::TriMesh* chunkmesh = new trimesh::TriMesh();
 		this->_ChunkMesh[i].quickTransform(chunkmesh);
 		return chunkmesh;
@@ -110,6 +111,11 @@ namespace topomesh {
 		{
 			topomesh::SimpleRemeshing(&this->_ChunkMesh[Chunkid[i]],ChunkMeshfaceindexs[i],thershold);
 		}
+	}
+
+	void InternelData::shrinkChunkMesh(int i)
+	{
+		this->_ChunkMesh[i].shrinkMesh();
 	}
 
 	void InternelData::QuickCombinationMesh()
