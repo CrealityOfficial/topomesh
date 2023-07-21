@@ -100,10 +100,6 @@ namespace topomesh {
 		topomesh::SimpleRemeshing(&this->_mesh, faceindexs, thershold);
 	}
 
-	void InternelData::SimpleChunkRemeshing(int chunkid, const std::vector<int>& faceindexs, float thershold)
-	{
-		topomesh::SimpleRemeshing(&this->_ChunkMesh[chunkid], faceindexs, thershold);
-	}
 
 	int InternelData::getFaceChunk(int faceindex)
 	{

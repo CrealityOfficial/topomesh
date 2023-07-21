@@ -86,11 +86,11 @@ namespace topomesh
 	MMeshT::MMeshT(trimesh::TriMesh* currentMesh, std::vector<int>& faces, std::map<int, int>& vmap, std::map<int, int>& fmap)
 	{
 		if (faces.size() < 4096)
-			this->faces.reserve(8192 * 100);
+			this->faces.reserve(8192 * 10);
 		else
 			this->faces.reserve((unsigned)(faces.size() * 3.5));
 		if (faces.size()*3 < 4096)
-			this->vertices.reserve(8192 * 100);
+			this->vertices.reserve(8192 * 10);
 		else
 			this->vertices.reserve((unsigned)(faces.size() * 8.5));
 
@@ -163,31 +163,69 @@ namespace topomesh
 
 	MMeshT::MMeshT(MMeshT* mt, std::vector<int>& faceindex)
 	{
+		std::map<int, int> vv;
 		for (int i = 0; i < faceindex.size(); i++)
 		{
-			mt->faces[faceindex[i]].V0(0)->SetS();
-			mt->faces[faceindex[i]].V0(1)->SetS();
-			mt->faces[faceindex[i]].V0(2)->SetS();		
-		}
-		std::map<int,int> vv;
-		for (int i = 0; i < mt->vertices.size(); i++)
-		{
-			if (mt->vertices[i].IsS())
+			mt->faces[faceindex[i]].SetS();
+			for (int vi = 0; vi < mt->faces[faceindex[i]].connect_vertex.size(); vi++)
 			{
-				this->appendVertex(mt->vertices[i].p);
-				if (mt->vertices[i].inner.size() > 0)
-					this->vertices.back().SetU(mt->vertices[i].inner[0]);
-				if (mt->vertices[i].IsL())
-					this->vertices.back().SetL();
-				vv[i] = this->vertices.back().index;
+				if (!mt->faces[faceindex[i]].V0(vi)->IsS())
+				{
+					this->appendVertex(mt->faces[faceindex[i]].V0(vi)->p);
+					vv[mt->faces[faceindex[i]].V0(vi)->index] = this->vertices.back().index;
+					mt->faces[faceindex[i]].V0(vi)->SetS();
+				}
 			}
 		}
+		std::map<int, int> ff;
 		for (int i = 0; i < faceindex.size(); i++)
 		{
 			this->appendFace(vv[mt->faces[faceindex[i]].V0(0)->index], vv[mt->faces[faceindex[i]].V0(1)->index], vv[mt->faces[faceindex[i]].V0(2)->index]);
+			ff[faceindex[i]] = this->faces.size() - 1;
 		}
+		if (mt->is_VVadjacent())
+		{	
+			this->set_VVadjacent(true);
+			bool is_vf = mt->is_VFadjacent();
+			if (is_vf) this->set_VFadjacent(true);
+			for (int vi = 0; vi < mt->vertices.size(); vi++)
+			{
+				MMeshVertex& v = mt->vertices[vi];
+				if (v.IsS())
+				{
+					for (MMeshVertex* vv_ptr : v.connected_vertex)
+					{
+						if (vv_ptr->IsS())
+							this->vertices[vv[vi]].connected_vertex.push_back(&this->vertices[vv[vv_ptr->index]]);
+					}
+					if (is_vf)
+					{
+						for (MMeshFace* vf : v.connected_face)
+						{
+							if (vf->IsS())
+								this->vertices[vv[vi]].connected_face.push_back(&this->faces[ff[vf->index]]);
+						}
+					}
+				}
+			}			
+		}
+		if (mt->is_FFadjacent())
+		{
+			this->set_FFadjacent(true);
+			for (int i = 0; i < faceindex.size(); i++)
+			{
+				MMeshFace& f = mt->faces[faceindex[i]];
+				for (MMeshFace* fc : f.connect_face)
+				{
+					if (fc->IsS())
+						this->faces[ff[f.index]].connect_face.push_back(&this->faces[ff[fc->index]]);
+				}
+			}
+		}
+		
 		for (int i = 0; i < faceindex.size(); i++)
 		{
+			mt->faces[faceindex[i]].ClearS();
 			mt->faces[faceindex[i]].V0(0)->ClearS();
 			mt->faces[faceindex[i]].V0(1)->ClearS();
 			mt->faces[faceindex[i]].V0(2)->ClearS();
