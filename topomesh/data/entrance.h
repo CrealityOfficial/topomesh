@@ -30,6 +30,7 @@ namespace topomesh {
 			std::vector<std::tuple<int, trimesh::ivec3>>& face_vertex, bool is_move=false,int iteration=1);
 		void SimpleSubdivsion(std::vector<int>& faceindexs);
 		void SimpleRemeshing(const std::vector<int>& faceindexs, float thershold);//根据阈值细分三角面
+		void SimpleChunkRemeshing(int chunkid, const std::vector<int>& faceindexs, float thershold);
 		void ChunkMeshSimpleRemshing(const std::vector<int>& Chunkid,const std::vector<std::vector<int>>& ChunkMeshfaceindexs,float thershold);//多个小mesh做细分
 	};
 }
