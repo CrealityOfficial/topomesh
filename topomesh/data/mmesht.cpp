@@ -163,6 +163,16 @@ namespace topomesh
 
 	MMeshT::MMeshT(MMeshT* mt, std::vector<int>& faceindex)
 	{
+		if (faceindex.size() < 4096)
+		{
+			this->vertices.reserve(4096 * 6);
+			this->faces.reserve(4096 * 2);
+		}
+		else
+		{
+			this->vertices.reserve(faceindex.size() * 6);
+			this->faces.reserve(faceindex.size() * 2);
+		}
 		std::map<int, int> vv;
 		for (int i = 0; i < faceindex.size(); i++)
 		{
@@ -442,7 +452,10 @@ namespace topomesh
 		if (!this->is_FFadjacent()||!this->is_VFadjacent()) return;
 		this->set_HalfEdge(true);
 		this->half_edge.clear();
-		this->half_edge.reserve(4*this->faces.size());
+		if (this->faces.size() < 4096)
+			this->half_edge.reserve(4096 * 4);
+		else		
+			this->half_edge.reserve(4*this->faces.size());
 		for (MMeshFace& f : this->faces)
 		{
 			this->half_edge.push_back(MMeshHalfEdge(f.V0(0), f.V1(0)));

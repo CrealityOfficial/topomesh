@@ -21,11 +21,14 @@ namespace topomesh {
 				if (len > threshlod * 4.f / 3.f)
 				{
 					halfedge->SetS();
-					halfedge->opposite->SetS();
 					trimesh::point mid = (halfedge->edge_vertex.first->p + halfedge->edge_vertex.second->p) / 2.f;
 					mesh->appendVertex(mid);
 					halfedge->attritube = mesh->vertices.size() - 1;
-					halfedge->opposite->attritube = mesh->vertices.size() - 1;
+					if (halfedge->opposite != nullptr)
+					{
+						halfedge->opposite->SetS();
+						halfedge->opposite->attritube = mesh->vertices.size() - 1;
+					}
 					splitEdge++;
 				}				
 				halfedge = halfedge->next;
@@ -82,6 +85,10 @@ namespace topomesh {
 			halfedge = mesh->faces[i].f_mhe;
 			do
 			{
+				if (halfedge->opposite == nullptr) {
+					halfedge = halfedge->next;
+					continue;
+				}
 				MMeshHalfEdge* heo = halfedge->opposite;
 				if (halfedge->IsS() && !heo->indication_face->IsS())
 				{
@@ -93,7 +100,11 @@ namespace topomesh {
 			} while (halfedge != mesh->faces[i].f_mhe);
 
 		}
+		for (int i : faceindexs)
+		{
+			mesh->faces[i].ClearS();
 
+		}
 
 	}
 }
