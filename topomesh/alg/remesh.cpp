@@ -103,7 +103,10 @@ namespace topomesh {
 		for (int i : faceindexs)
 		{
 			mesh->faces[i].ClearS();
-
+			MMeshHalfEdge* halfedge = mesh->faces[i].f_mhe;
+			halfedge->ClearS();
+			halfedge->next->ClearS();
+			halfedge->next->next->ClearS();
 		}
 
 	}
