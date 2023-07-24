@@ -342,6 +342,26 @@ namespace topomesh
 
 	void MMeshT::shrinkMesh()
 	{
+		if (this->is_HalfEdge())
+		{
+			int deleteHENum = 0;
+			for (MMeshHalfEdge& he : this->half_edge)
+			{
+				if (he.IsD())
+				{
+					deleteHENum++; continue;
+				}
+				he.index -= deleteHENum;
+			}
+			for (MMeshHalfEdge& he : this->half_edge)
+			{
+				he.next = &this->half_edge[he.next->index];
+				if (he.opposite != nullptr && !he.opposite->IsD())
+				{
+					he.opposite = &this->half_edge[he.opposite->index];
+				}
+			}
+		}
 		int deleteVNum = 0;
 		int deleteFNum = 0;
 		for (MMeshVertex& v : this->vertices)
@@ -367,6 +387,12 @@ namespace topomesh
 					this->vertices[i].connected_vertex[j] = &this->vertices[this->vertices[i].connected_vertex[j]->index];
 				for (int j = 0; j < this->vertices[i].connected_face.size(); j++)
 					this->vertices[i].connected_face[j] = &this->faces[this->vertices[i].connected_face[j]->index];
+				if(this->is_HalfEdge())
+					for (int j = 0; j < this->vertices[i].v_mhe.size(); j++)
+					{
+						if (this->vertices[i].v_mhe[j]->IsD())
+							this->vertices[i].v_mhe.erase(this->vertices[i].v_mhe.begin() + j);
+					}
 			}
 		if(this->is_VFadjacent())
 			for (int i = 0; i < this->faces.size(); i++)
@@ -375,6 +401,10 @@ namespace topomesh
 					this->faces[i].connect_vertex[j] = &this->vertices[this->faces[i].connect_vertex[j]->index];
 				for (int j = 0; j < this->faces[i].connect_face.size(); j++)
 					this->faces[i].connect_face[j] = &this->faces[this->faces[i].connect_face[j]->index];
+				if (this->is_HalfEdge())
+				{
+					this->faces[i].f_mhe = &this->half_edge[this->faces[i].f_mhe->index];	
+				}
 			}
 		for (int i = 0; i < this->vertices.size(); i++)
 			if (this->vertices[i].IsD())
@@ -385,29 +415,30 @@ namespace topomesh
 		for (int i = 0; i < this->faces.size(); i++)
 			if (this->faces[i].IsD())
 			{
+				if (this->is_HalfEdge())
+				{
+					this->faces[i].f_mhe->indication_face = nullptr;
+					this->faces[i].f_mhe->next->indication_face = nullptr;
+					this->faces[i].f_mhe->next->next->indication_face = nullptr;
+				}
 				this->faces.erase(this->faces.begin() + i);
 				i--;
-			}
-		if (this->is_HalfEdge())
+			}			
+		for (int i = 0; i < this->half_edge.size(); i++)
 		{
-			int deleteHENum = 0;
-			for (MMeshHalfEdge& he : this->half_edge)
+			if (this->half_edge[i].IsD())
 			{
-				if (he.IsD())
-				{
-					deleteHENum++; continue;
-				}
-				he.index -= deleteHENum;
-			}
-			for (int i = 0; i < this->half_edge.size(); i++)
-			{
-				if (this->half_edge[i].IsD())
-				{
-					this->half_edge.erase(this->half_edge.begin() + i);
-					i--;
-				}
-			}
+				this->half_edge.erase(this->half_edge.begin() + i);
+				i--;
+			}			
 		}
+		if (this->is_HalfEdge())
+			for (int i = 0; i < this->faces.size(); i++)
+			{
+				this->faces[i].f_mhe->indication_face = &this->faces[i];
+				this->faces[i].f_mhe->next->indication_face = &this->faces[i];
+				this->faces[i].f_mhe->next->next->indication_face = &this->faces[i];
+			}
 	}
 
 	void MMeshT::getMeshBoundary()
@@ -478,7 +509,7 @@ namespace topomesh
 		}
 		std::unordered_map<unsigned long long,std::vector<int>> map;
 		map.rehash(this->half_edge.size());
-		int scale = std::pow(10, 1 + std::log10(this->vertices.size()));
+		int scale = std::pow(10, 1 + (int)std::log10(this->vertices.size()));
 		for (int i=0;i<this->half_edge.size();i++)
 		{
 			MMeshHalfEdge& he = this->half_edge[i];
@@ -831,10 +862,10 @@ namespace topomesh
 					} while (ffhe!=ff->f_mhe);
 					if (pass)
 					{
-						he->edge_vertex.first->ClearL(); he->edge_vertex.second->ClearL();
 						break;
 					}
 				}
+				he->edge_vertex.first->ClearL(); he->edge_vertex.second->ClearL();
 				he = he->next;
 			} while (he!=this->faces.back().f_mhe);
 		}

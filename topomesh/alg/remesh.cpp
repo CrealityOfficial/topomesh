@@ -104,9 +104,9 @@ namespace topomesh {
 		{
 			mesh->faces[i].ClearS();
 			MMeshHalfEdge* halfedge = mesh->faces[i].f_mhe;
-			halfedge->ClearS();
-			halfedge->next->ClearS();
-			halfedge->next->next->ClearS();
+			halfedge->ClearS(); if(halfedge->opposite!=nullptr) halfedge->opposite->ClearS();
+			halfedge->next->ClearS(); if (halfedge->next->opposite != nullptr) halfedge->next->opposite->ClearS();
+			halfedge->next->next->ClearS(); if (halfedge->next->next->opposite != nullptr) halfedge->next->next->opposite->ClearS();
 		}
 
 	}
