@@ -150,7 +150,7 @@ namespace topomesh {
 		std::map<int, std::vector<int>> mmap;
 		for (MMeshFace& f : this->_mesh.faces)
 		{
-			if (!f.IsD() && std::find(chunks.begin(), chunks.end(), f.GetU()) != chunks.end())
+			if (!f.IsD() && std::find(chunks.begin(), chunks.end(), f.GetU()-1) != chunks.end())
 			{
 				mmap[f.GetU()].push_back(f.index);
 			}

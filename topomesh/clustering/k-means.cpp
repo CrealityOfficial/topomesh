@@ -14,7 +14,7 @@ namespace topomesh {
 		std::vector<int> centre_data;
 		for (int i = 0; i < centre_num; i++)
 		{
-			int rand = std::rand();
+			int rand = std::rand()%centre_num;
 		}
 	}
 }
