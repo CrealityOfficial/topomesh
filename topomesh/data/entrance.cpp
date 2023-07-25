@@ -22,10 +22,27 @@ namespace topomesh {
 
 	trimesh::TriMesh* InternelData::chunkmmesht2trimesh(int i)
 	{
-		if (i > this->_ChunkMesh.size() - 1) return nullptr;
+		/*if (i > this->_ChunkMesh.size() - 1) return nullptr;
 		if (this->_ChunkMesh[i].faces.empty()) return nullptr;
 		trimesh::TriMesh* chunkmesh = new trimesh::TriMesh();
 		this->_ChunkMesh[i].quickTransform(chunkmesh);
+		return chunkmesh;*/
+
+		std::vector<int> chunk;
+		for (MMeshFace& f : this->_mesh.faces)
+		{
+			if (!f.IsD() && f.GetU() == i)
+				chunk.push_back(f.index);
+		}
+		trimesh::TriMesh* chunkmesh = new trimesh::TriMesh();
+		this->_mesh.set_FFadjacent(false);
+		this->_mesh.set_VVadjacent(false);
+		this->_mesh.set_VFadjacent(false);
+		MMeshT mt1(&this->_mesh, chunk);
+		this->_mesh.set_FFadjacent(true);
+		this->_mesh.set_VVadjacent(true);
+		this->_mesh.set_VFadjacent(true);
+		mt1.quickTransform(chunkmesh);
 		return chunkmesh;
 	}
 
@@ -50,6 +67,7 @@ namespace topomesh {
 		float z = (this->_mesh.boundingbox.max_z - this->_mesh.boundingbox.min_z) * 1.f / n * 1.f;
 		int Chunknum = std::pow(n, 3);		
 		std::vector<std::vector<int>> chunkface(Chunknum);
+		this->mapping.resize(Chunknum);
 		for (MMeshFace& f : this->_mesh.faces)
 		{
 			if (f.GetU() > 0) continue;
@@ -59,14 +77,17 @@ namespace topomesh {
 			int zi = (c.z - this->_mesh.boundingbox.min_z) / (1.01f*z);
 			int chunked = zi * std::pow(n, 2) + yi * n + xi + 1;
 			f.SetU(chunked);
-			chunkface[chunked-1].push_back(f.index);	
-			
+			chunkface[chunked-1].push_back(f.index);
 		}
 
-		for (std::vector<int>& vec : chunkface)
+		for (int c=0;c<chunkface.size();c++)
 		{
-			MMeshT mt(&this->_mesh, vec);
-			this->_ChunkMesh.emplace_back(std::move(mt));
+			//MMeshT mt(&this->_mesh, vec);
+			//this->_ChunkMesh.emplace_back(std::move(mt));
+			for (int i = 0; i < chunkface[c].size(); i++)
+			{
+				this->mapping[c][i] = chunkface[c][i];
+			}
 		}
 
 	}
@@ -97,7 +118,7 @@ namespace topomesh {
 
 	void InternelData::SimpleRemeshing(const std::vector<int>& faceindexs, float thershold)
 	{
-		topomesh::SimpleRemeshing(&this->_mesh, faceindexs, thershold);
+		//topomesh::SimpleRemeshing(&this->_mesh, faceindexs, thershold);
 	}
 
 
@@ -106,17 +127,46 @@ namespace topomesh {
 		return this->_mesh.faces[faceindex].GetU();
 	}
 
-	void InternelData::ChunkMeshSimpleRemshing(const std::vector<int>& Chunkid, const std::vector<std::vector<int>>& ChunkMeshfaceindexs, float thershold)
+	void InternelData::ChunkMeshSimpleRemshing(const std::vector<int>& Chunkid, const std::vector<std::vector<int>>& ChunkMeshfaceindexs, float thershold, std::vector<int>& chunks)
 	{
-		for (int i=0 ; i<Chunkid.size();i++)
+		/*for (int i=0 ; i<Chunkid.size();i++)
 		{
 			topomesh::SimpleRemeshing(&this->_ChunkMesh[Chunkid[i]],ChunkMeshfaceindexs[i],thershold);
+		}*/
+		chunks.clear();
+		std::vector<int> faceindexs;
+		for (int i = 0; i < Chunkid.size(); i++)
+		{
+			for (int j = 0; j < ChunkMeshfaceindexs[i].size(); j++)
+			{
+				faceindexs.push_back(this->mapping[Chunkid[i]][ChunkMeshfaceindexs[i][j]]);
+			}
+		}		
+		topomesh::SimpleRemeshing(&this->_mesh, faceindexs, thershold,chunks);
+		for (int i = 0; i < chunks.size(); i++)
+		{
+			this->mapping[chunks[i]].clear();
+		}
+		std::map<int, std::vector<int>> mmap;
+		for (MMeshFace& f : this->_mesh.faces)
+		{
+			if (!f.IsD() && std::find(chunks.begin(), chunks.end(), f.GetU()) != chunks.end())
+			{
+				mmap[f.GetU()].push_back(f.index);
+			}
+		}
+		for (std::map<int, std::vector<int>>::iterator it = mmap.begin(); it != mmap.end(); it++)
+		{
+			for (int i = 0; i < it->second.size(); i++)
+			{
+				this->mapping[it->first - 1][i] = it->second[i];
+			}
 		}
 	}
 
 	void InternelData::shrinkChunkMesh(int i)
 	{
-		this->_ChunkMesh[i].shrinkMesh();
+		//this->_ChunkMesh[i].shrinkMesh();
 	}
 
 	void InternelData::QuickCombinationMesh()

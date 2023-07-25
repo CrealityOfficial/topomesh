@@ -1,15 +1,17 @@
 #include "remesh.h"
 
 namespace topomesh {
-	void  SimpleRemeshing(MMeshT* mesh,const std::vector<int>& faceindexs,float threshlod)
+	void  SimpleRemeshing(MMeshT* mesh,const std::vector<int>& faceindexs,float threshlod, std::vector<int>& chunks)
 	{
 		if (faceindexs.empty()) return;
 		if (!mesh->is_HalfEdge()) mesh->init_halfedge();
 		for (int i : faceindexs)
 			mesh->faces[i].SetS();		
+		std::set<int> input_user;
 		for (int i : faceindexs)
 		{
-			MMeshHalfEdge* halfedge = mesh->faces[i].f_mhe;
+			MMeshHalfEdge* halfedge = mesh->faces[i].f_mhe;					
+			int	user = mesh->faces[i].GetU(); input_user.insert(user);
 			int splitEdge = 0;
 			do
 			{			
@@ -50,7 +52,8 @@ namespace topomesh {
 				{					
 					if(!halfedge->IsS())
 					{
-						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->edge_vertex.second->index, appendVertex);
+						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->edge_vertex.second->index, appendVertex);						
+						mesh->faces.back().SetU(user);
 					}
 					halfedge = halfedge->next;
 				} while (halfedge!=mesh->faces[i].f_mhe);
@@ -63,11 +66,13 @@ namespace topomesh {
 						int connect_vexter;
 						if (halfedge->next->IsS()) connect_vexter = halfedge->next->attritube;
 						if (halfedge->next->next->IsS()) connect_vexter = halfedge->next->next->attritube;
-						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->attritube, connect_vexter);						
+						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->attritube, connect_vexter);								
+						mesh->faces.back().SetU(user);
 					}
 					else
 					{
-						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->edge_vertex.second->index, halfedge->next->next->attritube);
+						mesh->appendFace(halfedge->edge_vertex.first->index, halfedge->edge_vertex.second->index, halfedge->next->next->attritube);						
+						mesh->faces.back().SetU(user);
 					}
 					halfedge = halfedge->next;
 				} while (halfedge != mesh->faces[i].f_mhe);
@@ -75,10 +80,12 @@ namespace topomesh {
 			case 3:
 				do
 				{
-					mesh->appendFace(halfedge->attritube, halfedge->edge_vertex.second->index, halfedge->next->attritube);					
+					mesh->appendFace(halfedge->attritube, halfedge->edge_vertex.second->index, halfedge->next->attritube);							
+					mesh->faces.back().SetU(user);
 					halfedge = halfedge->next;
 				} while (halfedge!=mesh->faces[i].f_mhe);
-				mesh->appendFace(halfedge->attritube, halfedge->next->attritube, halfedge->next->next->attritube);
+				mesh->appendFace(halfedge->attritube, halfedge->next->attritube, halfedge->next->next->attritube);				
+				mesh->faces.back().SetU(user);
 				break;
 			}
 
@@ -92,9 +99,13 @@ namespace topomesh {
 				MMeshHalfEdge* heo = halfedge->opposite;
 				if (halfedge->IsS() && !heo->indication_face->IsS())
 				{
+					int n_user = heo->indication_face->GetU();					
+					input_user.insert(n_user);
 					mesh->deleteFace(heo->indication_face->index);
-					mesh->appendFace(heo->next->edge_vertex.first->index, heo->next->edge_vertex.second->index, heo->attritube);
-					mesh->appendFace(heo->next->next->edge_vertex.first->index, heo->next->next->edge_vertex.second->index, heo->attritube);
+					mesh->appendFace(heo->next->edge_vertex.first->index, heo->next->edge_vertex.second->index, heo->attritube);					
+					mesh->faces.back().SetU(n_user);
+					mesh->appendFace(heo->next->next->edge_vertex.first->index, heo->next->next->edge_vertex.second->index, heo->attritube);					
+					mesh->faces.back().SetU(n_user);
 				}
 				halfedge = halfedge->next;
 			} while (halfedge != mesh->faces[i].f_mhe);
@@ -108,6 +119,12 @@ namespace topomesh {
 			halfedge->next->ClearS(); if (halfedge->next->opposite != nullptr) halfedge->next->opposite->ClearS();
 			halfedge->next->next->ClearS(); if (halfedge->next->next->opposite != nullptr) halfedge->next->next->opposite->ClearS();
 		}
-
+		if (!input_user.empty())
+		{						
+			for (std::set<int>::iterator it = input_user.begin(); it != input_user.end(); ++it)
+			{
+				chunks.push_back(*it-1);				
+			}
+		}
 	}
 }
