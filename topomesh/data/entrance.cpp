@@ -33,7 +33,7 @@ namespace topomesh {
 		}
 		_mesh.faces.swap(faces_t);
 		_mesh.faces.reserve(faces_t.size() * 1.5f);
-		/*trimesh->need_across_edge(); _mesh.set_FFadjacent(true);
+		trimesh->need_across_edge(); _mesh.set_FFadjacent(true);
 		trimesh->need_adjacentfaces(); _mesh.set_VFadjacent(true);
 		trimesh->need_neighbors(); _mesh.set_VVadjacent(true);
 		for (int i = 0; i < _mesh.VN(); i++)
@@ -49,7 +49,7 @@ namespace topomesh {
 			{
 				_mesh.faces[i].connect_face.push_back(&_mesh.faces[trimesh->across_edge[i][ffi]]);
 			}
-		}*/
+		}
 	}
 	trimesh::TriMesh* InternelData::mmesht2trimesh(bool save)
 	{
