@@ -7,6 +7,7 @@ namespace topomesh
 	{		
 		currentMesh->need_adjacentfaces();
 		currentMesh->need_neighbors();
+		currentMesh->need_across_edge();
 		if(currentMesh->faces.size()<4096)
 			this->faces.reserve(8192);
 		else
@@ -30,11 +31,11 @@ namespace topomesh
 			vn++;
 		}
 		this->vn = vn;
-		for (int i = 0; i < this->vn; i++)
+		if (currentMesh->neighbors.size() > 0)
 		{
-			if (currentMesh->neighbors.size() > 0)
+			this->VVadjacent = true;
+			for (int i = 0; i < this->vn; i++)
 			{
-				this->VVadjacent = true;
 				for (int j = 0; j < currentMesh->neighbors[i].size(); j++)
 					this->vertices[i].connected_vertex.push_back(&this->vertices[currentMesh->neighbors[i][j]]);
 			}
@@ -52,14 +53,14 @@ namespace topomesh
 		this->fn = fn;
 		if (currentMesh->adjacentfaces.size() > 0)
 		{
-			this->FFadjacent = true;
+			//this->FFadjacent = true;
 			this->VFadjacent = true;
 			for (int i = 0; i < this->vn; i++)
 			{
 				for (int j = 0; j < currentMesh->adjacentfaces[i].size(); j++)
 					this->vertices[i].connected_face.push_back(&this->faces[currentMesh->adjacentfaces[i][j]]);
 			}
-			for (int n = 0; n < this->faces.size(); n++)
+			/*for (int n = 0; n < this->faces.size(); n++)
 			{
 				for (int i = 0; i < 3; i++)
 					for (int j = 0; j < this->faces[n].connect_vertex[i]->connected_face.size(); j++)
@@ -79,9 +80,20 @@ namespace topomesh
 						this->faces[n].connect_vertex[i]->connected_face[j]->ClearA();
 						this->faces[n].connect_vertex[i]->connected_face[j]->ClearS();
 					}
+			}*/
+		}
+		if (currentMesh->across_edge.size() > 0)
+		{
+			for (int i = 0; i < this->fn; i++)
+			{
+				for (int ffi = 0; ffi < currentMesh->across_edge[i].size(); ffi++)
+				{
+					this->faces[i].connect_face.push_back(&this->faces[currentMesh->across_edge[i][ffi]]);
+				}
 			}
 		}
 	}
+
 
 	MMeshT::MMeshT(trimesh::TriMesh* currentMesh, std::vector<int>& faces, std::map<int, int>& vmap, std::map<int, int>& fmap)
 	{

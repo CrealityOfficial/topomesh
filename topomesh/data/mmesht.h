@@ -19,11 +19,11 @@ namespace topomesh
 	class MMeshT
 	{
 	public:
-		MMeshT() :VVadjacent(true), VFadjacent(true), FFadjacent(true) { faces.reserve(81920); vertices.reserve(81920); };//��������������1000����
+		MMeshT() :VVadjacent(true), VFadjacent(true), FFadjacent(true) { faces.reserve(8192); vertices.reserve(8192); };//��������������1000����
 		MMeshT(const MMeshT& mt);
 		MMeshT(MMeshT&& mt) = default;
 		//MMeshT(MMeshT& mt) {};
-		MMeshT(MMeshT* mt,std::vector<int>& faceindex);
+		MMeshT(MMeshT* mt,std::vector<int>& faceindex);		
 		MMeshT(trimesh::TriMesh* currentMesh);
 		MMeshT(trimesh::TriMesh* currentMesh,std::vector<int>& faces,std::map<int,int>& vmap, std::map<int, int>& fmap);
 		MMeshT& operator=(MMeshT mt) { return *this; };

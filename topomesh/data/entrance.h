@@ -8,9 +8,10 @@ namespace topomesh {
 	class InternelData
 	{
 	public:
-		InternelData() {};
-		InternelData(trimesh::TriMesh* trimesh) :_mesh(trimesh){};
-		~InternelData() { _mesh.clear(); _ChunkMesh.clear(); };
+		InternelData(){};		
+		//InternelData(trimesh::TriMesh* trimesh) :_mesh(trimesh){};
+		InternelData(trimesh::TriMesh* trimesh);
+		~InternelData() { _mesh.clear(); std::vector<MMeshT>().swap(_ChunkMesh); std::vector<std::map<int, int>>().swap(mapping); };
 		
 	private:
 		MMeshT _mesh;

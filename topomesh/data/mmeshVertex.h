@@ -14,9 +14,9 @@ namespace topomesh
 	{
 	public:
 		MMeshVertex() {};
-		MMeshVertex(trimesh::point p) :p(p) {  connected_vertex.reserve(8); connected_face.reserve(8); };
+		MMeshVertex(trimesh::point p) :p(p) {  /*connected_vertex.reserve(8); connected_face.reserve(8);*/ };
 		virtual ~MMeshVertex() {};
-		MMeshFace* mf;	
+		MMeshFace* mf=nullptr;	
 		MMeshHalfEdge* me=nullptr;
 		std::vector<MMeshHalfEdge*> v_mhe;
 		bool operator==(MMeshVertex* v) const { return this == v ? true : false; };

@@ -17,17 +17,17 @@ namespace topomesh {
 		void userDefinedMatrix(const int row, const int col);
 		void normalzationLaplacian();
 
-		inline const Eigen::SparseMatrix<float, Eigen::RowMajor>* getLaplacianPtr() { return &L; };
-		inline const Eigen::SparseMatrix<float, Eigen::RowMajor>* getNormalizationLaplacianPtr() { return &NL; };
+		inline const Eigen::SparseMatrix<float>* getLaplacianPtr() { return &L; };
+		inline const Eigen::SparseMatrix<float>* getNormalizationLaplacianPtr() { return &NL; };
 
 		inline const int getRow() { return row; }
 		inline const int getCol() { return col; }
 	private:
 		int row;
 		int col;
-		Eigen::SparseMatrix<float, Eigen::RowMajor>  L;
-		Eigen::SparseMatrix<float, Eigen::RowMajor>  NL;
-		Eigen::SparseMatrix<float, Eigen::RowMajor>  Lsym;
-		Eigen::SparseMatrix<float, Eigen::RowMajor>  Lrw;
+		Eigen::SparseMatrix<float>  L;
+		Eigen::SparseMatrix<float>  NL;
+		Eigen::SparseMatrix<float>  Lsym;
+		Eigen::SparseMatrix<float>  Lrw;
 	};
 }
