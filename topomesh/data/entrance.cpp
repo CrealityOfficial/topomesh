@@ -11,46 +11,7 @@
 
 namespace topomesh {
 
-	InternelData::InternelData(trimesh::TriMesh* trimesh)
-	{
-		std::vector<topomesh::MMeshVertex> vertex_t;
-		int vi = 0;
-		for (trimesh::point p : trimesh->vertices)
-		{
-			vertex_t.push_back(p);
-			vertex_t.back().index = vi++;
-		}
-		_mesh.vertices.swap(vertex_t);
-		_mesh.vertices.reserve(vertex_t.size() * 1.5f);
-		std::vector<topomesh::MMeshFace> faces_t;
-		int fi = 0;
-		for (trimesh::TriMesh::Face f : trimesh->faces)
-		{
-			faces_t.push_back(f);
-			faces_t.back().index = fi++;
-			for (int i = 0; i < 3; i++)
-				faces_t.back().connect_vertex.push_back(&_mesh.vertices[f[i]]);
-		}
-		_mesh.faces.swap(faces_t);
-		_mesh.faces.reserve(faces_t.size() * 1.5f);
-		trimesh->need_across_edge(); _mesh.set_FFadjacent(true);
-		trimesh->need_adjacentfaces(); _mesh.set_VFadjacent(true);
-		trimesh->need_neighbors(); _mesh.set_VVadjacent(true);
-		for (int i = 0; i < _mesh.VN(); i++)
-		{
-			for (int j = 0; j < trimesh->neighbors[i].size(); j++)
-				_mesh.vertices[i].connected_vertex.push_back(&_mesh.vertices[trimesh->neighbors[i][j]]);
-			for (int j = 0; j < trimesh->adjacentfaces[i].size(); j++)
-				_mesh.vertices[i].connected_face.push_back(&_mesh.faces[trimesh->adjacentfaces[i][j]]);
-		}
-		for (int i = 0; i < _mesh.FN(); i++)
-		{
-			for (int ffi = 0; ffi < trimesh->across_edge[i].size(); ffi++)
-			{
-				_mesh.faces[i].connect_face.push_back(&_mesh.faces[trimesh->across_edge[i][ffi]]);
-			}
-		}
-	}
+	
 	trimesh::TriMesh* InternelData::mmesht2trimesh(bool save)
 	{
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();

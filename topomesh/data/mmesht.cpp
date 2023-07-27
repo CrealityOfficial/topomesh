@@ -7,20 +7,12 @@ namespace topomesh
 	{		
 		currentMesh->need_adjacentfaces();
 		currentMesh->need_neighbors();
-		currentMesh->need_across_edge();
-		if(currentMesh->faces.size()<4096)
-			this->faces.reserve(8192);
-		else
-			this->faces.reserve((unsigned)(currentMesh->faces.size() * 1.5));
-		if (currentMesh->vertices.size() < 4096)
-			this->vertices.reserve(8192);
-		else
-			this->vertices.reserve((unsigned)(currentMesh->vertices.size() * 1.5));		
-		
-		int vn = 0;
+		currentMesh->need_across_edge();		
+		reMemory(currentMesh->vertices.size(), currentMesh->faces.size());
 		if (currentMesh->normals.size() > 0)
 			this->VertexNormals = true;
-		for (trimesh::point apoint : currentMesh->vertices)
+		int vn = 0;
+		for (trimesh::point &apoint : currentMesh->vertices)
 		{
 			this->vertices.push_back(apoint);
 			this->vertices.back().index = vn;
@@ -30,7 +22,7 @@ namespace topomesh
 			}
 			vn++;
 		}
-		this->vn = vn;
+		this->vn = vn;				
 		if (currentMesh->neighbors.size() > 0)
 		{
 			this->VVadjacent = true;
@@ -40,7 +32,7 @@ namespace topomesh
 					this->vertices[i].connected_vertex.push_back(&this->vertices[currentMesh->neighbors[i][j]]);
 			}
 		}
-
+		
 		int fn = 0;
 		for (trimesh::TriMesh::Face f : currentMesh->faces)
 		{
@@ -97,14 +89,15 @@ namespace topomesh
 
 	MMeshT::MMeshT(trimesh::TriMesh* currentMesh, std::vector<int>& faces, std::map<int, int>& vmap, std::map<int, int>& fmap)
 	{
-		if (faces.size() < 4096)
+		/*if (faces.size() < 4096)
 			this->faces.reserve(8192 * 10);
 		else
 			this->faces.reserve((unsigned)(faces.size() * 3.5));
 		if (faces.size()*3 < 4096)
 			this->vertices.reserve(8192 * 10);
 		else
-			this->vertices.reserve((unsigned)(faces.size() * 8.5));
+			this->vertices.reserve((unsigned)(faces.size() * 8.5));*/
+		reMemory(currentMesh->vertices.size(), currentMesh->faces.size());
 
 		std::vector<int> vertexIndex;
 		for (int i = 0; i < faces.size(); i++)
@@ -175,7 +168,7 @@ namespace topomesh
 
 	MMeshT::MMeshT(MMeshT* mt, std::vector<int>& faceindex)
 	{
-		if (faceindex.size() < 4096)
+		/*if (faceindex.size() < 4096)
 		{
 			this->vertices.reserve(4096 * 6);
 			this->faces.reserve(4096 * 2);
@@ -184,7 +177,8 @@ namespace topomesh
 		{
 			this->vertices.reserve(faceindex.size() * 6);
 			this->faces.reserve(faceindex.size() * 2);
-		}
+		}*/
+		reMemory(faceindex.size()*3, faceindex.size());
 		std::map<int, int> vv;
 		for (int i = 0; i < faceindex.size(); i++)
 		{
@@ -259,10 +253,32 @@ namespace topomesh
 		//std::cout << "" << "\n";
 	}
 
-	//MMeshT::MMeshT(MMeshT&& mt)
-	//{
-	//	std::cout << "" << "\n";
-	//}
+	void MMeshT::reMemory(int v_size,int f_size)
+	{
+		auto g = [](int x, int a, int b, int c)->float {
+			return (float)a * std::exp(-(std::pow(x - b, 2)*1.0f / 2.0f * std::pow(c, 2)));
+		};
+		if (v_size < 8096 || f_size < 8086)
+		{
+			this->vertices.reserve(80960);
+			this->faces.reserve(80960);
+			return;
+		}
+		int begin_size = 8096;
+		int scale = 10;
+		int vu = std::pow(10, (int)std::log10(v_size));
+		int fu = std::pow(10, (int)std::log10(f_size));
+		float new_v_size = g(v_size, scale, begin_size, vu);
+		new_v_size = new_v_size < 0.03f ? 0.03f : new_v_size;
+		float new_f_size = g(f_size, scale, begin_size, fu);
+		new_f_size = new_f_size < 0.03f ? 0.03f : new_f_size;
+		int size_v = new_v_size * v_size;
+		int szie_f = new_f_size * f_size;
+		this->vertices.reserve(size_v);
+		this->faces.reserve(szie_f);
+	}
+
+
 
 	void MMeshT::getBoundingBox()
 	{
@@ -599,15 +615,6 @@ namespace topomesh
 		}		
 	}
 
-	void MMeshT::initFacePolygon()
-	{
-		for (int i = 0; i < this->faces.size(); i++)
-		{
-			std::vector<int> triangle = { this->faces[i].V0(0)->index ,this->faces[i].V0(1)->index ,this->faces[i].V0(2)->index };
-			this->faces[i].polygons.push_back(triangle);
-		}
-		this->FacePolygon = true;
-	}
 
 	void MMeshT::deleteVertex(MMeshVertex& v)
 	{

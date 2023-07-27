@@ -69,6 +69,7 @@ namespace topomesh
 		void getMeshBoundary();
 		void getMeshBoundaryFaces();
 		void getEdge(std::vector<trimesh::ivec2>& edge, bool is_select = false);
+		void reMemory(int v_size,int f_size);
 		
 		void getFacesNormals();
 
@@ -89,16 +90,16 @@ namespace topomesh
 		inline void set_BoundingBox(bool b) { bbox = b; }
 		inline void set_HalfEdge(bool b) { HalfEdge = b; }
 
-		inline void clear() { vertices.clear(); faces.clear();}
+		inline void clear() { std::vector<MMeshVertex>().swap(vertices); std::vector<MMeshFace>().swap(faces); std::vector<MMeshHalfEdge>().swap(half_edge); }
 
 		inline int VN() const { return vn; }
 		inline int FN() const { return fn; }
 		inline int EN() const { return en; }
 
-		
+		inline void adjustVN() { vn = vertices.size(); }
+		inline void adjustFN() { fn = faces.size(); }
 
-		void calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);
-		void initFacePolygon();		
+		void calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc);			
 		void getEdgeNumber();
 		void getBoundingBox();
 		void init_halfedge();

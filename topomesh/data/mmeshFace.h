@@ -18,33 +18,31 @@ namespace topomesh
 		{		
 			connect_vertex.push_back(v0); connect_vertex.push_back(v1); connect_vertex.push_back(v2);			
 		}
-		virtual ~MMeshFace() {};			
-		int index = -1;
+		~MMeshFace() {};			
 		bool operator==(MMeshFace* f) const { return this == f ? true : false; };
-
-		trimesh::point normal;
-		std::vector<MMeshVertex*> connect_vertex;
-		std::vector<MMeshFace*> connect_face;
-		MMeshHalfEdge* f_mhe=nullptr;
-
-
-		std::vector<trimesh::vec4> uv_coord;
-		std::vector<trimesh::vec4> inner_vertex;
-		std::vector<std::vector<int>> polygons;
 	private:
 		enum faceflag
 		{
 			MF_DELETED = 0x00000001,
 			MF_SELECT = 0x00000002,
 			MF_BORDER = 0x00000004,
-			MF_VISITED= 0x00000008,
-			MF_ACCUMULATE   = 0x00000ff0,
-			MF_LIMITING   = 0x00001000,
+			MF_VISITED = 0x00000008,
+			MF_ACCUMULATE = 0x00000ff0,
+			MF_LIMITING = 0x00001000,
 			MF_MARKED = 0x00002000,
 			MF_USER = 0xffff0000
 		};
-		int flag=0;
+		int flag = 0;
 	public:
+		MMeshHalfEdge* f_mhe = nullptr;
+		trimesh::point normal;
+		int index = -1;
+		std::vector<MMeshVertex*> connect_vertex;
+		std::vector<MMeshFace*> connect_face;
+
+		std::vector<trimesh::vec4> uv_coord;
+		std::vector<trimesh::vec4> inner_vertex;		
+	
 		inline void SetD() { flag |= MF_DELETED; }
 		inline bool IsD() { return (MF_DELETED & flag)!=0 ? 1 : 0; }
 		inline void ClearD() { flag &= ~MF_DELETED; }

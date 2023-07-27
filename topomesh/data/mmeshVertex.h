@@ -15,32 +15,35 @@ namespace topomesh
 	public:
 		MMeshVertex() {};
 		MMeshVertex(trimesh::point p) :p(p) {  /*connected_vertex.reserve(8); connected_face.reserve(8);*/ };
-		virtual ~MMeshVertex() {};
-		MMeshFace* mf=nullptr;	
-		MMeshHalfEdge* me=nullptr;
-		std::vector<MMeshHalfEdge*> v_mhe;
+		~MMeshVertex() {
+			std::vector<int>().swap(inner); std::vector<MMeshVertex*>().swap(connected_vertex);
+			std::vector<MMeshFace*>().swap(connected_face); std::vector<MMeshHalfEdge*>().swap(v_mhe);
+		};
+		//MMeshFace* mf=nullptr;	
+		//MMeshHalfEdge* me=nullptr;
 		bool operator==(MMeshVertex* v) const { return this == v ? true : false; };
-
-		int index = -1;
-		trimesh::point p;
-		std::vector<int> inner;
-		trimesh::point normal;
-		std::vector<MMeshVertex*> connected_vertex;
-		std::vector<MMeshFace*> connected_face;
 	private:
 		enum vertexflag
 		{
 			MV_DELETE = 0x00000001,
 			MV_SELECT = 0x00000002,
 			MV_BORDER = 0x00000004,
-			MV_VISITED= 0x00000008,
+			MV_VISITED = 0x00000008,
 			MV_ACCUMULATE = 0x00000ff0,
 			MV_LIMITING = 0x00001000,
 			MV_MARKED = 0x00002000,
-			MV_USER	  = 0xffff0000
+			MV_USER = 0xffff0000
 		};
 		int flag = 0;
 	public:
+		int index = -1;
+		trimesh::point p;
+		trimesh::point normal;
+		std::vector<int> inner;
+		std::vector<MMeshVertex*> connected_vertex;
+		std::vector<MMeshFace*> connected_face;
+		std::vector<MMeshHalfEdge*> v_mhe;
+
 		inline void SetD() { flag |= MV_DELETE; }
 		inline bool IsD() { return (MV_DELETE & flag) != 0 ? 1 : 0; }
 		inline void ClearD() { flag &= ~MV_DELETE; }

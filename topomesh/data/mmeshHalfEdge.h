@@ -10,16 +10,8 @@ namespace topomesh {
 		MMeshHalfEdge(){};
 		MMeshHalfEdge(MMeshVertex* v1, MMeshVertex* v2) { edge_vertex.first = v1, edge_vertex.second = v2; };
 		MMeshHalfEdge(int v1, int v2) {};
+		~MMeshHalfEdge() { indication_face = nullptr; next = nullptr; opposite = nullptr;};
 
-		int index=-1;
-		std::pair<MMeshVertex*, MMeshVertex*> edge_vertex;
-		MMeshFace* indication_face;
-		MMeshHalfEdge* next;
-		MMeshHalfEdge* opposite=nullptr;
-
-		int attritube;
-		float attritube_f;
-		std::vector<float> attritube_vec;
 	private:
 		enum halfedge_flag
 		{
@@ -34,6 +26,15 @@ namespace topomesh {
 		};
 		int flag = 0;
 	public:
+		int index = -1;
+		std::pair<MMeshVertex*, MMeshVertex*> edge_vertex;
+		MMeshFace* indication_face;
+		MMeshHalfEdge* next;
+		MMeshHalfEdge* opposite = nullptr;
+
+		int attritube;
+		float attritube_f;
+		std::vector<float> attritube_vec;
 		inline void SetD() { flag |= ME_DELETE; }
 		inline bool IsD() { return (ME_DELETE & flag) != 0 ? 1 : 0; }
 		inline void ClearD() { flag &= ~ME_DELETE; }
