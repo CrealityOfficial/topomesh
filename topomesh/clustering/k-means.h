@@ -5,11 +5,14 @@
 
 
 namespace topomesh {
+	//template <typename T>
 	class kmeansClustering {
 	public:
 		kmeansClustering() {};
-		kmeansClustering(Eigen::SparseMatrix<float>* data,int centre_num = 2);
+		//template <typename T>
+		kmeansClustering(Eigen::MatrixXf* data,int centre_num = 2);//Eigen::SparseMatrix<float>
 		~kmeansClustering() {};
+		std::vector<std::vector<float>>* get_result() { return &result; }
 	private:
 		std::vector<std::vector<float>> result;
 	};

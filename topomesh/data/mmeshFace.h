@@ -13,10 +13,10 @@ namespace topomesh
 	{
 	public:
 		MMeshFace() {};
-		MMeshFace(trimesh::TriMesh::Face f) {};
+		MMeshFace(trimesh::TriMesh::Face f) { connect_vertex.reserve(3); };
 		MMeshFace(MMeshVertex* v0, MMeshVertex* v1, MMeshVertex* v2)
 		{		
-			connect_vertex.push_back(v0); connect_vertex.push_back(v1); connect_vertex.push_back(v2);			
+			connect_vertex.reserve(3); connect_vertex.push_back(v0); connect_vertex.push_back(v1); connect_vertex.push_back(v2);
 		}
 		~MMeshFace() {};			
 		bool operator==(MMeshFace* f) const { return this == f ? true : false; };

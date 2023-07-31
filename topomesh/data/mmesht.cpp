@@ -8,7 +8,7 @@ namespace topomesh
 		currentMesh->need_adjacentfaces();
 		currentMesh->need_neighbors();
 		currentMesh->need_across_edge();		
-		reMemory(currentMesh->vertices.size(), currentMesh->faces.size());
+		rememory(currentMesh->vertices.size(), currentMesh->faces.size());
 		if (currentMesh->normals.size() > 0)
 			this->VertexNormals = true;
 		int vn = 0;
@@ -97,7 +97,7 @@ namespace topomesh
 			this->vertices.reserve(8192 * 10);
 		else
 			this->vertices.reserve((unsigned)(faces.size() * 8.5));*/
-		reMemory(currentMesh->vertices.size(), currentMesh->faces.size());
+		rememory(currentMesh->vertices.size(), currentMesh->faces.size());
 
 		std::vector<int> vertexIndex;
 		for (int i = 0; i < faces.size(); i++)
@@ -178,7 +178,7 @@ namespace topomesh
 			this->vertices.reserve(faceindex.size() * 6);
 			this->faces.reserve(faceindex.size() * 2);
 		}*/
-		reMemory(faceindex.size()*3, faceindex.size());
+		rememory(faceindex.size()*3, faceindex.size());
 		std::map<int, int> vv;
 		for (int i = 0; i < faceindex.size(); i++)
 		{
@@ -253,7 +253,7 @@ namespace topomesh
 		//std::cout << "" << "\n";
 	}
 
-	void MMeshT::reMemory(int v_size,int f_size)
+	void MMeshT::rememory(int v_size,int f_size)
 	{
 		auto g = [](int x, int a, int b, int c)->float {
 			return (float)a * std::exp(-(std::pow(x - b, 2)*1.0f / 2.0f * std::pow(c, 2)));

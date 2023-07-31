@@ -69,7 +69,7 @@ namespace topomesh
 		void getMeshBoundary();
 		void getMeshBoundaryFaces();
 		void getEdge(std::vector<trimesh::ivec2>& edge, bool is_select = false);
-		void reMemory(int v_size,int f_size);
+		void rememory(int v_size,int f_size);
 		
 		void getFacesNormals();
 
