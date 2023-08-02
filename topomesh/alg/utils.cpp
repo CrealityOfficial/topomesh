@@ -56,7 +56,7 @@ namespace topomesh
 	}
 
 
-	void findNeighborFacesOfSameAsNormal(MMeshT* mesh, int indicate, std::vector<int>& faceIndexs, float angle_threshold)
+	void findNeighborFacesOfSameAsNormal(MMeshT* mesh, int indicate, std::vector<int>& faceIndexs, float angle_threshold, bool vis)
 	{
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		for (MMeshFace& f : mesh->faces)
@@ -71,14 +71,13 @@ namespace topomesh
 			mesh->faces[queue.front()].SetS();
 			for (int i = 0; i < mesh->faces[queue.front()].connect_face.size(); i++)
 			{
+				if (vis && mesh->faces[queue.front()].connect_face[i]->IsV()) continue;
 				if (!mesh->faces[queue.front()].connect_face[i]->IsS())
 				{
 					mesh->faces[queue.front()].connect_face[i]->SetS();
 					float arc = trimesh::normalized(mesh->faces[indicate].normal) ^ trimesh::normalized(mesh->faces[queue.front()].connect_face[i]->normal);
-					if (arc >= 1.f)
-						arc = 1.f;
-					if (arc <= -1.f)
-						arc = -1.f;
+					arc = arc >= 1.f ? 1.f : arc;
+					arc = arc <= -1.f ? -1.f : arc;					
 					if ((std::acos(arc) * 180 / M_PI) < angle_threshold)
 						queue.push(mesh->faces[queue.front()].connect_face[i]->index);
 				}
