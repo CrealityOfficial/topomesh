@@ -1,4 +1,6 @@
 #include "segmentation.h"
+#include "cmath"
+#include "floyd.h"
 #include "dijkstra.h"
 #include "utils.h"
 #include "Eigen/Dense"
@@ -69,7 +71,7 @@ namespace topomesh {
 		/*topomesh::Dijkstra<Eigen::SparseMatrix<float>> dijk(D);
 		Eigen::SparseMatrix<float>  r = dijk.get_result();*/
 		//------- 矩阵太大，计算时间长
-		float sigma = D.sum() * 1.f / (1.f*std::powf(edge,2));
+		float sigma = D.sum() * 1.f / (1.f*std::pow(edge,2));
 		Eigen::SparseMatrix<float> W;
 		std::vector<Tr> W_triplet;
 		std::vector<Tr> diag_triplet;
@@ -77,7 +79,7 @@ namespace topomesh {
 			for (Eigen::SparseMatrix<float>::InnerIterator it(D, k); it; ++it)
 			{
 				float value = it.value();
-				value = std::exp((-1.f * value) / (2.f * std::powf(sigma, 2)));
+				value = std::exp((-1.f * value) / (2.f * std::pow(sigma, 2)));
 				W_triplet.push_back(Tr(it.row(), it.col(), value));
 			}
 
@@ -91,7 +93,7 @@ namespace topomesh {
 
 	void SpectralClusteringCuts::BlockSpectralClusteringCuts(MMeshT* mesh)
 	{
-		//应该改为边界点
+#if 0
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		std::vector<float> face_smooth;
 		//----is not isD------------
@@ -138,6 +140,17 @@ namespace topomesh {
 
 			result.push_back(block);
 		}
+#else
+		for (MMeshFace& f : mesh->faces)
+		{
+			std::vector<int> block_face;
+
+		}
+
+#endif // 0
+
+
+
 
 	}
 
