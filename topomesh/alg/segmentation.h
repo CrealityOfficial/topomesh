@@ -25,15 +25,22 @@ namespace topomesh {
 
 	};
 
+	enum class SegmentatStrategy
+	{
+		ss_angle,
+		ss_sdf,
+		ss_num
+	}
+
 	class Segmentation
 	{
 	public:
 		Segmentation(trimesh::TriMesh* mesh);
 		~Segmentation();
 
-		void autoSegment(int num);   // num  < 0 auto
+		void autoSegment(int num);   // num  <= 0 auto
 
-		//
+		//seed
 		int createGroup();
 		void removeGroup(int index);
 		void addSeed2Group(int groupIndex, int index);

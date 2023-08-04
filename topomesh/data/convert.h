@@ -14,7 +14,7 @@ namespace topomesh
 		trimesh::ivec2 ScreenSize;  // hw
 		trimesh::ivec2 p1;		
 		trimesh::ivec2 p2;
-		//ÄÚ²Î
+		//ï¿½Ú²ï¿½
 		float n;
 		float f;		
 		float t;
@@ -24,7 +24,7 @@ namespace topomesh
 
 		float fov,aspect;
 
-		//Íâ²Î
+		//ï¿½ï¿½ï¿½
 		trimesh::point pos;
 		trimesh::point lookAt;
 		trimesh::point right;
@@ -65,5 +65,5 @@ namespace topomesh
 	};
 
 	typedef std::vector<int> FacePatch;
-	typedef std::vector<int> FacePatchs;
+	typedef std::vector<FacePatch> FacePatchs;
 }
