@@ -1,4 +1,5 @@
 #pragma once
+#include <stdlib.h>
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 #include "topomesh/data/mmesht.h"

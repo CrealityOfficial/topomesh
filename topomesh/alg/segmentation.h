@@ -30,7 +30,7 @@ namespace topomesh {
 		ss_angle,
 		ss_sdf,
 		ss_num
-	}
+	};
 
 	class Segmentation
 	{

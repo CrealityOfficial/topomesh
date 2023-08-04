@@ -51,9 +51,10 @@ namespace topomesh {
 		arc = arc > 1.f ? 1 : arc;
 		arc = arc < -1.f ? -1.f : arc;
 		float ang = std::acos(arc) * 180 / M_PI;
-		if (arc < 0)
-			return M_PI + ang;
+		return ang;
+		/*if (arc < 0)
+			return 180 + ang;
 		else
-			return M_PI - ang;
+			return 180 - ang;*/
 	}
 };

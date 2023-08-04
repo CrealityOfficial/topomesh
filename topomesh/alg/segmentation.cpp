@@ -143,8 +143,16 @@ namespace topomesh {
 #else
 		for (MMeshFace& f : mesh->faces)
 		{
+			if (f.IsS()) continue;
 			std::vector<int> block_face;
-
+			for (MMeshFace* ff : f.connect_face)
+			{
+				float angle = f.dihedral(ff);
+				if (angle < 180)
+				{
+					f.SetS(); ff->SetS();
+				}
+			}
 		}
 
 #endif // 0
