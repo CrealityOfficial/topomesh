@@ -20,4 +20,28 @@ namespace topomesh {
 		float _eta;
 	};
 	
+	struct SegmentationParam
+	{
+
+	};
+
+	class Segmentation
+	{
+	public:
+		Segmentation(trimesh::TriMesh* mesh);
+		~Segmentation();
+
+		void autoSegment(int num);   // num  < 0 auto
+
+		//
+		int createGroup();
+		void removeGroup(int index);
+		void addSeed2Group(int groupIndex, int index);
+		void addSeeds2Group(int groupIndex, const std::vector<int>& indices);
+		void removeGroupSeed(int groupIndex, int index);
+
+		const FacePatchs& currentPatches();
+	protected:
+		FacePatchs m_patches;
+	};
 }

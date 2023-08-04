@@ -158,4 +158,49 @@ namespace topomesh {
 	{
 
 	}
+
+	Segmentation::Segmentation(trimesh::TriMesh* mesh)
+	{
+
+	}
+
+	Segmentation::~Segmentation()
+	{
+
+	}
+
+	void Segmentation::autoSegment(int num)   // num  < 0 auto
+	{
+
+	}
+	//
+	int Segmentation::createGroup()
+	{
+		return -1;
+	}
+
+	void Segmentation::removeGroup(int index)
+	{
+
+	}
+
+	void Segmentation::addSeed2Group(int groupIndex, int index)
+	{
+
+	}
+
+	void Segmentation::addSeeds2Group(int groupIndex, const std::vector<int>& indices)
+	{
+
+	}
+
+	void Segmentation::removeGroupSeed(int groupIndex, int index)
+	{
+
+	}
+
+	const FacePatchs& Segmentation::currentPatches()
+	{
+		return m_patches;
+	}
 }

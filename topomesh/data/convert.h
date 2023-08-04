@@ -63,4 +63,7 @@ namespace topomesh
 
 		virtual void onMeshProjected(const std::vector<trimesh::vec3>& triangles) = 0;
 	};
+
+	typedef std::vector<int> FacePatch;
+	typedef std::vector<int> FacePatchs;
 }
