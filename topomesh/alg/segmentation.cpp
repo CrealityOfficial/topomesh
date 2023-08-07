@@ -93,73 +93,50 @@ namespace topomesh {
 
 	void SpectralClusteringCuts::BlockSpectralClusteringCuts(MMeshT* mesh)
 	{
-#if 0
+		//还没所有清除标记位
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
-		std::vector<float> face_smooth;
-		//----is not isD------------
+		if (!mesh->is_HalfEdge()) mesh->init_halfedge();
+#if 1
+		int make_user = 1;//user <=65536
 		for (MMeshFace& f : mesh->faces)
 		{
-			float angle;
-			for (MMeshFace* ff : f.connect_face)
+			if (f.IsV()) continue;
+			topomesh::FacePatch path;
+			findNeighborFacesOfSameAsNormal(mesh,f.index,path,10.f,true);
+			for (int i : path)
 			{
-				float arc = trimesh::normalized(f.normal) ^ trimesh::normalized(ff->normal);
-				arc = arc >= 1.f ? 1.f : arc;
-				arc = arc <= -1.f ? -1.f : arc;
-				angle += (std::acos(arc) * 180 / M_PI);
+				mesh->faces[i].SetV();
+				mesh->faces[i].SetU(make_user);
 			}
-			angle = angle * 1.f / (f.connect_face.size() * 1.f);
-			face_smooth.push_back(angle);
+			make_user++;
+			result.push_back(path);
 		}
 
-		for (MMeshFace& f : mesh->faces)
+		for (MMeshHalfEdge& he : mesh->half_edge)
 		{
-			if (f.IsS()) continue;
-			f.SetS();
-			std::vector<int> block;
-			std::queue<int> queue;
-			queue.push(f.index);
-			while (!queue.empty())
-			{
-				block.push_back(queue.front());
-				for (int i = 0; i < mesh->faces[queue.front()].connect_face.size(); i++)
-				{
-					if (!mesh->faces[queue.front()].connect_face[i]->IsS())
-					{
-						float agdiff = face_smooth[f.index] - face_smooth[mesh->faces[queue.front()].connect_face[i]->index];
-						agdiff = std::abs(agdiff);
-						if (agdiff < 5.f)
-						{
-							//block.push_back(mesh->faces[queue.front()].connect_face[i]->index);
-							queue.push(mesh->faces[queue.front()].connect_face[i]->index);
-							mesh->faces[queue.front()].connect_face[i]->SetS();
-						}
-					}
-				}
-				queue.pop();
-			}
 
-			result.push_back(block);
 		}
 #else
-		for (MMeshFace& f : mesh->faces)
+		for (topomesh::MMeshHalfEdge& he : mesh->half_edge)
 		{
-			if (f.IsS()) continue;
-			std::vector<int> block_face;
-			for (MMeshFace* ff : f.connect_face)
+			if (he.IsS() || he.opposite==nullptr) continue;
+			he.SetS(); he.opposite->SetS();
+			float angle = he.indication_face->dihedral(he.opposite->indication_face);
+			if (angle < 170.f)
 			{
-				float angle = f.dihedral(ff);
-				if (angle < 180)
-				{
-					f.SetS(); ff->SetS();
-				}
+				he.indication_face->SetA();
+				he.opposite->indication_face->SetA();
 			}
 		}
-
+		std::vector<int> faceindex;
+		for (topomesh::MMeshFace& f : mesh->faces)
+		{
+			int a = f.getA();
+			if (a>0)
+				faceindex.push_back(f.index);
+		}
+		result.push_back(faceindex);
 #endif // 0
-
-
-
-
 	}
 
 	void SpectralClusteringCuts::test()

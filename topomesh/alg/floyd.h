@@ -21,8 +21,8 @@ namespace topomesh {
 				return r;
 			};
 			//-----bottom triangle-----
-			if (std::is_same<typename T, Eigen::SparseMatrix<float>>::value)
-			{
+			//if (std::is_same<typename T, Eigen::SparseMatrix<float>>::value)
+			//{
 				for (int r = 0; r < _result.rows(); r++)
 				{
 					for (int i = 0; i < _result.rows(); i++)
@@ -47,7 +47,7 @@ namespace topomesh {
 						}
 					}
 				}
-			}
+			//}
 			
 		};
 		~floyd(){};

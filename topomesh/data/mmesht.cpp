@@ -76,6 +76,7 @@ namespace topomesh
 		}
 		if (currentMesh->across_edge.size() > 0)
 		{
+			this->FFadjacent = true;
 			for (int i = 0; i < this->fn; i++)
 			{
 				for (int ffi = 0; ffi < currentMesh->across_edge[i].size(); ffi++)

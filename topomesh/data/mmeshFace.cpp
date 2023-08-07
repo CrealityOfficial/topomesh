@@ -50,11 +50,39 @@ namespace topomesh {
 		float arc = this->normal ^ f->normal;
 		arc = arc > 1.f ? 1 : arc;
 		arc = arc < -1.f ? -1.f : arc;
-		float ang = std::acos(arc) * 180 / M_PI;
-		return ang;
-		/*if (arc < 0)
-			return 180 + ang;
+		float ang = std::acos(arc) * 180 / M_PI;	
+		/*std::vector<int> fv1 = {this->V0(0)->index,this->V1(0)->index,this->V2(0)->index};
+		std::sort(fv1.begin(),fv1.end());
+		std::vector<int> fv2 = { f->V0(0)->index,f->V1(0)->index,f->V2(0)->index };
+		std::sort(fv2.begin(), fv2.end());
+		std::vector<int> other;
+		std::set_difference(fv1.begin(), fv1.end(), fv2.begin(), fv2.end(), std::back_inserter(other));
+		trimesh::point mid;
+		trimesh::point ot;
+		for (MMeshVertex* fv : this->connect_vertex)
+			if (fv->index == other[0])
+				ot = fv->p;
+			else
+				mid += fv->p;
+		
+		mid = mid / 2.f;
+		trimesh::point ori = mid - ot;*/
+		trimesh::point other;
+		trimesh::point mid;
+		for (MMeshVertex* fv : f->connect_vertex)
+			fv->SetM();
+		for (MMeshVertex* fv : this->connect_vertex)
+			if (fv->IsM())
+				mid += fv->p;
+			else
+				other = fv->p;
+		for (MMeshVertex* fv : f->connect_vertex)
+			fv->ClearM();
+		mid = mid / 2.f;
+		trimesh::point ori = mid - other;
+		if ((ori^f->normal) < 0)
+			return 180.f - ang;
 		else
-			return 180 - ang;*/
+			return 180.f + ang;
 	}
 };

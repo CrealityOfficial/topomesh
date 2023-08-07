@@ -25,12 +25,12 @@ namespace topomesh {
 
 	};
 
-	enum class SegmentatStrategy
+	/*enum class SegmentatStrategy
 	{
 		ss_angle,
 		ss_sdf,
 		ss_num
-	};
+	};*/
 
 	class Segmentation
 	{

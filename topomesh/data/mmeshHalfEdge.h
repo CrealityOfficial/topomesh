@@ -71,5 +71,7 @@ namespace topomesh {
 		inline int GetU() { int copy = flag & ME_USER; copy = copy >> 16; return copy; }
 
 		inline void ClearALL() { flag &= ME_DELETE; }
+
+		float dihedral();
 	};
 }

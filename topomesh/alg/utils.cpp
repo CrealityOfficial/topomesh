@@ -59,8 +59,9 @@ namespace topomesh
 	void findNeighborFacesOfSameAsNormal(MMeshT* mesh, int indicate, std::vector<int>& faceIndexs, float angle_threshold, bool vis)
 	{
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
-		for (MMeshFace& f : mesh->faces)
-			f.ClearS();
+		/*for (MMeshFace& f : mesh->faces)
+			f.ClearS();*/
+		std::vector<int> clears;
 		if (indicate >= mesh->faces.size() || mesh->faces[indicate].IsD()) return;
 		trimesh::point normal=mesh->faces[indicate].normal;	
 		std::queue<int> queue;
@@ -69,12 +70,14 @@ namespace topomesh
 		{
 			faceIndexs.push_back(queue.front());
 			mesh->faces[queue.front()].SetS();
+			clears.push_back(mesh->faces[queue.front()].index);
 			for (int i = 0; i < mesh->faces[queue.front()].connect_face.size(); i++)
 			{
 				if (vis && mesh->faces[queue.front()].connect_face[i]->IsV()) continue;
 				if (!mesh->faces[queue.front()].connect_face[i]->IsS())
 				{
 					mesh->faces[queue.front()].connect_face[i]->SetS();
+					clears.push_back(mesh->faces[queue.front()].connect_face[i]->index);
 					float arc = trimesh::normalized(mesh->faces[indicate].normal) ^ trimesh::normalized(mesh->faces[queue.front()].connect_face[i]->normal);
 					arc = arc >= 1.f ? 1.f : arc;
 					arc = arc <= -1.f ? -1.f : arc;					
@@ -84,5 +87,7 @@ namespace topomesh
 			}
 			queue.pop();
 		}	
+		for (const int& i : clears)
+			mesh->faces[i].ClearS();
 	}
 }
