@@ -5,6 +5,7 @@
 #include "utils.h"
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
+#include<Eigen/Eigenvalues>
 #include "queue"
 
 
@@ -23,7 +24,11 @@ namespace topomesh {
 			MMeshHalfEdge* halfedge_ptr = f.f_mhe;
 			do
 			{
-				if (halfedge_ptr->IsS()) continue;
+				if (halfedge_ptr->IsS())
+				{
+					halfedge_ptr = halfedge_ptr->next;
+					continue;
+				}
 				if (halfedge_ptr->opposite == nullptr || halfedge_ptr->opposite->IsD())
 				{
 					halfedge_ptr->SetS();
@@ -53,7 +58,7 @@ namespace topomesh {
 		ave_ang_dist = ave_ang_dist * 1.f / edge * 1.f;
 		for (MMeshHalfEdge& he : mesh->half_edge)
 			he.ClearS();		
-		Eigen::SparseMatrix<float> D;
+		Eigen::SparseMatrix<float> D(mesh->faces.size(),mesh->faces.size());
 		typedef Eigen::Triplet<float> Tr;
 		std::vector<Tr> D_triplet;
 		for (MMeshHalfEdge& he : mesh->half_edge)
@@ -70,6 +75,8 @@ namespace topomesh {
 
 		/*topomesh::Dijkstra<Eigen::SparseMatrix<float>> dijk(D);
 		Eigen::SparseMatrix<float>  r = dijk.get_result();*/
+		/*topomesh::floyd<Eigen::SparseMatrix<float>> floyd(D);
+		Eigen::MatrixXf result = floyd.get_result();*/
 		//------- 矩阵太大，计算时间长
 		float sigma = D.sum() * 1.f / (1.f*std::pow(edge,2));
 		Eigen::SparseMatrix<float> W;
@@ -87,7 +94,17 @@ namespace topomesh {
 		for (int i = 0; i < D.rows(); i++)
 			diag_triplet.push_back(Tr(i, i, 1));
 		W.setFromTriplets(diag_triplet.begin(), diag_triplet.end());
+		Eigen::VectorXf rowSums = W * Eigen::VectorXf::Ones(W.cols());
+		Eigen::SparseMatrix<float> LD;
+		std::vector<Tr> LD_triplet;
+		for (int i = 0; i < rowSums.size(); i++)
+			LD_triplet.push_back(Tr(i,i,rowSums(i)));
+		LD.setFromTriplets(LD_triplet.begin(), LD_triplet.end());
+		Eigen::SparseMatrix<float> L;
+		L = ((((W*LD).pruned()).transpose()*LD).pruned()).transpose();
 		
+		Eigen::SelfAdjointEigenSolver<Eigen::SparseMatrix<float>> es(L);
+		std::cout<<"vec : "<<es.eigenvectors()<<"\n";
 	}
 
 
@@ -95,7 +112,7 @@ namespace topomesh {
 	{
 		//还没所有清除标记位
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
-		if (!mesh->is_HalfEdge()) mesh->init_halfedge();
+		//if (!mesh->is_HalfEdge()) mesh->init_halfedge();
 #if 1
 		int make_user = 1;//user <=65536
 		for (MMeshFace& f : mesh->faces)
@@ -112,10 +129,10 @@ namespace topomesh {
 			result.push_back(path);
 		}
 
-		for (MMeshHalfEdge& he : mesh->half_edge)
+		/*for (MMeshHalfEdge& he : mesh->half_edge)
 		{
 
-		}
+		}*/
 #else
 		for (topomesh::MMeshHalfEdge& he : mesh->half_edge)
 		{

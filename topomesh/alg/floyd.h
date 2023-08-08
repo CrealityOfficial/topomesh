@@ -12,7 +12,7 @@ namespace topomesh {
 	{
 	public:
 		floyd() {};
-		floyd(const T& data):_result(data)
+		floyd(const T& data):_data(data)
 		{			
 			_path.resize(data.rows(), data.cols());
 			auto trans = [&](int a) ->float {
@@ -23,20 +23,20 @@ namespace topomesh {
 			//-----bottom triangle-----
 			//if (std::is_same<typename T, Eigen::SparseMatrix<float>>::value)
 			//{
-				for (int r = 0; r < _result.rows(); r++)
+				for (int r = 0; r < _data.rows(); r++)
 				{
-					for (int i = 0; i < _result.rows(); i++)
+					for (int i = 0; i < _data.rows(); i++)
 					{
 						if (r != i)
 						{
-							float distance1 = _result.coeffRef(i, r);
+							float distance1 = _data.coeffRef(i, r);
 							if (distance1 == 0.0f) continue;
 							distance1 = trans(distance1);
 							for (int j = 0; j <= i; j++)
 							{
-								float value = _result.coeffRef(i, j);
+								float value = _data.coeffRef(i, j);
 								value = trans(value);
-								float distance2 = _result.coeffRef(r, j);
+								float distance2 = _data.coeffRef(r, j);
 								distance2 = trans(distance2);
 								if (value > distance1 + distance2)
 								{
@@ -54,6 +54,7 @@ namespace topomesh {
 		Eigen::MatrixXf& get_result() { return _result; }
 		Eigen::MatrixXf& get_path()  { return _path; }
 	private:
+		Eigen::SparseMatrix<float> _data;
 		Eigen::MatrixXf _result;
 		Eigen::MatrixXf _path;
 	};

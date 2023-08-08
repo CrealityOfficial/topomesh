@@ -375,7 +375,7 @@ namespace topomesh {
             p += trimesh::vec3(minPt.x, minPt.y, minPt.z);
             p = mat * p;
         }
-		//newMesh->write("honeycombs.ply");
+		newMesh->write("honeycombs.ply");
 		return newMesh;
 	}
 
@@ -550,6 +550,10 @@ namespace topomesh {
 		{
 			int xi = (mesh->vertices[compara_vertex[vi]].p.x - begin_x) / length_x;
 			int yi = (mesh->vertices[compara_vertex[vi]].p.y - begin_y) / length_y;
+			if (xi == width)
+				xi--;
+			if (yi == height)
+				yi--;
 			float min_z = std::numeric_limits<float>::max();
 			for (int ii = 0; ii < mapind[xi][yi].size(); ii++)
 			{
