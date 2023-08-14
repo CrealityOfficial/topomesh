@@ -803,12 +803,13 @@ namespace topomesh {
 	}
 
 
-	HoneyCombContext::HoneyCombContext(trimesh::TriMesh* mesh)
+	HoneyCombContext::HoneyCombContext(std::shared_ptr<trimesh::TriMesh> mesh)
 	{
+		m_mesh = mesh;
 		mesh->need_adjacentfaces();
 		mesh->need_neighbors();
 		mesh->need_normals();
-		innerMesh.reset(new MMeshT(mesh));
+		innerMesh.reset(new MMeshT(mesh.get()));
 	}
 
 	HoneyCombContext::~HoneyCombContext()
@@ -819,5 +820,10 @@ namespace topomesh {
 	void HoneyCombContext::checkNeigbour(int indicate, std::vector<int>& faceIndexs, float angle_threshold)
 	{
 		findNeighborFacesOfSameAsNormal(innerMesh.get(), indicate, faceIndexs, angle_threshold);
+	}
+
+	trimesh::TriMesh* HoneyCombContext::data()
+	{
+		return m_mesh.get();
 	}
 }

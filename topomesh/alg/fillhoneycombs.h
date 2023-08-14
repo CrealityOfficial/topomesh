@@ -53,11 +53,14 @@ namespace topomesh {
 	class HoneyCombContext
 	{
 	public:
-		HoneyCombContext(trimesh::TriMesh* mesh);
+		HoneyCombContext(std::shared_ptr<trimesh::TriMesh> mesh);
 		~HoneyCombContext();
 
 		void checkNeigbour(int indicate, std::vector<int>& faceIndexs, float angle_threshold);
+
+		trimesh::TriMesh* data();
 	protected:
+		std::shared_ptr<trimesh::TriMesh> m_mesh;
 		std::shared_ptr<MMeshT> innerMesh;
 	};
 }
