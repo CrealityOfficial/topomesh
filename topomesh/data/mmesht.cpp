@@ -81,7 +81,8 @@ namespace topomesh
 			{
 				for (int ffi = 0; ffi < currentMesh->across_edge[i].size(); ffi++)
 				{
-					this->faces[i].connect_face.push_back(&this->faces[currentMesh->across_edge[i][ffi]]);
+					if(currentMesh->across_edge[i][ffi] !=-1)
+						this->faces[i].connect_face.push_back(&this->faces[currentMesh->across_edge[i][ffi]]);
 				}
 			}
 		}
@@ -98,7 +99,7 @@ namespace topomesh
 			this->vertices.reserve(8192 * 10);
 		else
 			this->vertices.reserve((unsigned)(faces.size() * 8.5));*/
-		rememory(currentMesh->vertices.size(), currentMesh->faces.size());
+		rememory(faces.size()*2, faces.size());
 
 		std::vector<int> vertexIndex;
 		for (int i = 0; i < faces.size(); i++)

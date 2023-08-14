@@ -14,8 +14,8 @@ namespace topomesh {
 		//template <typename T>
 		kmeansClustering(T data,int centre_num = 2)
 		{
-			int data_num = data->rows();
-			int data_dim = data->cols();
+			int data_num = data.rows();
+			int data_dim = data.cols();
 			//Eigen::SparseMatrix<float> centre(data_num, data_dim);
 			std::vector<int> random_vec(data_num);
 			std::vector<int> seed;
@@ -33,8 +33,10 @@ namespace topomesh {
 			Eigen::MatrixXf centre_data(centre_num, data_dim);
 			for (int i = 0; i < centre_num; i++)
 			{
-				centre_data.row(i) = data->row(seed[i]);
+				centre_data.row(i) = data.row(10*i);
+				std::cout << "seed[i] : " << seed[i] << "\n";
 			}
+			
 
 			Eigen::MatrixXd k_mark(data_num, centre_num);
 			for (int i = 0; i < 10; i++)
@@ -45,9 +47,11 @@ namespace topomesh {
 				{
 					for (int n = 0; n < data_num; n++)
 					{
-						distance(n, c) = (data->row(n) - centre_data.row(c)).squaredNorm();
+						distance(n, c) = (data.row(n) - centre_data.row(c)).squaredNorm();
 					}
 				}
+				//std::cout <<"i :"<<i << " centre_data : \n" << centre_data << "\n";
+				//std::cout << "i :" << i << " distance : \n" << distance << "\n";
 				//std::vector<int> k_mark(data_num);
 				for (int n = 0; n < data_num; n++)
 				{
@@ -56,6 +60,7 @@ namespace topomesh {
 					//k_mark[n] = c;
 					k_mark(n, c) = 1;
 				}
+				//std::cout << "i :" << i << " k_mark : \n" << k_mark << "\n";
 				Eigen::VectorXf cluster = k_mark.colwise().sum().cast<float>();
 				for (int c = 0; c < centre_num; c++)
 				{
@@ -66,7 +71,7 @@ namespace topomesh {
 						{
 							if (k_mark(n, c) == 1)
 							{
-								t += data->row(n);
+								t += data.row(n);
 							}
 						}
 						centre_data.row(c) = t / cluster[c];

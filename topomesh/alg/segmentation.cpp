@@ -2,11 +2,13 @@
 #include "cmath"
 #include "floyd.h"
 #include "dijkstra.h"
+#include "topomesh/clustering/k-means.h"
 #include "utils.h"
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 #include<Eigen/Eigenvalues>
 #include "queue"
+
 
 
 
@@ -32,6 +34,7 @@ namespace topomesh {
 				if (halfedge_ptr->opposite == nullptr || halfedge_ptr->opposite->IsD())
 				{
 					halfedge_ptr->SetS();
+					halfedge_ptr = halfedge_ptr->next;
 					continue;
 				}
 				trimesh::point m = (halfedge_ptr->edge_vertex.first->p + halfedge_ptr->edge_vertex.second->p) / 2.f;
@@ -63,53 +66,124 @@ namespace topomesh {
 		std::vector<Tr> D_triplet;
 		for (MMeshHalfEdge& he : mesh->half_edge)
 		{
-			if (!he.IsS())
+			if (!he.IsS()&&he.attritube_vec.size()==2)
 			{
-				float value = _delta * (he.attritube_vec[0] * 1.f / (ave_geod_dist * 1.f))
-					+ (1.f - _delta) * (he.attritube_vec[1] * 1.f / (ave_ang_dist * 1.f));
+				/*std::cout << "face : " << he.indication_face->index << "to face : " << he.opposite->indication_face->index 
+					<< " distance : " << he.attritube_vec[0] << " angle : " << he.attritube_vec[1] << "\n";*/
+				/*float value = _delta * (he.attritube_vec[0] * 1.f / (ave_geod_dist * 1.f))
+					+ (1.f - _delta) * (he.attritube_vec[1] * 1.f / (ave_ang_dist * 1.f));*/
+				float value = he.attritube_vec[1]*50.f;
 				D_triplet.push_back(Tr(he.indication_face->index, he.opposite->indication_face->index, value));
 				he.SetS();
 			}
 		}
 		D.setFromTriplets(D_triplet.begin(),D_triplet.end());
-
+		//std::cout << "D : \n" << D << "\n";
 		/*topomesh::Dijkstra<Eigen::SparseMatrix<float>> dijk(D);
 		Eigen::SparseMatrix<float>  r = dijk.get_result();*/
 		/*topomesh::floyd<Eigen::SparseMatrix<float>> floyd(D);
 		Eigen::MatrixXf result = floyd.get_result();*/
 		//------- 矩阵太大，计算时间长
-		float sigma = D.sum() * 1.f / (1.f*std::pow(edge,2));
-		Eigen::SparseMatrix<float> W;
+	/*	float sigma = D.sum() * 1.f / (1.f*std::pow(edge,2));
+		Eigen::SparseMatrix<float> W(D.rows(), D.cols());
 		std::vector<Tr> W_triplet;
 		std::vector<Tr> diag_triplet;
 		for (int k = 0; k < D.outerSize(); ++k)
 			for (Eigen::SparseMatrix<float>::InnerIterator it(D, k); it; ++it)
 			{
 				float value = it.value();
+				std::cout << "before value : " << value << "\n";
 				value = std::exp((-1.f * value) / (2.f * std::pow(sigma, 2)));
+				std::cout << "value : " << value <<" row :"<<it.row()<<" col :"<< it.col() << "\n";
 				W_triplet.push_back(Tr(it.row(), it.col(), value));
 			}
 
-		W.setFromTriplets(W_triplet.begin(), W_triplet.end());
-		for (int i = 0; i < D.rows(); i++)
-			diag_triplet.push_back(Tr(i, i, 1));
-		W.setFromTriplets(diag_triplet.begin(), diag_triplet.end());
-		Eigen::VectorXf rowSums = W * Eigen::VectorXf::Ones(W.cols());
-		Eigen::SparseMatrix<float> LD;
+		W.setFromTriplets(W_triplet.begin(), W_triplet.end());		
+		std::cout << "W : \n" << W << "\n";*/
+		Eigen::SparseMatrix<float> LD(D.rows(), D.cols());
+		Eigen::VectorXf rowsum(D.rows());
+		rowsum.setZero();
 		std::vector<Tr> LD_triplet;
-		for (int i = 0; i < rowSums.size(); i++)
-			LD_triplet.push_back(Tr(i,i,rowSums(i)));
+		for (int i = 0; i < D.outerSize(); i++)
+		{
+			for (Eigen::SparseMatrix<float>::InnerIterator it(D, i); it; ++it) {
+				rowsum(it.row()) += it.value();
+				/*std::cout << "value : " << it.value() << " row :" << it.row() << " col :" << it.col() << "\n";
+				std::cout << "rowsum : " << rowsum(it.row()) << "\n";*/
+			}
+		}
+		for (int i = 0; i < rowsum.size(); i++)
+			LD_triplet.push_back(Tr(i,i,rowsum(i)));
 		LD.setFromTriplets(LD_triplet.begin(), LD_triplet.end());
-		Eigen::SparseMatrix<float> L;
-		L = ((((W*LD).pruned()).transpose()*LD).pruned()).transpose();
+		//std::cout << "LD : \n" << LD << "\n";
+		Eigen::SparseMatrix<float> L(D.rows(), D.cols());
+		L = LD - D;
+		//L = ((((W*LD).pruned()).transpose()*LD).pruned()).transpose();
 		
 		Eigen::SelfAdjointEigenSolver<Eigen::SparseMatrix<float>> es(L);
-		std::cout<<"vec : "<<es.eigenvectors()<<"\n";
+		//std::cout << "L : \n" << L << "\n";
+		//std::cout << "value : \n" << es.eigenvalues() << "\n";
+		//std::cout<<"vec : \n"<<es.eigenvectors()<<"\n";
+		//std::cout << "block : \n" << es.eigenvectors().block(0,1,L.rows(),3)<<"\n";
+		Eigen::MatrixXf block = es.eigenvectors().block(0, 1, L.rows(), 4);
+		result.resize(16);
+		for (int i = 0; i < block.rows(); i++)
+		{
+			int index = 0;
+			for (int j = 0; j < block.cols(); j++)
+			{
+				if (block(i, j) > 0)
+					index += std::pow(2, j);
+			}
+			result[index].push_back(i);
+		}
+		for (int i = 0; i < result.size(); i++)
+		{
+			if (result[i].empty())
+			{
+				result.erase(result.begin() + i); i--;
+			}
+		}
+		/*for (int i = 0; i < result.size(); i++)
+		{
+			for (int j = 0; j < result[i].size(); j++)
+				std::cout << "i : " << i << " j : " << result[i][j] << "\n";
+		}*/
+
+		/*topomesh::kmeansClustering<Eigen::MatrixXf> kmeans(block, 9);
+		this->result.resize(kmeans.get_result()->size());
+		for (int i = 0; i < kmeans.get_result()->size(); i++)
+		{
+			for (int j = 0; j < kmeans.get_result()->at(i).size(); j++)
+			{
+				std::cout << "i : " << i << " j : " << kmeans.get_result()->at(i).at(j) << "\n";
+				this->result[i].push_back(kmeans.get_result()->at(i).at(j));
+			}
+		}*/
+		
 	}
-
-
+	
 	void SpectralClusteringCuts::BlockSpectralClusteringCuts(MMeshT* mesh)
-	{
+	{		
+		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		if (!mesh->is_HalfEdge()) mesh->init_halfedge();
+		for (MMeshHalfEdge& he : mesh->half_edge)
+		{
+			if (he.opposite == nullptr || he.opposite->IsD()) continue;
+			float angle = he.indication_face->dihedral(he.opposite->indication_face);
+			if (angle < 120)
+			{
+				he.indication_face->SetS();
+				he.opposite->indication_face->SetS();
+			}
+		}
+		topomesh::FacePatch path;
+		for (MMeshFace& f : mesh->faces)
+			if (f.IsS())
+				path.push_back(f.index);
+
+		result.push_back(path);
+		return;
 		//还没所有清除标记位
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		//if (!mesh->is_HalfEdge()) mesh->init_halfedge();
@@ -119,19 +193,36 @@ namespace topomesh {
 		{
 			if (f.IsV()) continue;
 			topomesh::FacePatch path;
-			findNeighborFacesOfSameAsNormal(mesh,f.index,path,10.f,true);
+			findNeighborFacesOfConsecutive(mesh,f.index,path,8.0f,true);
 			for (int i : path)
 			{
 				mesh->faces[i].SetV();
 				mesh->faces[i].SetU(make_user);
 			}
-			make_user++;
-			result.push_back(path);
+			if (make_user < 65535)
+				make_user++;
+			//if(path.size()>10)
+				result.push_back(path);
 		}
-
-		/*for (MMeshHalfEdge& he : mesh->half_edge)
+		/*for (MMeshFace& f : mesh->faces)
 		{
-
+			f.ClearV();
+			int fuser = f.GetU();
+			if (fuser < 0) std::cout << " <0 " << f.index << "\n";
+			int sameuser = 0;
+			for (MMeshFace* ff : f.connect_face)
+			{
+				if (fuser != ff->GetU())
+					sameuser++;
+			}
+			if (sameuser == 3)
+				f.SetU(f.connect_face[0]->GetU());
+		}
+		result.resize(make_user - 1);
+		for (MMeshFace& f : mesh->faces)
+		{			
+			std::cout << "index: " <<f.index<<" user :"<<f.GetU()<<" result size : "<<result[f.GetU()].size() << "\n";
+			result[f.GetU()].push_back(f.index);
 		}*/
 #else
 		for (topomesh::MMeshHalfEdge& he : mesh->half_edge)
@@ -158,7 +249,30 @@ namespace topomesh {
 
 	void SpectralClusteringCuts::test()
 	{
-
+		Eigen::MatrixXf L(12,3);
+		L << -0.291691, -0.173686, 0.367083,
+			-0.286053, -0.175397, 0.370689,
+			-0.291229, 0.40508, -0.0331007,
+			-0.285586, 0.409053, -0.0334231,
+			-0.291525, -0.230866, -0.334235,
+			-0.285886, -0.233138, -0.337515,
+			0.291694, 0.173695, -0.367075,
+			0.286056, 0.175406, -0.370682,
+			0.291523, 0.230861, 0.334242,
+			0.285884, 0.233132, 0.337521,
+			0.291226, -0.405083, 0.0330848,
+			0.285583, -0.409055, 0.0334072;
+		topomesh::kmeansClustering<Eigen::MatrixXf> kmean(L, 6);
+		for (int i = 0; i < kmean.get_result()->size(); i++)
+		{
+			for (int j = 0; j < kmean.get_result()->at(i).size(); j++)
+			{
+				std::cout << "i : " << i << " j : " << kmean.get_result()->at(i).at(j) << "\n";
+			}
+		}
+		/*Eigen::SelfAdjointEigenSolver<Eigen::MatrixXf> es(L);
+		std::cout << "v : \n" << es.eigenvalues() << "\n";
+		std::cout << "vec : \n" << es.eigenvectors() << "\n";*/
 	}
 
 	Segmentation::Segmentation(trimesh::TriMesh* mesh)

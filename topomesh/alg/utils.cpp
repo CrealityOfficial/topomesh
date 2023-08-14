@@ -90,4 +90,38 @@ namespace topomesh
 		for (const int& i : clears)
 			mesh->faces[i].ClearS();
 	}
+
+	void findNeighborFacesOfConsecutive(MMeshT* mesh, int indicate, std::vector<int>& faceIndexs, float angle_threshold, bool vis)
+	{
+		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		std::vector<int> clears;
+		if (indicate >= mesh->faces.size() || mesh->faces[indicate].IsD()) return;
+		trimesh::point normal = mesh->faces[indicate].normal;
+		std::queue<int> queue;
+		queue.push(indicate);
+		while (!queue.empty())
+		{
+			faceIndexs.push_back(queue.front());
+			mesh->faces[queue.front()].SetS();
+			clears.push_back(mesh->faces[queue.front()].index);
+			bool is_pass = true;
+			for (int i = 0; i < mesh->faces[queue.front()].connect_face.size(); i++)
+			{
+				if (vis && mesh->faces[queue.front()].connect_face[i]->IsV()) continue;
+				if (!mesh->faces[queue.front()].connect_face[i]->IsS())
+				{
+					mesh->faces[queue.front()].connect_face[i]->SetS();
+					clears.push_back(mesh->faces[queue.front()].connect_face[i]->index);
+					float arc = trimesh::normalized(mesh->faces[queue.front()].normal) ^ trimesh::normalized(mesh->faces[queue.front()].connect_face[i]->normal);
+					arc = arc >= 1.f ? 1.f : arc;
+					arc = arc <= -1.f ? -1.f : arc;
+					if ((std::acos(arc) * 180 / M_PI) < angle_threshold)
+						queue.push(mesh->faces[queue.front()].connect_face[i]->index);
+				}				
+			}
+			queue.pop();
+		}
+		for (const int& i : clears)
+			mesh->faces[i].ClearS();
+	}
 }
