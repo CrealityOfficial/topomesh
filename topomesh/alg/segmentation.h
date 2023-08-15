@@ -39,6 +39,7 @@ namespace topomesh {
 
 	};
 
+	class ManualSegmentation;
 	class SegmentationGroup
 	{
 		friend class ManualSegmentation;
