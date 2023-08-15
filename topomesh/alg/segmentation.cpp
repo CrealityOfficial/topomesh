@@ -291,8 +291,8 @@ namespace topomesh {
 	{
 		std::vector<int> indices;
 		indices.push_back(index);
-		m_segmentation->replaceSeeds(indices, m_id);
-		return true;
+
+		return addSeeds(indices);
 	}
 
 	bool SegmentationGroup::addSeeds(const std::vector<int>& indices)
