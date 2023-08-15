@@ -275,48 +275,148 @@ namespace topomesh {
 		std::cout << "vec : \n" << es.eigenvectors() << "\n";*/
 	}
 
-	Segmentation::Segmentation(trimesh::TriMesh* mesh)
+	SegmentationGroup::SegmentationGroup(int id, ManualSegmentation* segmentation)
+		: m_segmentation(segmentation)
+		, m_id(id)
 	{
 
 	}
 
-	Segmentation::~Segmentation()
+	SegmentationGroup::~SegmentationGroup()
 	{
 
 	}
 
-	void Segmentation::autoSegment(int num)   // num  < 0 auto
+	bool SegmentationGroup::addSeed(int index)
 	{
-
+		std::vector<int> indices;
+		indices.push_back(index);
+		m_segmentation->replaceSeeds(indices, m_id);
+		return true;
 	}
+
+	bool SegmentationGroup::addSeeds(const std::vector<int>& indices)
+	{
+		for (int index : indices)
+		{
+			assert(m_segmentation->checkValid(index)
+				&& m_segmentation->checkEmpty(index));
+		}
+
+		m_segmentation->replaceSeeds(indices, m_id);
+		return true;
+	}
+
+	bool SegmentationGroup::removeSeed(int index)
+	{
+		assert(m_segmentation->checkValid(index)
+			&& m_segmentation->checkIn(index, m_id));
+
+		m_segmentation->removeSeed(index, m_id);
+		return true;
+	}
+
+	ManualSegmentation::ManualSegmentation(TopoTriMeshPtr mesh)
+		: m_mesh(mesh)
+		, m_debugger(nullptr)
+		, m_usedGroupId(0)
+	{
+		m_faceSize = (int)m_mesh->faces.size();
+		m_groupMap.resize(m_faceSize, -1);
+	}
+
+	ManualSegmentation::~ManualSegmentation()
+	{
+		for (SegmentationGroup* group : m_groups)
+			delete group;
+
+		m_groups.clear();
+	}
+
+	void ManualSegmentation::setDebugger(ManualSegmentationDebugger* debugger)
+	{
+		m_debugger = debugger;
+	}
+
 	//
-	int Segmentation::createGroup()
+	SegmentationGroup* ManualSegmentation::addGroup()
 	{
-		return -1;
+		SegmentationGroup* group = new SegmentationGroup(m_usedGroupId, this);
+		m_groups.push_back(group);
+
+		++m_usedGroupId;
+		return group;
 	}
 
-	void Segmentation::removeGroup(int index)
+	void ManualSegmentation::removeGroup(SegmentationGroup* group)
+	{
+		if (!group)
+			return;
+
+		std::vector<SegmentationGroup*>::iterator it = std::find(m_groups.begin(), m_groups.end(), group);
+		if (it != m_groups.end())
+		{
+			int id = (*it)->m_id;
+			for (int& index : m_groupMap)
+			{
+				if (index == id)
+					index = -1;
+			}
+			m_groups.erase(it);
+		}
+
+		delete group;
+	}
+
+	SegmentationGroup* ManualSegmentation::checkIndex(int index)
+	{
+		if (!checkValid(index))
+			return nullptr;
+
+		int id = m_groupMap.at(index);
+		for (SegmentationGroup* group : m_groups)
+		{
+			if (group->m_id == id)
+				return group;
+		}
+		return nullptr;
+	}
+
+	void ManualSegmentation::segment()
 	{
 
 	}
 
-	void Segmentation::addSeed2Group(int groupIndex, int index)
+	bool ManualSegmentation::checkOther(int index, int groupID)
 	{
-
+		return m_groupMap.at(index) == -1 || m_groupMap.at(index) == groupID;
 	}
 
-	void Segmentation::addSeeds2Group(int groupIndex, const std::vector<int>& indices)
+	bool ManualSegmentation::checkEmpty(int index)
 	{
-
+		return m_groupMap.at(index) == -1;
 	}
 
-	void Segmentation::removeGroupSeed(int groupIndex, int index)
+	bool ManualSegmentation::checkIn(int index, int groupID)
 	{
-
+		return m_groupMap.at(index) == groupID;
 	}
 
-	const FacePatchs& Segmentation::currentPatches()
+	bool ManualSegmentation::checkValid(int index)
 	{
-		return m_patches;
+		return index >= 0 && index < m_faceSize;
+	}
+
+	void ManualSegmentation::replaceSeeds(const std::vector<int>& indices, int groupID)
+	{
+		for (int index : indices)
+		{
+			m_groupMap.at(index) = groupID;
+		}
+	}
+
+	void ManualSegmentation::removeSeed(int index, int groupID)
+	{
+		m_groupMap.at(index) = -1;
 	}
 }

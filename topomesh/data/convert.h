@@ -1,5 +1,6 @@
 #pragma once
 #include "trimesh2/TriMesh.h"
+#include <memory>
 
 namespace topomesh
 {
@@ -66,4 +67,6 @@ namespace topomesh
 
 	typedef std::vector<int> FacePatch;
 	typedef std::vector<FacePatch> FacePatchs;
+
+	typedef std::shared_ptr<trimesh::TriMesh> TopoTriMeshPtr;
 }

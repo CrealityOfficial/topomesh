@@ -1,6 +1,7 @@
 #pragma once
 #include "topomesh/data/convert.h"
 #include "topomesh/data/mmesht.h"
+#include <list>
 
 namespace topomesh {
 	class SpectralClusteringCuts
@@ -32,23 +33,57 @@ namespace topomesh {
 		ss_num
 	};*/
 
-	class Segmentation
+	class ManualSegmentationDebugger
 	{
 	public:
-		Segmentation(trimesh::TriMesh* mesh);
-		~Segmentation();
 
-		void autoSegment(int num);   // num  <= 0 auto
+	};
+
+	class SegmentationGroup
+	{
+		friend class ManualSegmentation;
+	public:
+		SegmentationGroup(int id, ManualSegmentation* segmentation);
+		~SegmentationGroup();
+
+		bool addSeed(int index);
+		bool addSeeds(const std::vector<int>& indices);
+		bool removeSeed(int index);
+	protected:
+		ManualSegmentation* m_segmentation;
+		int m_id;
+	};
+
+	class ManualSegmentation
+	{
+		friend class SegmentationGroup;
+	public:
+		ManualSegmentation(TopoTriMeshPtr mesh);
+		~ManualSegmentation();
+
+		void setDebugger(ManualSegmentationDebugger* debugger);
 
 		//seed
-		int createGroup();
-		void removeGroup(int index);
-		void addSeed2Group(int groupIndex, int index);
-		void addSeeds2Group(int groupIndex, const std::vector<int>& indices);
-		void removeGroupSeed(int groupIndex, int index);
+		SegmentationGroup* addGroup();
+		void removeGroup(SegmentationGroup* group);
 
-		const FacePatchs& currentPatches();
+		void segment();
+		SegmentationGroup* checkIndex(int index);
 	protected:
-		FacePatchs m_patches;
+		bool checkOther(int index, int groupID);
+		bool checkEmpty(int index);
+		bool checkIn(int index, int groupID);
+		bool checkValid(int index);
+
+		void replaceSeeds(const std::vector<int>& indices, int groupID);
+		void removeSeed(int index, int groupID);
+	protected:
+		int m_usedGroupId;
+		TopoTriMeshPtr m_mesh;
+		int m_faceSize;
+		std::vector<int> m_groupMap;
+		std::vector<SegmentationGroup*> m_groups;
+
+		ManualSegmentationDebugger* m_debugger;
 	};
 }
