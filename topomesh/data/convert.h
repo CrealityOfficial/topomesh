@@ -44,6 +44,15 @@ namespace topomesh
 
 	typedef std::vector<trimesh::vec3> TriPolygon;
 	typedef std::vector<TriPolygon> TriPolygons;
+    struct HexaPolygon {
+        TriPolygon poly;
+        trimesh::ivec3 coord;
+        std::vector<int> neighbors;
+        HexaPolygon() : neighbors(6, -1) {}
+    };
+    typedef std::vector<HexaPolygon> HexaPolygons;
+    TriPolygons convertFromHexaPolygons(const HexaPolygons& hexas);
+    HexaPolygons convertFromTriPolygons(const TriPolygons& polys, const trimesh::ivec3& coords);
 
 	struct SimpleCamera
 	{
