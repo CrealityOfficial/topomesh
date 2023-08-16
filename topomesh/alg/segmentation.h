@@ -20,6 +20,19 @@ namespace topomesh {
 		float _delta;
 		float _eta;
 	};
+
+	class InteractionCuts
+	{
+	public:
+		InteractionCuts() {};
+		InteractionCuts(MMeshT* mesh,std::vector<int> indication,float alpth,float delta);
+		~InteractionCuts() {};
+		std::vector<int>& get_result() { return result; }
+	private:
+		std::vector<int> result;
+		float _alpth;
+		float _delta;
+	};
 	
 	struct SegmentationParam
 	{
