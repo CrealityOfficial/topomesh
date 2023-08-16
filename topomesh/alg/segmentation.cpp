@@ -83,7 +83,7 @@ namespace topomesh {
 		Eigen::SparseMatrix<float>  r = dijk.get_result();*/
 		/*topomesh::floyd<Eigen::SparseMatrix<float>> floyd(D);
 		Eigen::MatrixXf result = floyd.get_result();*/
-		//------- ¾ØÕóÌ«´ó£¬¼ÆËãÊ±¼ä³¤
+		//------- ï¿½ï¿½ï¿½ï¿½Ì«ï¿½ó£¬¼ï¿½ï¿½ï¿½Ê±ï¿½ä³¤
 	/*	float sigma = D.sum() * 1.f / (1.f*std::pow(edge,2));
 		Eigen::SparseMatrix<float> W(D.rows(), D.cols());
 		std::vector<Tr> W_triplet;
@@ -164,36 +164,17 @@ namespace topomesh {
 	}
 	
 	void SpectralClusteringCuts::BlockSpectralClusteringCuts(MMeshT* mesh)
-	{		
-		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
-		if (!mesh->is_HalfEdge()) mesh->init_halfedge();
-		for (MMeshHalfEdge& he : mesh->half_edge)
-		{
-			if (he.opposite == nullptr || he.opposite->IsD()) continue;
-			float angle = he.indication_face->dihedral(he.opposite->indication_face);
-			if (angle < 120)
-			{
-				he.indication_face->SetS();
-				he.opposite->indication_face->SetS();
-			}
-		}
-		topomesh::FacePatch path;
-		for (MMeshFace& f : mesh->faces)
-			if (f.IsS())
-				path.push_back(f.index);
-
-		result.push_back(path);
-		return;
-		//»¹Ã»ËùÓÐÇå³ý±ê¼ÇÎ»
+	{				
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		//if (!mesh->is_HalfEdge()) mesh->init_halfedge();
-#if 1
+#if 1				
+		std::vector<topomesh::FacePatch> container;
 		int make_user = 1;//user <=65536
 		for (MMeshFace& f : mesh->faces)
 		{
 			if (f.IsV()) continue;
 			topomesh::FacePatch path;
-			findNeighborFacesOfConsecutive(mesh,f.index,path,8.0f,true);
+			findNeighborFacesOfConsecutive(mesh,f.index,path,7.0f,true);
 			for (int i : path)
 			{
 				mesh->faces[i].SetV();
@@ -201,29 +182,69 @@ namespace topomesh {
 			}
 			if (make_user < 65535)
 				make_user++;
-			//if(path.size()>10)
-				result.push_back(path);
-		}
-		/*for (MMeshFace& f : mesh->faces)
+			container.push_back(path);
+			//result.push_back(path);
+		}	
+		for (int i = 0; i < container.size(); i++)
 		{
-			f.ClearV();
-			int fuser = f.GetU();
-			if (fuser < 0) std::cout << " <0 " << f.index << "\n";
-			int sameuser = 0;
-			for (MMeshFace* ff : f.connect_face)
-			{
-				if (fuser != ff->GetU())
-					sameuser++;
+			if (container[i].size() <28)//ï¿½Ã±ï¿½ï¿½ï¿½ï¿½ï¿½Ïµ
+			{				
+				for (int j = 0; j < container[i].size(); j++)
+				{
+					mesh->faces[container[i][j]].SetM();
+				}				
 			}
-			if (sameuser == 3)
-				f.SetU(f.connect_face[0]->GetU());
 		}
-		result.resize(make_user - 1);
+	
+		for (MMeshFace& f : mesh->faces)
+		{
+			if (f.IsM()&&!f.IsS())
+			{
+				int user=-1;
+				std::vector<int> changeuser;
+				std::queue<int> que;
+				que.push(f.index);
+				while (!que.empty())
+				{
+					mesh->faces[que.front()].SetS();
+					for (MMeshFace* ff : mesh->faces[que.front()].connect_face)
+					{
+						if (!ff->IsS())
+						{
+							ff->SetS();
+							if (ff->IsM())
+								que.push(ff->index);
+							else
+								user = ff->GetU();
+						}
+					}
+					changeuser.push_back(que.front());
+					que.pop();
+				}
+				if(user!=-1)
+					for (int i = 0; i < changeuser.size(); i++)
+					{
+						mesh->faces[changeuser[i]].SetU(user);
+					}
+
+			}
+		}
+		result.resize(make_user );
 		for (MMeshFace& f : mesh->faces)
 		{			
-			std::cout << "index: " <<f.index<<" user :"<<f.GetU()<<" result size : "<<result[f.GetU()].size() << "\n";
-			result[f.GetU()].push_back(f.index);
-		}*/
+			result[f.GetU() - 1].push_back(f.index);
+		}
+		for (int i = 0; i < result.size(); i++)
+		{
+			if (result[i].empty())
+			{
+				result.erase(result.begin() + i);
+				i--;
+			}
+		}
+
+		for (MMeshFace& f : mesh->faces)
+			f.ClearALL();
 #else
 		for (topomesh::MMeshHalfEdge& he : mesh->half_edge)
 		{
@@ -275,9 +296,57 @@ namespace topomesh {
 		std::cout << "vec : \n" << es.eigenvectors() << "\n";*/
 	}
 
+	
+	InteractionCuts::InteractionCuts(MMeshT* mesh, std::vector<int> indication, float alpth, float delta) :_alpth(alpth), _delta(delta)
+	{
+		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
+		for (int i = 0; i < indication.size(); i++)
+		{
+			std::vector<int> container = { indication[i] };
+			std::vector<int> next_container;
+			int score = 18000;
+			mesh->faces[container[0]].SetU(score);
+			while (!container.empty())
+			{
+				for (int j = 0; j < container.size(); j++)
+				{
+					MMeshFace& f = mesh->faces[container[j]];
+					f.SetS();
+					for (MMeshFace* ff : f.connect_face)if(!ff->IsS())
+					{
+						ff->SetS();
+						float angle = f.dihedral(ff);
+						int new_score = f.GetU()-10;
+						if (angle >= 180)
+							new_score = new_score - _alpth*(angle - 180.f)*1.f/180.f ;
+						else
+							new_score = new_score - _delta * (angle - 180.f) * 1.f / 180.f;
+						ff->SetU(new_score);
+						next_container.push_back(ff->index);
+					}
+				}
+				container.clear();
+				container.swap(next_container);
+			}
+			for (MMeshFace& f : mesh->faces)
+				f.ClearS();
+		}
+		for (MMeshFace& f : mesh->faces)
+		{
+			if (f.GetU() > 8000)
+				result.push_back(f.index);
+		}
+	}
+
 	SegmentationGroup::SegmentationGroup(int id, ManualSegmentation* segmentation)
-		: m_segmentation(segmentation)
-		, m_id(id)
+			: m_segmentation(segmentation)
+			, m_id(id)
+	{
+		
+	}	
+
+
+	Segmentation::Segmentation(trimesh::TriMesh* mesh)
 	{
 
 	}
