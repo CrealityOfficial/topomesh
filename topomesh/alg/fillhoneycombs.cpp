@@ -503,6 +503,22 @@ namespace topomesh {
         }
         return;
     }
+
+    TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index)
+    {
+        topomesh::TriPolygons polys;
+        if (index >= 0 && index < (hexas.size()))             {
+            const auto& neighbors = hexas.at(index).neighbors;
+            int nums = neighbors.size();
+            polys.reserve(nums);
+            for (int i = 0; i < nums; ++i) {
+                if (neighbors[i] >= 0)
+                    polys.emplace_back(hexas.at(neighbors[i]).poly);
+            }
+        }
+        return polys;
+    }
+
 	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir ,
 		trimesh::vec2 arrayDir, double honeyCombRadius , double nestWidth , double shellThickness)
 	{

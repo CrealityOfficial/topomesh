@@ -38,6 +38,7 @@ namespace topomesh {
     };
     HexaPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
     void GenerateHexagonNeighbors(HexaPolygons& hexas);
+    TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
 
 	class MMeshT;
 	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir=trimesh::vec3(0,0,1),
