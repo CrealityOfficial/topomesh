@@ -28,7 +28,7 @@ namespace topomesh {
     };
     HexDirection hex_neighbor(const trimesh::ivec3& va, const trimesh::ivec3& vb)
     {
-        const trimesh::ivec3& hex = va - vb;
+        const trimesh::ivec3& hex = vb - va;
         const int dist = int(abs(hex.x) + abs(hex.y) + abs(hex.z));
         if (dist == 2) {
             if (hex.x == 1) {
@@ -504,6 +504,15 @@ namespace topomesh {
         return;
     }
 
+    TriPolygons traitCurrentPolygons(const HexaPolygons& hexas, int index)
+    {
+        topomesh::TriPolygons polys;
+        if (index >= 0 && index < (hexas.size())) {
+            polys.emplace_back(hexas[index].poly);
+        }
+        return polys;
+    }
+
     TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index)
     {
         topomesh::TriPolygons polys;
@@ -514,6 +523,21 @@ namespace topomesh {
             for (int i = 0; i < nums; ++i) {
                 if (neighbors[i] >= 0)
                     polys.emplace_back(hexas.at(neighbors[i]).poly);
+            }
+        }
+        return polys;
+    }
+
+    TriPolygons traitDirctionPolygons(const HexaPolygons& hexas, int index, int dir)
+    {
+        topomesh::TriPolygons polys;
+        if (index >= 0 && index < (hexas.size())) {
+            if (dir >= 0 && dir <= 6) {
+                const auto& neighbors = hexas.at(index).neighbors;
+                int val = neighbors[dir];
+                if (val >= 0) {
+                    polys.emplace_back(hexas[val].poly);
+                }
             }
         }
         return polys;
