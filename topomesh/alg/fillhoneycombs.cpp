@@ -528,11 +528,11 @@ namespace topomesh {
         return polys;
     }
 
-    TriPolygons traitDirctionPolygons(const HexaPolygons& hexas, int index, int dir)
+    TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir)
     {
         topomesh::TriPolygons polys;
         if (index >= 0 && index < (hexas.size())) {
-            if (dir >= 0 && dir <= 6) {
+            if (dir >= 0 && dir <= 5) {
                 const auto& neighbors = hexas.at(index).neighbors;
                 int val = neighbors[dir];
                 if (val >= 0) {
