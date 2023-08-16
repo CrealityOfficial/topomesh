@@ -32,7 +32,7 @@ namespace topomesh
 			MF_MARKED = 0x00002000,
 			MF_USER = 0xffff0000
 		};
-		int flag = 0;
+		unsigned int flag = 0;
 	public:
 		MMeshHalfEdge* f_mhe = nullptr;
 		trimesh::point normal;
@@ -73,10 +73,10 @@ namespace topomesh
 		inline bool IsM() { return (MF_MARKED & flag) != 0 ? 1 : 0; }
 		inline void ClearM() { flag &= ~MF_MARKED; }
 
-		inline bool SetU(int user) { if (user > 65536) return false; flag &= ~MF_USER; int copy = user << 16; flag |= copy; return true; }
+		inline bool SetU(int user) { if (user > 65535) return false; flag &= ~MF_USER; int copy = user << 16; flag |= copy; return true; }
 		inline bool IsU(int i) { int copy = flag & MF_USER; copy = copy >> 16; if (i == copy)return true; return false; }
 		inline void ClearU() { flag &= ~MF_USER; }
-		inline int GetU() { int copy = flag & MF_USER; copy = copy >> 16; return copy; }
+		inline int GetU() { unsigned int copy = flag & MF_USER; copy = copy >> 16; return copy; }
 
 		inline void ClearALL() { flag &= MF_DELETED; }
 

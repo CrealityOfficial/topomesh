@@ -266,7 +266,7 @@ namespace topomesh
 			this->faces.reserve(80960);
 			return;
 		}
-		int begin_size = 8096;
+		/*int begin_size = 8096;
 		int scale = 10;
 		int vu = std::pow(10, (int)std::log10(v_size));
 		int fu = std::pow(10, (int)std::log10(f_size));
@@ -276,6 +276,20 @@ namespace topomesh
 		new_f_size = new_f_size < 0.03f ? 0.03f : new_f_size;
 		int size_v = new_v_size * v_size;
 		int szie_f = new_f_size * f_size;
+		this->vertices.reserve(size_v);
+		this->faces.reserve(szie_f);*/
+		int size_v = 2.5 * v_size;
+		int szie_f = 2.5 * f_size;
+		if (f_size > 3000000)
+		{
+			size_v = 1.5 * v_size;
+			szie_f = 1.5 * f_size;
+		}
+		if (f_size > 6000000)
+		{
+			size_v = 1.25 * v_size;
+			szie_f = 1.25 * f_size;
+		}
 		this->vertices.reserve(size_v);
 		this->faces.reserve(szie_f);
 	}

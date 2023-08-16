@@ -8,6 +8,7 @@
 #include "Eigen/Sparse"
 #include<Eigen/Eigenvalues>
 #include "queue"
+#include "set"
 
 
 
@@ -172,9 +173,10 @@ namespace topomesh {
 		int make_user = 1;//user <=65536
 		for (MMeshFace& f : mesh->faces)
 		{
+			int user = f.GetU();			
 			if (f.IsV()) continue;
 			topomesh::FacePatch path;
-			findNeighborFacesOfConsecutive(mesh,f.index,path,7.0f,true);
+			findNeighborFacesOfConsecutive(mesh,f.index,path,2.5f,true);
 			for (int i : path)
 			{
 				mesh->faces[i].SetV();
@@ -184,67 +186,83 @@ namespace topomesh {
 				make_user++;
 			container.push_back(path);
 			//result.push_back(path);
-		}	
+		}
+		if (container.size() < 1000)
+		{
+			result.swap(container);
+			return;
+		}
+		std::vector<std::set<unsigned int>> block_neighbor(container.size());
+		std::vector<trimesh::point> block_ave_normal(container.size());
 		for (int i = 0; i < container.size(); i++)
 		{
-			if (container[i].size() <28)//�ñ�����ϵ
-			{				
-				for (int j = 0; j < container[i].size(); j++)
-				{
-					mesh->faces[container[i][j]].SetM();
-				}				
-			}
-		}
-	
-		for (MMeshFace& f : mesh->faces)
-		{
-			if (f.IsM()&&!f.IsS())
+			trimesh::point ave_normal(0, 0, 0);
+			for (int j = 0; j < container[i].size(); j++)
 			{
-				int user=-1;
-				std::vector<int> changeuser;
-				std::queue<int> que;
-				que.push(f.index);
-				while (!que.empty())
+				MMeshFace& f = mesh->faces[container[i][j]];
+				ave_normal += f.normal;
+				for (MMeshFace* ff : f.connect_face)
 				{
-					mesh->faces[que.front()].SetS();
-					for (MMeshFace* ff : mesh->faces[que.front()].connect_face)
+					unsigned int user = (unsigned int)ff->GetU();
+					if (user != i + 1)
 					{
-						if (!ff->IsS())
-						{
-							ff->SetS();
-							if (ff->IsM())
-								que.push(ff->index);
-							else
-								user = ff->GetU();
-						}
+						block_neighbor[i].emplace(user);
 					}
-					changeuser.push_back(que.front());
-					que.pop();
 				}
-				if(user!=-1)
-					for (int i = 0; i < changeuser.size(); i++)
+			}
+			ave_normal = (ave_normal * 1.f) / (container[i].size() * 1.f);
+			block_ave_normal[i] = ave_normal;
+		}
+		std::vector<std::vector<int>> new_block;
+		for (int i = 0; i < block_ave_normal.size(); i++)
+		{
+			bool pass = true;
+			for(int j=0;j<new_block.size();j++)
+				for (int k = 0; k < new_block[j].size(); k++)
+				{
+					if (i == new_block[j][k])
 					{
-						mesh->faces[changeuser[i]].SetU(user);
+						pass = false;
+						goto next1;
 					}
+				}
+		next1:
+			if (!pass)
+				continue;
+			trimesh::point this_normal = block_ave_normal[i];
+			for (std::set<unsigned int>::iterator itr = block_neighbor[i].begin();itr!=block_neighbor[i].end();++itr)
+			{
+				trimesh::point neighbor_normal = block_ave_normal[*itr];
+				float ang = trimesh::normalized(this_normal)^trimesh::normalized(neighbor_normal);
+				ang = ang >= 1.f ? 1.f : ang;
+				ang = ang <= -1.f ? -1.f : ang;
+				if (ang < 5.f)
+				{
 
+				}
 			}
 		}
-		result.resize(make_user );
+
+
+		/*for (int i = 0; i < container.size(); i++)
+			if (container[i].size() == 1)
+				mesh->faces[container[i][0]].SetM();
+		for (int i = 0; i < container.size(); i++)
+			if (container[i].size() == 1)
+				for (MMeshFace* ff : mesh->faces[container[i][0]].connect_face)
+					if (!ff->IsM())
+						mesh->faces[container[i][0]].SetU((unsigned int)ff->GetU());
+		result.resize(make_user--);
 		for (MMeshFace& f : mesh->faces)
 		{			
-			result[f.GetU() - 1].push_back(f.index);
+			result[(unsigned int)f.GetU()].push_back(f.index);
+			f.ClearALL();
 		}
-		for (int i = 0; i < result.size(); i++)
-		{
+		for(int i=0;i< result.size();i++)
 			if (result[i].empty())
 			{
-				result.erase(result.begin() + i);
-				i--;
-			}
-		}
-
-		for (MMeshFace& f : mesh->faces)
-			f.ClearALL();
+				result.erase(result.begin() + i); i--;
+			}*/
 #else
 		for (topomesh::MMeshHalfEdge& he : mesh->half_edge)
 		{
@@ -346,10 +364,10 @@ namespace topomesh {
 	}	
 
 
-	Segmentation::Segmentation(trimesh::TriMesh* mesh)
+	/*Segmentation::Segmentation(trimesh::TriMesh* mesh)
 	{
 
-	}
+	}*/
 
 	SegmentationGroup::~SegmentationGroup()
 	{
