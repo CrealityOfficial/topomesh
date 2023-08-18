@@ -11,11 +11,14 @@ namespace topomesh {
 	{
 	public:
 		LaplacianMatrix() {};
+		LaplacianMatrix(const std::vector<std::vector<std::pair<int,float>>>& data);
 		LaplacianMatrix(MMeshT* mesh,bool weight=false);
 		~LaplacianMatrix() {};
 
-		void userDefinedMatrix(const int row, const int col);
+		
 		void normalzationLaplacian();
+		void EigenvectorSolver();
+		void selectEigenVector(int indication ,std::vector<int>& result);
 
 		inline const Eigen::SparseMatrix<float>* getLaplacianPtr() { return &L; };
 		inline const Eigen::SparseMatrix<float>* getNormalizationLaplacianPtr() { return &NL; };
@@ -29,5 +32,6 @@ namespace topomesh {
 		Eigen::SparseMatrix<float>  NL;
 		Eigen::SparseMatrix<float>  Lsym;
 		Eigen::SparseMatrix<float>  Lrw;
+		Eigen::MatrixXf EigenVector;
 	};
 }

@@ -3,6 +3,7 @@
 #include "floyd.h"
 #include "dijkstra.h"
 #include "topomesh/clustering/k-means.h"
+#include "laplacian.h"
 #include "utils.h"
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
@@ -11,6 +12,16 @@
 #include "set"
 
 
+struct Patch
+{
+	Patch() {};
+	Patch(std::vector<int>& faces) { inner = faces; }
+	int index;
+	bool select=false;
+	std::vector<int> inner;//对于基本块
+	trimesh::point normal;
+	std::set<int> neighbor;//对于本层块
+};
 
 
 namespace topomesh {
@@ -169,28 +180,219 @@ namespace topomesh {
 		if (!mesh->is_FaceNormals()) mesh->getFacesNormals();
 		//if (!mesh->is_HalfEdge()) mesh->init_halfedge();
 #if 1				
-		std::vector<topomesh::FacePatch> container;
-		int make_user = 1;//user <=65536
+		std::vector<std::vector<int>> container;
+		int index = 1;
+		int threshold = mesh->faces.size() / 1000;		
+		std::vector<int> other_faces;
+		other_faces.reserve(mesh->faces.size());
+		std::vector<float> faces_area(mesh->faces.size());
+		float surface_area = 0.f;
+		for (MMeshFace& f : mesh->faces)
+		{					
+			float area=mesh->det(f.index);
+			surface_area += area;
+			faces_area[f.index] = area;
+			if (f.IsV()) continue;
+			std::vector<int> patch;
+			findNeighborFacesOfConsecutive(mesh,f.index, patch,3.f,true);			
+			//if(false)
+			if (patch.size() < threshold)
+			{								
+				for (int i : patch)
+				{
+					mesh->faces[i].SetV();					
+					//other_faces.emplace_back(i);					
+				}	
+				container.push_back(patch);
+				//other_faces.insert(other_faces.end(), patch.begin(), patch.end());			
+			}
+			else
+			{
+				for (int i : patch)
+				{
+					mesh->faces[i].SetV();
+					mesh->faces[i].SetU(index);	
+				}
+				index++;
+			}		
+			//container.push_back(patch);
+			//result.push_back(patch);
+		}		
+
+		float ave_area = surface_area / 1000.f;
+		for (int i = 0; i < container.size(); i++)
+		{
+			float block_area = 0.0f;
+			for (int j = 0; j < container[i].size(); j++)
+			{
+				block_area += faces_area[container[i][j]];
+			}
+			if (block_area > ave_area)
+			{
+				for (int j = 0; j < container[i].size(); j++)
+					mesh->faces[container[i][j]].SetU(index);
+				index++;
+			}
+			else
+			{
+				other_faces.insert(other_faces.end(), container[i].begin(), container[i].end());
+			}
+		}
+
+		std::vector<int> mark(other_faces.size(),0);
+		int mark_all = 0;
+		while (mark_all<other_faces.size())
+		{
+			for (int i = 0; i < other_faces.size(); i++)
+			{
+				mesh->faces[other_faces[i]].ClearV();
+				if (mark[i]) continue;
+				for (MMeshFace* f : mesh->faces[other_faces[i]].connect_face)
+				{
+					if (f->GetU() > 0)
+					{
+						float ang = trimesh::normalized(mesh->faces[other_faces[i]].normal) ^ trimesh::normalized(f->normal);
+						ang = ang >= 1.f ? 1.f : ang;
+						ang = ang <= -1.f ? -1.f : ang;
+						float arc = (std::acos(ang) * 180 / M_PI);
+						if (arc<10.f)
+						{
+							mesh->faces[other_faces[i]].SetU(f->GetU());
+							mark_all++;
+							break;
+						}
+					}
+				}
+			}
+		}
 		for (MMeshFace& f : mesh->faces)
 		{
-			int user = f.GetU();			
-			if (f.IsV()) continue;
-			topomesh::FacePatch path;
-			findNeighborFacesOfConsecutive(mesh,f.index,path,2.5f,true);
-			for (int i : path)
+			if (f.GetU() == 0&&!f.IsV())
 			{
-				mesh->faces[i].SetV();
-				mesh->faces[i].SetU(make_user);
+				std::vector<int> patch;
+				findNeighborFacesOfConsecutive(mesh, f.index, patch, 30.f, true);
+				for (int i : patch)
+				{
+					mesh->faces[i].SetV();
+					mesh->faces[i].SetU(index);
+				}
+				index++;
 			}
-			if (make_user < 65535)
-				make_user++;
-			container.push_back(path);
-			//result.push_back(path);
 		}
-		if (container.size() < 1000)
+		container.clear();
+		//container.resize(index - 1);
+		result.resize(index-1);	
+		for (MMeshFace& f : mesh->faces)
+		{						
+			result[f.GetU()-1].push_back(f.index);
+			//container[f.GetU() - 1].push_back(f.index);
+		}
+		return;
+		std::vector<std::set<int>> patch_neighbor(container.size());
+		std::vector<trimesh::point> patch_normal(container.size());
+		for (int i = 0; i < container.size(); i++)
 		{
-			result.swap(container);
-			return;
+			trimesh::point normal(0,0,0);
+			for (int j = 0; j < container[i].size(); j++)
+			{
+				normal += mesh->faces[container[i][j]].normal;
+				for(MMeshFace* f :mesh->faces[container[i][j]].connect_face)
+					if (f->GetU() != i + 1)
+					{
+						patch_neighbor[i].emplace(f->GetU() - 1);
+					}
+			}
+			normal /= (container[i].size()*1.f);
+			patch_normal[i] = normal;
+		}
+		std::vector<std::vector<std::pair<int, float>>> data;
+		for (int i = 0; i < patch_neighbor.size(); i++)
+		{
+			std::vector<std::pair<int, float>> node;
+			for (std::set<int>::iterator itr = patch_neighbor[i].begin(); itr != patch_neighbor[i].end(); itr++)
+			{
+				float ang = trimesh::normalized(patch_normal[i]) ^ trimesh::normalized(patch_normal[*itr]);
+				ang = ang >= 1.f ? 1.f : ang;
+				ang = ang <= -1.f ? -1.f : ang;
+				//float arc = (std::acos(ang) * 180 / M_PI);
+				float arc = 100.f * (1.f - std::cos(ang));
+				node.push_back(std::make_pair(*itr, arc));
+			}
+			data.push_back(node);
+		}
+		int indica = mesh->faces[304832].GetU() - 1;
+		LaplacianMatrix lapMatrix(data);
+		lapMatrix.EigenvectorSolver();
+		
+		std::vector<int> data_result;
+		lapMatrix.selectEigenVector(indica, data_result);
+
+		result.resize(1);
+		if (!data_result.empty())
+		{
+			for (int i = 0; i < data_result.size(); i++)
+				result[0].insert(result[0].end(), container[data_result[i]].begin(), container[data_result[i]].end());
+		}
+		return;
+		
+		std::vector<Patch> Patchcontainer;
+		for (int i = 0; i < container.size(); i++)
+		{						
+			Patch ph;
+			ph.index = i;
+			ph.inner.push_back(i);
+			trimesh::point normal(0, 0, 0);
+			for (int j = 0; j < container[i].size(); j++)
+			{
+				MMeshFace& f = mesh->faces[container[i][j]];
+				normal += f.normal;
+				for (MMeshFace* ff : f.connect_face)
+				{
+					if (ff->GetU() != i)
+						ph.neighbor.emplace(ff->GetU());
+				}
+			}
+			normal /= (container[i].size() * 1.f);
+			ph.normal = normal;
+			Patchcontainer.push_back(ph);
+		}
+
+		while (Patchcontainer.size()>5000)
+		{
+			std::vector<Patch> new_patchcontainer;
+			int index = 0;
+			for (int i = 0; i < Patchcontainer.size(); i++)
+			{
+				Patch& ph = Patchcontainer[i];
+				if (ph.select) continue;
+				ph.select = true;
+				Patch np;
+				np.index = index++;
+				for (int j = 0; j < ph.inner.size(); j++)
+					np.inner.push_back(ph.inner[j]);
+				trimesh::point normal=ph.normal;
+				int is_neig = 1;
+				for (std::set<int>::iterator itr = ph.neighbor.begin(); itr != ph.neighbor.end(); itr++)
+				{
+					float ang = trimesh::normalized(ph.normal)^trimesh::normalized(Patchcontainer[*itr].normal);
+					ang = ang >= 1.f ? 1.f : ang;
+					ang = ang <= -1.f ? -1.f : ang;
+					if ((std::acos(ang) * 180 / M_PI) < (10.f))
+					{
+						Patchcontainer[*itr].select = true;
+						normal += Patchcontainer[*itr].normal;
+						is_neig++;
+						for (int j = 0; j < Patchcontainer[*itr].inner.size(); j++)
+						{
+							np.inner.push_back(Patchcontainer[*itr].inner[j]);
+						}
+					}
+				}
+				normal /= (is_neig * 1.f);
+				np.normal = normal;
+				new_patchcontainer.push_back(np);
+			}
+
 		}
 		std::vector<std::set<unsigned int>> block_neighbor(container.size());
 		std::vector<trimesh::point> block_ave_normal(container.size());
@@ -204,7 +406,7 @@ namespace topomesh {
 				for (MMeshFace* ff : f.connect_face)
 				{
 					unsigned int user = (unsigned int)ff->GetU();
-					if (user != i + 1)
+					if (user != i)
 					{
 						block_neighbor[i].emplace(user);
 					}
@@ -212,38 +414,60 @@ namespace topomesh {
 			}
 			ave_normal = (ave_normal * 1.f) / (container[i].size() * 1.f);
 			block_ave_normal[i] = ave_normal;
-		}
-		std::vector<std::vector<int>> new_block;
-		for (int i = 0; i < block_ave_normal.size(); i++)
+		}		
+	
+		int scale = 1;
+		while (container.size() > 5000)
 		{
-			bool pass = true;
-			for(int j=0;j<new_block.size();j++)
-				for (int k = 0; k < new_block[j].size(); k++)
+			scale++;
+			std::vector<trimesh::point> block_normal(container.size());
+			for (int i = 0; i < container.size(); i++)
+			{
+				trimesh::point ave_normal(0, 0, 0);				
+				for (int j = 0; j < container[i].size(); j++)
+				{					
+					ave_normal += block_ave_normal[container[i][j]];
+				}
+				ave_normal /= (container[i].size() * 1.f);
+				block_normal[i] = ave_normal;
+			}
+			std::vector<std::vector<int>> temp_container;
+			std::vector<int> is_pass(container.size(), 0);
+			for (int i = 0; i < container.size(); i++)
+			{
+				if (is_pass[i]) continue;
+
+			}
+
+
+			for (int i = 0; i < container.size(); i++)
+			{
+				if (is_pass[i]) continue;
+				is_pass[i] = 1;
+				std::vector<int> block = { i };
+				trimesh::point this_normal = block_ave_normal[i];
+				for (std::set<unsigned int>::iterator itr = block_neighbor[i].begin(); itr != block_neighbor[i].end(); itr++)
 				{
-					if (i == new_block[j][k])
+					trimesh::point neighbor_normal = block_ave_normal[*itr];
+					float ang = trimesh::normalized(this_normal) ^ trimesh::normalized(neighbor_normal);
+					ang = ang >= 1.f ? 1.f : ang;
+					ang = ang <= -1.f ? -1.f : ang;
+					if ((std::acos(ang) * 180 / M_PI) < (8.f+ scale*2.0f))
 					{
-						pass = false;
-						goto next1;
+						block.push_back(*itr);
+						is_pass[*itr] = 1;
 					}
 				}
-		next1:
-			if (!pass)
-				continue;
-			trimesh::point this_normal = block_ave_normal[i];
-			for (std::set<unsigned int>::iterator itr = block_neighbor[i].begin();itr!=block_neighbor[i].end();++itr)
-			{
-				trimesh::point neighbor_normal = block_ave_normal[*itr];
-				float ang = trimesh::normalized(this_normal)^trimesh::normalized(neighbor_normal);
-				ang = ang >= 1.f ? 1.f : ang;
-				ang = ang <= -1.f ? -1.f : ang;
-				if (ang < 5.f)
+				std::vector<int> new_block(container[i]);
+				for (int j = 0; j < block.size(); j++)
 				{
-
+					std::move(container[block[j]].begin(), container[block[j]].end(), std::back_inserter(new_block));
 				}
+				container.push_back(new_block);
 			}
+			container.swap(container);
 		}
-
-
+		result.swap(container);
 		/*for (int i = 0; i < container.size(); i++)
 			if (container[i].size() == 1)
 				mesh->faces[container[i][0]].SetM();

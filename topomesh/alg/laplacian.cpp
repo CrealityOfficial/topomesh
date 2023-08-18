@@ -1,4 +1,5 @@
 #include "laplacian.h"
+#include<Eigen/Eigenvalues>
 
 namespace topomesh {
 	LaplacianMatrix::LaplacianMatrix(MMeshT* mesh, bool weight)
@@ -36,13 +37,62 @@ namespace topomesh {
 		NL = D_sqrt * L * D_sqrt;
 	};
 
+
+	LaplacianMatrix::LaplacianMatrix(const std::vector<std::vector<std::pair<int, float>>>& data)
+	{
+		this->row = data.size();
+		this->col = data.size();
+		L.resize(this->row, this->col);
+		typedef Eigen::Triplet<float> Tr;
+		std::vector<Tr> D_tripletList;
+		std::vector<Tr> W_tripletList;
+		for (int i = 0; i < data.size(); i++)
+		{
+			float diag = 0.f;
+			for (int j = 0; j < data[i].size(); j++)
+			{
+				W_tripletList.push_back(Tr(i, data[i][j].first,data[i][j].second));
+				diag += data[i][j].second;
+			}
+			W_tripletList.push_back(Tr(i,i,diag));
+		}
+		Eigen::SparseMatrix<float>  D(this->row, this->col);
+		Eigen::SparseMatrix<float>  W(this->row, this->col);
+
+		D.setFromTriplets(D_tripletList.begin(), D_tripletList.end());
+		W.setFromTriplets(W_tripletList.begin(), W_tripletList.end());
+		L = D - W;
+	}
+
+
+	void LaplacianMatrix::EigenvectorSolver()
+	{
+		if (L.size() == 0) return;
+		Eigen::SelfAdjointEigenSolver<Eigen::SparseMatrix<float>> es(L);
+		EigenVector = es.eigenvectors().block(0, 1, L.rows(), 10);
+	}
+
+	void LaplacianMatrix::selectEigenVector(int indication, std::vector<int>& result)
+	{
+		if (EigenVector.size() == 0) return;
+		Eigen::VectorXf indica= EigenVector.row(indication);
+		std::vector<std::pair<int, float>> distance;
+		for (int i = 0; i < EigenVector.rows(); i++)
+		{
+			Eigen::VectorXf c = indica - EigenVector.row(i);
+			distance.push_back(std::make_pair(i, c.norm()));
+		}
+		std::sort(distance.begin(), distance.end(), [](std::pair<int, float> a, std::pair<int, float> b) {
+			return a.second < b.second;
+			});
+		for (int i = 0; i < 20; i++)
+			result.push_back(distance[i].first);
+	}
+
 	void LaplacianMatrix::normalzationLaplacian()
 	{
 		
 	}
 
-	void LaplacianMatrix::userDefinedMatrix(const int row, const int col)
-	{
-
-	}
+	
 }
