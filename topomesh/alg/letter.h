@@ -1,5 +1,6 @@
 #ifndef TOPOMESH_LETTER_1680853426716_H
 #define TOPOMESH_LETTER_1680853426716_H
+#include "topomesh/interface/letter.h"
 #include "mmesh/trimesh/polygon.h"
 #include "mmesh/util/mnode.h"
 #include "topomesh/data/mmesht.h"
@@ -38,9 +39,8 @@ namespace topomesh
 	void mapping(MMeshT* mesh, trimesh::TriMesh* trimesh, std::map<int, int>& vmap, std::map<int, int>& fmap,bool is_thread=false);
 	void fillholes(trimesh::TriMesh* mesh);
 	void simpleCutting(MMeshT* mesh, const std::vector<std::vector<std::vector<trimesh::vec2>>>& polygons, std::vector<std::vector<int>>& faceindexs);
+
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
-		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
-	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter,const std::vector<TriPolygons>& polygons,
 		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 }
 

@@ -961,11 +961,6 @@ namespace topomesh
 		mesh->bbox.min = trimesh::point(point.x() * (1.0f / point.w()), point.y() * (1.0f / point.w()), point.z() * (1.0f / point.w()));
 	}
 
-	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons,
-		LetterDebugger* debugger, ccglobal::Tracer* tracer) {
-		bool letterOpState = true;
-		return letter(mesh, camera, Letter, polygons, letterOpState, debugger, tracer);
-	}
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{								
@@ -1056,7 +1051,8 @@ namespace topomesh
 		std::vector<int> faceindex;
 		float threshold = 0.6f;
 		getMeshFaces(newmesh, poly, cp, faceindex, threshold);
-		tracer->progress(0.35);
+		if(tracer)
+			tracer->progress(0.35);
 		if (faceindex.empty())
 		{
 			letterOpState = false;
@@ -1065,10 +1061,14 @@ namespace topomesh
 		std::map<int, int> vmap;
 		std::map<int, int> fmap;		
 		MMeshT mt(newmesh,faceindex,vmap,fmap);
-		tracer->progress(0.37);
+
+		if (tracer)
+			tracer->progress(0.37);
 		faceindex.clear();
 		getDisCoverFaces(&mt, faceindex, fmap);
-		tracer->progress(0.42);
+		
+		if (tracer)
+			tracer->progress(0.42);
 		fmap.clear();
 		vmap.clear();
 		MMeshT mt2(newmesh, faceindex, vmap, fmap);	
@@ -1077,7 +1077,8 @@ namespace topomesh
 		mt2.set_VVadjacent(true);
 		mt2.set_FFadjacent(true);
 		faceindex.clear();	
-		tracer->progress(0.45);
+		if (tracer)
+			tracer->progress(0.45);
 
 		if (polygons.size() >= 8 && mt2.faces.size() > 800)
 		{
@@ -1118,21 +1119,25 @@ namespace topomesh
 			mt2.set_VVadjacent(true);
 			mt2.set_FFadjacent(true);
 			embedingAndCutting(&mt2, totalpoly, faceindex);	
-			tracer->progress(0.85);
+			if (tracer)
+				tracer->progress(0.85);
 			faceindex.clear();
 			for (int i = 0; i < mt2.faces.size(); i++)
 				faceindex.push_back(i);
 			std::vector<int> outfacesIndex;
 			polygonInnerFaces(&mt2, poly, faceindex, outfacesIndex);
-			tracer->progress(0.9);
+			if (tracer)
+				tracer->progress(0.9);
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
 			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);
 			for (int i = 0; i < mt.vertices.size(); i++)
 				mt.vertices[i].ClearS();
 			concaveOrConvexOfFaces(&mt2, outfacesIndex, Letter.concave, Letter.deep);
-			tracer->progress(0.95);
+			if (tracer)
+				tracer->progress(0.95);
 			mapping(&mt2, newmesh, vmap, fmap);
-			tracer->progress(1.0);
+			if (tracer)
+				tracer->progress(1.0);
 		}								
 		/*trimesh::TriMesh* savemesh = new trimesh::TriMesh();
 		mt2.mmesh2trimesh(savemesh);

@@ -7,8 +7,8 @@ __cc_find(cxlog)
 
 __files_group(${CMAKE_CURRENT_SOURCE_DIR}/topomesh/ SRCS)
 		 
-set(ILIBS trimesh2 eigen mmesh clipper rapidjson)
-set(LIBS vcg boost_system cxlog)
+set(ILIBS trimesh2 cxnd eigen)
+set(LIBS vcg boost_system mmesh rapidjson clipper)
 
 set(INCS)
 if(CGAL_INCLUDE_DIRS)

@@ -1,15 +1,8 @@
 #pragma once
-#include "trimesh2/TriMesh.h"
-#include <memory>
+#include "topomesh/interface/idata.h"
 
 namespace topomesh
 {
-	struct LetterParam
-	{		
-		bool concave = true;
-		float deep = 2.0f;
-	};
-
 	struct CameraParam
 	{	
 		trimesh::ivec2 ScreenSize;  // hw
@@ -33,17 +26,6 @@ namespace topomesh
 		trimesh::point dir;
 	};
 
-	class LetterInput
-	{
-	public:
-		LetterParam letterparam;
-
-		void save(const std::string& fileName);
-		void load(const std::string& fileName);
-	};
-
-	typedef std::vector<trimesh::vec3> TriPolygon;
-	typedef std::vector<TriPolygon> TriPolygons;
     struct HexaPolygon {
         TriPolygon poly;
         float radius = 0.0f;
@@ -62,29 +44,4 @@ namespace topomesh
     typedef std::vector<HexaPolygon> HexaPolygons;
     TriPolygons convertFromHexaPolygons(const HexaPolygons& hexas);
     HexaPolygons convertFromTriPolygons(const TriPolygons& polys, const trimesh::ivec3& coords);
-
-	struct SimpleCamera
-	{
-		float f;
-		float n;
-		float fov;
-		float aspect;
-
-		trimesh::point pos;
-		trimesh::point center;
-		trimesh::point up;
-	};
-
-	class LetterDebugger
-	{
-	public:
-		virtual ~LetterDebugger() {}
-
-		virtual void onMeshProjected(const std::vector<trimesh::vec3>& triangles) = 0;
-	};
-
-	typedef std::vector<int> FacePatch;
-	typedef std::vector<FacePatch> FacePatchs;
-
-	typedef std::shared_ptr<trimesh::TriMesh> TopoTriMeshPtr;
 }

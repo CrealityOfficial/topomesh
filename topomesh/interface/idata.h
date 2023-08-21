@@ -2,20 +2,14 @@
 #define TOPOMESH_IDATA_1692613164081_H
 #include "topomesh/interface.h"
 #include "trimesh2/TriMesh.h"
+#include "trimesh2/XForm.h"
+#include "ccglobal/tracer.h"
 #include <memory>
 
 namespace topomesh
 {
 	typedef std::vector<trimesh::vec3> TriPolygon;
 	typedef std::vector<TriPolygon> TriPolygons;
-
-	struct HexaPolygon {
-		TriPolygon poly;
-		trimesh::ivec3 coord;
-		std::vector<int> neighbors;
-		HexaPolygon() : neighbors(6, -1) {}
-	};
-	typedef std::vector<HexaPolygon> HexaPolygons;
 
 	struct SimpleCamera
 	{
