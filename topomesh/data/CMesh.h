@@ -32,7 +32,6 @@ namespace topomesh {
     };
     class CMesh{
     public:
-        trimesh::TriMesh mtrimesh;
         typedef trimesh::Vec<3, float> PPoint;
         typedef trimesh::Vec<3, int> FFace;
         typedef trimesh::Box<3, float>BBox;
@@ -53,7 +52,8 @@ namespace topomesh {
         void DuplicateSTL(double ratio = 0.3);
         //bBinary=true,写入二进制文件，bBinary=false写入ASCII文件
         bool WriteSTLFile(const char* filename, bool bBinary = true);
-        CMesh(trimesh::TriMesh* mesh);
+        CMesh(const trimesh::TriMesh* mesh);
+        trimesh::TriMesh GetTriMesh() const;
         void Merge(const CMesh& mesh);
         void Clone(const CMesh& mesh);
         void MiniCopy(const CMesh& mesh);
@@ -62,7 +62,7 @@ namespace topomesh {
         void Rotate(const PPoint& axis, const double& angle);
         void Rotate(const PPoint& dir1, const PPoint& dir2);
         void BuildFromBox(const BBox& box);
-        BBox Bound();
+        void GenerateBoundBox();
         int AddPoint(const PPoint& p);
         int AddFace(int i0, int i1, int i2);
         int EdgeOppositePoint(int e, int f)const;

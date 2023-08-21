@@ -37,10 +37,16 @@ namespace topomesh {
         double nestWidth = 0.3; ///<·äÎÑÁù±ßÐÎ±Úºñ£¨ÏòÄÚÊÕËõµÄ¾àÀëµÄ2±¶£©
     };
     HexaPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
-    void GenerateHexagonNeighbors(HexaPolygons& hexas);
+    void GenerateHexagonNeighbors(HexaPolygons& hexas, float cheight = 5.0);
     TriPolygons traitCurrentPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir);
+    struct ColumnarHoleParam {
+        float cheight = 5.0f; ///<Ô²¿×Ô²ÐÄ¸ß¶È
+        float radius = 1.0f; ///<Ô²¿×°ë¾¶
+    };
+    TriPolygon traitPlanarCircle(const trimesh::vec3& c, float r, std::vector<int>& indexs, const trimesh::vec3& edgeDir = trimesh::vec3(0, 0, 1), int nums = 17);
+    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param);
 
 	class MMeshT;
 	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir=trimesh::vec3(0,0,1),
