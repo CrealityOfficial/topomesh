@@ -46,9 +46,18 @@ namespace topomesh
 	typedef std::vector<TriPolygon> TriPolygons;
     struct HexaPolygon {
         TriPolygon poly;
+        float radius = 0.0f;
+        float ratio = 0.5f;
+        float depth = 10.0f;
+        float ctop = 0.0f;
+        int startIndex = 0;
         trimesh::ivec3 coord;
         std::vector<int> neighbors;
-        HexaPolygon() : neighbors(6, -1) {}
+        std::vector<bool> canAdds;
+        std::vector<bool> hasAdds;
+        std::vector<int> holeIndexs;
+        std::vector<std::vector<int>> corners;
+        HexaPolygon() : neighbors(6, -1), canAdds(6, false), hasAdds(6, false), holeIndexs(6, -1), corners(6) {}
     };
     typedef std::vector<HexaPolygon> HexaPolygons;
     TriPolygons convertFromHexaPolygons(const HexaPolygons& hexas);

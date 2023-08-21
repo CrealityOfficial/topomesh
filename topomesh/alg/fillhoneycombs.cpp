@@ -9,6 +9,7 @@
 #include "topomesh/honeycomb/HoneyComb.h"
 
 #include "topomesh/alg/utils.h"
+#include "topomesh/data/CMesh.h"
 //#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
 
@@ -316,7 +317,7 @@ namespace topomesh {
     }
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
-    {						
+    {	        
         honeyLetterOpt letterOpts;
         honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
@@ -462,6 +463,7 @@ namespace topomesh {
                     honeycomb::Hexagon hexagon(center, side);
                     const auto& border = hexagon.Border();
                     HexaPolygon hexa;
+                    hexa.radius = side;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
                         hexa.poly.emplace_back(trimesh::vec3((float)p.x, (float)p.y, p0.z));
@@ -473,6 +475,7 @@ namespace topomesh {
                     honeycomb::Hexagon hexagon(center, side);
                     const auto & border = hexagon.Border();
                     HexaPolygon hexa;
+                    hexa.radius = side;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
                         hexa.poly.emplace_back(trimesh::vec3((float)p.x, (float)p.y, p0.z));
@@ -484,7 +487,7 @@ namespace topomesh {
         }
         return polygons;
     }
-    void GenerateHexagonNeighbors(HexaPolygons& hexas)
+    void GenerateHexagonNeighbors(HexaPolygons& hexas, float cheight)
     {
         const int size = hexas.size();
         std::vector<std::vector<int>> hoods(size, std::vector<int>(size, 1));
@@ -498,6 +501,19 @@ namespace topomesh {
                         hoods[i][j] = 0;
                         hoods[i][j] = 0;
                     }
+                }
+            }
+        }
+        for (auto& hexa : hexas) {
+            for (int i = 0; i < 6 && (!hexa.canAdds[i]) && (hexa.neighbors[i] >= 0); i++) {
+                auto& hn = hexas[hexa.neighbors[i]];
+                const auto& r1 = hexa.radius * hexa.ratio;
+                const auto& r2 = hn.radius * hn.ratio;
+                hexa.ctop = r1 + cheight;
+                hn.ctop = r2 + cheight;
+                if ((hexa.depth > hexa.ctop) && (hn.depth > hn.ctop)) {
+                    hexa.canAdds[i] = true;
+                    hn.canAdds[(i + 3) % 6] = true;
                 }
             }
         }
@@ -543,7 +559,214 @@ namespace topomesh {
         return polys;
     }
 
-	void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir ,
+    TriPolygon traitPlanarCircle(const trimesh::vec3& center, float r, std::vector<int>& indexs, const trimesh::vec3& dir, int nums)
+    {
+        TriPolygon points;
+        points.reserve(nums);
+        trimesh::vec3 ydir = trimesh::normalized(dir);
+        trimesh::vec3 zdir(0, 0, 1);
+        const float phi = 2.0f * M_PI / float(nums);
+        for (int i = 0; i < nums; ++i) {
+            const auto& theta = phi * (float)i + (float)M_PI_2;
+            const auto& y = ydir * r * std::cos(theta);
+            const auto& z = zdir * r * std::sin(theta);
+            points.emplace_back(std::move(center + y + z));
+        }
+        float miny = points.front() DOT ydir;
+        float minz = points.front() DOT zdir;
+        float maxy = points.front() DOT ydir;
+        float maxz = points.front() DOT zdir;
+        for (int i = 1; i < nums; ++i) {
+            float yn = points[i] DOT ydir;
+            float zn = points[i] DOT zdir;
+            if (yn < miny) miny = yn;
+            if (zn < minz) minz = zn;
+            if (yn > maxy) maxy = yn;
+            if (zn > maxz) maxz = zn;
+        }
+        if (nums % 2 == 0) indexs.reserve(4);
+        else indexs.reserve(5);
+        for (int i = 0; i < nums; ++i) {
+            float zn = points[i] DOT zdir;
+            if (std::abs(zn - maxz) < EPS) {
+                indexs.emplace_back(i);
+            }
+        }
+        for (int i = 0; i < nums; ++i) {
+            float yn = points[i] DOT ydir;
+            if (std::abs(yn - miny) < EPS) {
+                indexs.emplace_back(i);
+            }
+        }
+        for (int i = 0; i < nums; ++i) {
+            float zn = points[i] DOT zdir;
+            if (std::abs(zn - minz) < EPS) {
+                indexs.emplace_back(i);
+            }
+        }
+        for (int i = 0; i < nums; ++i) {
+            float yn = points[i] DOT ydir;
+            if (std::abs(yn - maxy) < EPS) {
+                indexs.emplace_back(i);
+            }
+        }
+        return points;
+    }
+
+    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param)
+    {
+        const float cheight = param.cheight;
+        GenerateHexagonNeighbors(hexas, cheight);
+        std::vector<trimesh::vec3> points;
+        std::vector<trimesh::ivec3> faces;
+        int hexaspointnum = 0, num2 = 0;
+        for (auto& hexa : hexas) {
+            hexa.startIndex = num2;
+            for (const auto& p : hexa.poly) {
+                points.emplace_back(std::move(p));
+                ++num2, ++hexaspointnum;
+            }
+        }
+
+        for (const auto& hexa : hexas) {
+            for (const auto& p : hexa.poly) {
+                const auto& pt = trimesh::vec3(p.x, p.y, p.z + hexa.depth);
+                points.emplace_back(std::move(pt));
+                ++num2;
+            }
+        }
+        int holesnum = 0, nslices = 17;
+        for (auto& hexa : hexas) {
+            for (int i = 0; i < 6 && hexa.canAdds[i] && (!hexa.hasAdds[i]) && (hexa.neighbors[i] >= 0); ++i) {
+                auto& hn = hexas[hexa.neighbors[i]];
+                if (hexa.depth > hexa.ctop && hn.depth > hn.ctop) {
+                    const auto& a = hexa.poly[i];
+                    const auto& b = hexa.poly[(i + 1) % 6];
+                    const auto& r1 = hexa.radius * hexa.ratio * 0.5f;
+                    const auto& c1 = (a + b) / 2.0 + trimesh::vec3(0, 0, cheight);
+                    std::vector<int> corner1;
+                    const auto& poly1 = traitPlanarCircle(c1, r1, corner1, a - b, nslices);
+                    hexa.corners[i].swap(corner1);
+                    const auto& c = hn.poly[(i + 3) % 6];
+                    const auto& d = hn.poly[(i + 4) % 6];
+                    const auto& r2 = hn.radius * hn.ratio * 0.5f;
+                    const auto& c2 = (c + d) / 2.0 + trimesh::vec3(0, 0, cheight);
+                    std::vector<int> corner2;
+                    const auto& poly2 = traitPlanarCircle(c2, r2, corner2, c - d, nslices);
+                    hn.corners[(i + 3) % 6].swap(corner2);
+                    points.insert(points.end(), poly1.begin(), poly1.end());
+                    points.insert(points.end(), poly2.begin(), poly2.end());
+                    hexa.hasAdds[i] = true;
+                    hn.hasAdds[(i + 3) % 6] = true;
+                    hexa.holeIndexs[i] = holesnum;
+                    hn.holeIndexs[(i + 3) % 6] = holesnum + 1;
+                    holesnum += 2;
+                } else {
+                    hexa.canAdds[i] = false;
+                    hn.canAdds[(i + 3) % 6] = false;
+                }
+                
+            }
+        }
+        int holefacenums = holesnum * nslices;
+        int rectfacenums = (hexaspointnum - holesnum) * 2;
+        int holerectfacenums = holefacenums * (nslices + 4);
+        int upperfacenums = hexaspointnum;
+        int bottomfacenums = 0;
+        int allfacenums = holefacenums + rectfacenums + holerectfacenums + upperfacenums + bottomfacenums;
+        faces.reserve(allfacenums);
+        for (int i = 0; i < hexas.size(); ++i) {
+            const auto& hexa = hexas[i];
+            const auto& poly = hexa.poly;
+            int polynums = poly.size();
+            const int& start = hexa.startIndex;
+            //六角网格顶部
+            const int& upstart = start + hexaspointnum;
+            for (int j = 1; j < polynums - 1; ++j) {
+                const int& cur = upstart + j;
+                const int& next = upstart + j + 1;
+                faces.emplace_back(trimesh::ivec3(upstart, next, cur));
+            }
+            //六角网格侧面
+            for (int j = 0; j < polynums; ++j) {
+                const int& a = start + j;
+                const int& b = start + (j + 1) % polynums;
+                const int& c = a + hexaspointnum;
+                const int& d = b + hexaspointnum;
+                if (hexa.hasAdds[j]) {
+                    const auto& corner = hexa.corners[j];
+                    const int& cstart = num2 + hexa.holeIndexs[j] * nslices;
+                    if (nslices % 2 == 0) {
+                        int r = corner[0];
+                        int s = corner[1];
+                        int t = corner[2];
+                        int u = corner[3];
+                        faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
+                        for (int k = 0; k < s; ++k) {
+                            faces.emplace_back(trimesh::ivec3(cstart + k, d, cstart + k + 1));
+                        }
+                        faces.emplace_back(trimesh::ivec3(b, cstart + s, d));
+                        for (int k = s; k < t; ++k) {
+                            faces.emplace_back(trimesh::ivec3(cstart + k, b, cstart + k + 1));
+                        }
+                        faces.emplace_back(trimesh::ivec3(b, a, cstart + t));
+                        for (int k = t; k < u; ++k) {
+                            faces.emplace_back(trimesh::ivec3(a, cstart + k + 1, cstart + k));
+                        }
+                        faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                        for (int k = u; k < nslices; ++k) {
+                            faces.emplace_back(trimesh::ivec3(c, cstart + (k + 1) % nslices, cstart + k));
+                        }
+                    } else {
+                        int r = corner[0];
+                        int s = corner[1];
+                        int t = corner[2];
+                        int u = corner[4];
+                        faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
+                        for (int k = 0; k < s; ++k) {
+                            faces.emplace_back(trimesh::ivec3(cstart + k, d, cstart + k + 1));
+                        }
+                        faces.emplace_back(trimesh::ivec3(b, cstart + s, d));
+                        for (int k = s; k < t; ++k) {
+                            faces.emplace_back(trimesh::ivec3(cstart + k, b, cstart + k + 1));
+                        }
+                        faces.emplace_back(trimesh::ivec3(b, a, cstart + t));
+                        for (int k = t; k < u; ++k) {
+                            faces.emplace_back(trimesh::ivec3(a, cstart + k + 1, cstart + k));
+                        }
+                        faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                        for (int k = u; k < nslices; ++k) {
+                            faces.emplace_back(trimesh::ivec3(c, cstart + (k + 1) % nslices, cstart + k));
+                        }
+                    }
+                } else {
+                    faces.emplace_back(trimesh::ivec3(b, a, c));
+                    faces.emplace_back(trimesh::ivec3(b, c, d));
+                }
+            }
+        }
+        //六角网格孔部
+        for (int i = 0; i < holesnum; i += 2) {
+            const int& start = num2 + i * nslices;
+            for (int j = 0; j < nslices; ++j) {
+                const int& lcur = start + j;
+                const int& lnext = start + (j + 1) % nslices;
+                const int& rcur = start + (nslices - j) % nslices + nslices;
+                const int& rnext = start + (nslices - j - 1) % nslices + nslices;
+                faces.emplace_back(trimesh::ivec3(lnext, rnext, rcur));
+                faces.emplace_back(trimesh::ivec3(lnext, rcur, lcur));
+            }
+        }
+        //六角网格底部
+
+        std::shared_ptr<trimesh::TriMesh> triMesh(new trimesh::TriMesh());
+        triMesh->vertices.swap(points);
+        triMesh->faces.swap(faces);
+        //triMesh->write("holes.stl");
+        return triMesh;
+    }
+
+    void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir ,
 		trimesh::vec2 arrayDir, double honeyCombRadius , double nestWidth , double shellThickness)
 	{
 		trimesh::TriMesh* newMesh=new trimesh::TriMesh();

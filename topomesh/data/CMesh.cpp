@@ -12,6 +12,9 @@
 namespace topomesh {
     CMesh::CMesh()
     {
+        mbox.clear();
+        ::std::vector<PPoint>().swap(mpoints);
+        ::std::vector<FFace>().swap(mfaces);
         ::std::vector<EEdge>().swap(medges);
         ::std::vector<PPoint>().swap(mnorms);
         ::std::vector<float>().swap(mareas);
@@ -25,6 +28,9 @@ namespace topomesh {
     }
     void CMesh::Clear()
     {
+        mbox.clear();
+        std::vector<PPoint>().swap(mpoints);
+        std::vector<FFace>().swap(mfaces);
         std::vector<PPoint>().swap(mnorms);
         std::vector<std::vector<int>>().swap(mfaceEdges);
         std::vector<std::vector<int>>().swap(medgeFaces);
@@ -305,11 +311,20 @@ namespace topomesh {
             return true;
         }
     }
-    CMesh::CMesh(trimesh::TriMesh* mesh)
+    CMesh::CMesh(const trimesh::TriMesh* mesh)
     {
-        mtrimesh = *mesh;
-        mpoints = mtrimesh.vertices;
-        mfaces = mtrimesh.faces;
+        trimesh::TriMesh trimesh = *mesh;
+        mfaces.swap(trimesh.faces);
+        mpoints.swap(trimesh.vertices);
+        std::swap(mbox, trimesh.bbox);
+    }
+    trimesh::TriMesh CMesh::GetTriMesh() const
+    {
+        trimesh::TriMesh mesh;
+        mesh.vertices = mpoints;
+        mesh.faces = mfaces;
+        mesh.bbox = mbox;
+        return mesh;
     }
     void CMesh::Merge(const CMesh& mesh)
     {
@@ -320,6 +335,7 @@ namespace topomesh {
     }
     void CMesh::MiniCopy(const CMesh& mesh)
     {
+        mbox = std::move(mesh.mbox);
         mfaces = std::move(mesh.mfaces);
         mpoints = std::move(mesh.mpoints);
     }
@@ -371,10 +387,23 @@ namespace topomesh {
         AddFace(5, 4, 7);
         AddFace(5, 7, 6);
     }
-    CMesh::BBox CMesh::Bound()
+    void CMesh::GenerateBoundBox()
     {
-        mtrimesh.need_bbox();
-        return mtrimesh.bbox;
+        if (!mbox.valid) {
+            constexpr float max = std::numeric_limits<float>::max();
+            constexpr float min = std::numeric_limits<float>::lowest();
+            trimesh::vec3 a(max, max, max), b(min, min, min);
+            for (const auto& p : mpoints) {
+                if (a.x > p.x) a.x = p.x;
+                if (a.y > p.y) a.y = p.y;
+                if (a.z > p.z) a.z = p.z;
+                if (b.x < p.x) b.x = p.x;
+                if (b.y < p.y) b.y = p.y;
+                if (b.z < p.z) b.z = p.z;
+            }
+            mbox = trimesh::box3(a, b);
+            mbox.valid = true;
+        }
     }
     int CMesh::AddPoint(const PPoint& p)
     {
@@ -645,8 +674,9 @@ namespace topomesh {
         for (int i = 0; i < facenums; ++i) {
             sequence[i] = i;
         }
-        mtrimesh.need_across_edge();
-        mffaces = mtrimesh.across_edge;
+        trimesh::TriMesh trimesh = GetTriMesh();
+        trimesh.need_across_edge();
+        mffaces = trimesh.across_edge;
         std::vector<int> masks(facenums, 1);
         std::vector<std::vector<int>> selectFaces;
         selectFaces.reserve(facenums);
@@ -696,7 +726,7 @@ namespace topomesh {
 
     void CMesh::FlatBottomSurface(std::vector<int>* bottomfaces)
     {
-        mtrimesh.need_bbox();
+        GenerateBoundBox();
         const auto& minz = mbox.min.z;
         for (const auto& f : *bottomfaces) {
             const auto& neighbor = mfaces[f];
