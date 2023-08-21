@@ -15,10 +15,5 @@ if(CGAL_INCLUDE_DIRS)
 	list(APPEND INCS ${CGAL_INCLUDE_DIRS})
 endif()
 
-__add_real_target(topomesh lib SOURCE ${SRCS}
-							   ILIB ${ILIBS}
-							   LIB ${LIBS}
-							   INC ${INCS}
-							   INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}
-							   OPENMP
-							   )
+set(TOPOMESH_STATIC 1)
+__add_common_library(topomesh OPENMP)
