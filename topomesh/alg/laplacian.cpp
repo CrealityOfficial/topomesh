@@ -54,7 +54,7 @@ namespace topomesh {
 				W_tripletList.push_back(Tr(i, data[i][j].first,data[i][j].second));
 				diag += data[i][j].second;
 			}
-			W_tripletList.push_back(Tr(i,i,diag));
+			D_tripletList.push_back(Tr(i,i,diag));
 		}
 		Eigen::SparseMatrix<float>  D(this->row, this->col);
 		Eigen::SparseMatrix<float>  W(this->row, this->col);
@@ -69,7 +69,7 @@ namespace topomesh {
 	{
 		if (L.size() == 0) return;
 		Eigen::SelfAdjointEigenSolver<Eigen::SparseMatrix<float>> es(L);
-		EigenVector = es.eigenvectors().block(0, 1, L.rows(), 10);
+		EigenVector = es.eigenvectors().block(0, 1, L.rows(), 30);
 	}
 
 	void LaplacianMatrix::selectEigenVector(int indication, std::vector<int>& result)
@@ -85,7 +85,7 @@ namespace topomesh {
 		std::sort(distance.begin(), distance.end(), [](std::pair<int, float> a, std::pair<int, float> b) {
 			return a.second < b.second;
 			});
-		for (int i = 0; i < 20; i++)
+		for (int i = 0; i < 4; i++)
 			result.push_back(distance[i].first);
 	}
 

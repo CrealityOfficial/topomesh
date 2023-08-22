@@ -103,6 +103,7 @@ namespace topomesh
 		void getEdgeNumber();
 		void getBoundingBox();
 		void init_halfedge();
+		void getVertexSDFBlockCoord();
 
 	private:
 		int vn = 0;
@@ -116,6 +117,9 @@ namespace topomesh
 		bool FacePolygon = false;
 		bool bbox = false;
 		bool HalfEdge = false;
+		float span_x;
+		float span_y;
+		float span_z;
 	};
 
 	double  getTotalArea(std::vector<trimesh::point>& inVertices);

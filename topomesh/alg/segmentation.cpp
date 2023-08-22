@@ -10,6 +10,7 @@
 #include<Eigen/Eigenvalues>
 #include "queue"
 #include "set"
+#include <CGAL/mesh_segmentation.h>
 
 
 struct Patch
@@ -189,36 +190,45 @@ namespace topomesh {
 		float surface_area = 0.f;
 		for (MMeshFace& f : mesh->faces)
 		{					
-			float area=mesh->det(f.index);
+			/*float area=mesh->det(f.index);
 			surface_area += area;
-			faces_area[f.index] = area;
+			faces_area[f.index] = area;*/
 			if (f.IsV()) continue;
 			std::vector<int> patch;
-			findNeighborFacesOfConsecutive(mesh,f.index, patch,3.f,true);			
-			//if(false)
-			if (patch.size() < threshold)
-			{								
-				for (int i : patch)
-				{
-					mesh->faces[i].SetV();					
-					//other_faces.emplace_back(i);					
-				}	
-				container.push_back(patch);
-				//other_faces.insert(other_faces.end(), patch.begin(), patch.end());			
-			}
-			else
+			findNeighborFacesOfConsecutive(mesh,f.index, patch,30.f,true);	
+			for (int i : patch)
 			{
-				for (int i : patch)
-				{
-					mesh->faces[i].SetV();
-					mesh->faces[i].SetU(index);	
-				}
-				index++;
-			}		
-			//container.push_back(patch);
+				mesh->faces[i].SetV();
+			}
+			//if(false)
+			//if (patch.size() < threshold)
+			//{								
+			//	for (int i : patch)
+			//	{
+			//		mesh->faces[i].SetV();					
+			//		//other_faces.emplace_back(i);					
+			//	}	
+			//	container.push_back(patch);
+			//	//other_faces.insert(other_faces.end(), patch.begin(), patch.end());			
+			//}
+			//else
+			//{
+			//	for (int i : patch)
+			//	{
+			//		mesh->faces[i].SetV();
+			//		mesh->faces[i].SetU(index);	
+			//	}
+			//	index++;
+			//}		
+			container.push_back(patch);
 			//result.push_back(patch);
 		}		
+		//mesh->getVertexSDFBlockCoord();
+	
 
+		result.swap(container);
+
+		return;
 		float ave_area = surface_area / 1000.f;
 		for (int i = 0; i < container.size(); i++)
 		{
@@ -241,6 +251,7 @@ namespace topomesh {
 
 		std::vector<int> mark(other_faces.size(),0);
 		int mark_all = 0;
+		int remark = 0;
 		while (mark_all<other_faces.size())
 		{
 			for (int i = 0; i < other_faces.size(); i++)
@@ -255,7 +266,7 @@ namespace topomesh {
 						ang = ang >= 1.f ? 1.f : ang;
 						ang = ang <= -1.f ? -1.f : ang;
 						float arc = (std::acos(ang) * 180 / M_PI);
-						if (arc<10.f)
+						if (arc<10.f+remark*2.5f)
 						{
 							mesh->faces[other_faces[i]].SetU(f->GetU());
 							mark_all++;
@@ -264,6 +275,7 @@ namespace topomesh {
 					}
 				}
 			}
+			remark++;
 		}
 		for (MMeshFace& f : mesh->faces)
 		{
@@ -271,23 +283,35 @@ namespace topomesh {
 			{
 				std::vector<int> patch;
 				findNeighborFacesOfConsecutive(mesh, f.index, patch, 30.f, true);
-				for (int i : patch)
+				if (patch.size() > threshold)
 				{
-					mesh->faces[i].SetV();
-					mesh->faces[i].SetU(index);
+					for (int i : patch)
+					{
+						mesh->faces[i].SetV();
+						mesh->faces[i].SetU(index);
+					}
+					index++;
 				}
-				index++;
 			}
+		}		
+		for (MMeshFace& f : mesh->faces)
+		{
+			if (f.GetU() == 0 && !f.IsV())
+				for (MMeshFace* ff : f.connect_face)
+					if(ff->GetU()!=0)
+						f.SetU(ff->GetU());
 		}
 		container.clear();
-		//container.resize(index - 1);
-		result.resize(index-1);	
+		container.resize(index - 1);
+		//result.resize(index-1);	
 		for (MMeshFace& f : mesh->faces)
-		{						
-			result[f.GetU()-1].push_back(f.index);
-			//container[f.GetU() - 1].push_back(f.index);
+		{			
+			if (f.GetU() != 0)
+			{//result[f.GetU()-1].push_back(f.index);
+				container[f.GetU() - 1].push_back(f.index);
+			}
 		}
-		return;
+		//return;
 		std::vector<std::set<int>> patch_neighbor(container.size());
 		std::vector<trimesh::point> patch_normal(container.size());
 		for (int i = 0; i < container.size(); i++)
@@ -297,7 +321,7 @@ namespace topomesh {
 			{
 				normal += mesh->faces[container[i][j]].normal;
 				for(MMeshFace* f :mesh->faces[container[i][j]].connect_face)
-					if (f->GetU() != i + 1)
+					if (f->GetU() != i + 1&&f->GetU()!=0)
 					{
 						patch_neighbor[i].emplace(f->GetU() - 1);
 					}

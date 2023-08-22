@@ -609,6 +609,25 @@ namespace topomesh
 		}
 	}
 
+	void MMeshT::getVertexSDFBlockCoord()
+	{
+		if (!this->is_BoundingBox()) this->getBoundingBox();
+		int base = 200;
+		this->span_x = (this->boundingbox.max_x - this->boundingbox.min_x) / (base * 1.f);
+		this->span_y = (this->boundingbox.max_y - this->boundingbox.min_y) / (base * 1.f);
+		this->span_z = (this->boundingbox.max_z - this->boundingbox.min_z) / (base * 1.f);
+		for (MMeshVertex& v : this->vertices)
+		{
+			if (!v.inner.empty()) v.inner.clear();
+			int xi = (v.p.x - this->boundingbox.min_x) / this->span_x;
+			int yi = (v.p.y - this->boundingbox.min_y) / this->span_y;
+			int zi = (v.p.z - this->boundingbox.min_z) / this->span_z;
+			v.inner.push_back(xi);
+			v.inner.push_back(yi);
+			v.inner.push_back(zi);
+		}
+	}
+
 	void MMeshT::calculateCrossPoint(const std::vector<trimesh::ivec2>& edge,const std::pair<trimesh::point, trimesh::point>& line, std::vector<std::pair<float, trimesh::ivec2>>& tc)
 	{		
 		for (trimesh::ivec2 e : edge)
