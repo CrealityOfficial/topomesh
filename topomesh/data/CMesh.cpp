@@ -345,12 +345,14 @@ namespace topomesh {
         for (auto& pt : mpoints) {
             pt += trans;
         }
+        this->mbox.valid = false;
     }
     void CMesh::Rotate(const trimesh::fxform& mat)
     {
         for (auto& pt : mpoints) {
             pt = mat * pt;
         }
+        this->mbox.valid = false;
     }
     void CMesh::Rotate(const PPoint& axis, const double& angle)
     {

@@ -315,6 +315,55 @@ namespace topomesh {
         }
         return;
     }
+
+    trimesh::vec3 adjustHoneyCombParam(trimesh::TriMesh* trimesh,const HoneyCombParam& honeyparams)
+    {
+       // if (trimesh == nullptr) return ;
+        if (!honeyparams.faces.empty())
+        {
+            trimesh::vec3 ave_normal(0, 0, 0);
+            for (int fi : honeyparams.faces)
+            {
+                trimesh::vec3 v1 = trimesh->vertices[trimesh->faces[fi][1]] - trimesh->vertices[trimesh->faces[fi][0]];
+                trimesh::vec3 v2 = trimesh->vertices[trimesh->faces[fi][2]] - trimesh->vertices[trimesh->faces[fi][0]];
+                ave_normal += trimesh::normalized(v1 % v2);
+            }
+            ave_normal /= (ave_normal / (honeyparams.faces.size() * 1.f));
+            trimesh::normalize(ave_normal);
+           /* trimesh::vec3* dir = const_cast<trimesh::vec3*>(&honeyparams.axisDir);
+            *dir = ave_normal;*/
+            return ave_normal;
+        }else
+             return honeyparams.axisDir;
+    }
+
+    trimesh::TriMesh* GenerateHoneyCombs(trimesh::TriMesh* trimesh , const HoneyCombParam& honeyparams ,
+        ccglobal::Tracer* tracer , HoneyCombDebugger* debugger )
+    {
+        //0.初始化Cmesh,并旋转
+        trimesh::TriMesh* result_trimesh = new trimesh::TriMesh();
+        if(trimesh == nullptr) return result_trimesh;
+        CMesh cmesh(trimesh);
+        //1.重新整理输入参数
+        trimesh::vec3 dir=adjustHoneyCombParam(trimesh, honeyparams);
+        cmesh.Rotate(dir, trimesh::vec3(0, 0, 1));
+        //2.找到生成蜂窝指定的区域（自定义或者是用户自己指定）          
+        cmesh.GenerateBoundBox();
+        HexagonArrayParam hexagonparams;
+        hexagonparams.dir = honeyparams.axisDir;
+        hexagonparams.pos = trimesh::vec3(cmesh.mbox.min.x, cmesh.mbox.max.y, 0);
+        hexagonparams.radius = honeyparams.honeyCombRadius;
+        hexagonparams.nestWidth = honeyparams.nestWidth;
+        const auto& xdist = 3.0 / 2.0 * hexagonparams.radius;
+        const auto& ydist = SQRT3 / 2.0 * hexagonparams.radius;
+        hexagonparams.ncols = std::ceil((cmesh.mbox.max.x - cmesh.mbox.min.x) / xdist);
+        hexagonparams.nrows = (std::ceil((cmesh.mbox.max.y - cmesh.mbox.min.y) / ydist) + 1) / 2;
+        HexaPolygons hexagons = GenerateHexagons(hexagonparams);
+
+        
+        return result_trimesh;
+    }
+
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {	        
@@ -766,63 +815,7 @@ namespace topomesh {
         return triMesh;
     }
 
-    void GenerateHoneyCombs(const trimesh::TriMesh* mesh, trimesh::TriMesh& resultmesh, const TriPolygon& poly, trimesh::vec3 axisDir ,
-		trimesh::vec2 arrayDir, double honeyCombRadius , double nestWidth , double shellThickness)
-	{
-		trimesh::TriMesh* newMesh=new trimesh::TriMesh();
-		*newMesh = *mesh;
-		newMesh->need_normals();
-		newMesh->need_adjacentfaces();
-		newMesh->need_neighbors();
-		std::vector<int> upfaceindex;
-		std::vector<int> botfaceindex;
-		for (int fi = 0; fi < newMesh->faces.size(); fi++)
-		{
-			trimesh::point n = trimesh::normalized(newMesh->trinorm(fi));
-			if (std::abs(n.z+1)<10*EPS)
-				botfaceindex.push_back(fi);
-			else
-				upfaceindex.push_back(fi);
-		}
-		MMeshT mt(newMesh);		
-		//std::vector<std::vector<trimesh::vec2>> lines;
-		//embedingAndCutting(&mt, lines, botfaceindex);
-		std::vector<int> honeycombs = {21463,20775,21464,22129,22792,22128};
-		
-		for (int i = 0; i < honeycombs.size(); i++)
-		{
-			mt.faces[honeycombs[i]].V0(0)->SetS();
-			mt.faces[honeycombs[i]].V1(0)->SetS();
-			mt.faces[honeycombs[i]].V2(0)->SetS();
-			mt.faces[honeycombs[i]].SetS();
-		}		
-		for (int vi = 0; vi < mt.vertices.size(); vi++)
-		{
-			if (mt.vertices[vi].IsS())
-			{				
-				for (MMeshVertex* v : mt.vertices[vi].connected_vertex)
-				{
-					if (!v->IsS())
-					{
-						mt.vertices[vi].SetV(); break;
-					}
-				}
-			}
-		}
-		std::vector<std::pair<int, int>> vd;
-		findNeighVertex(newMesh, upfaceindex, honeycombs,vd);
-		for (int i = 0; i < vd.size(); i++)
-		{
-			//float z = mt.vertices[vd[i].second].p.z-2.0f;
-			//if(mt.vertices[vd[i].first].IsV())
-			//	splitPoint(&mt, &mt.vertices[vd[i].first],trimesh::point(0,0,z));
-			//else
-			//	mt.vertices[vd[i].first].p += trimesh::point(0, 0, z);
-		}
-		//concaveOrConvexOfFaces(&mt, honeycombs, true, 20.f);
-		mt.mmesh2trimesh(newMesh);
-		newMesh->write("botmesh.ply");	
-	}
+   
 
 
 	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, float>>& vertex_distance)
