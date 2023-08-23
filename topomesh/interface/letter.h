@@ -38,8 +38,8 @@ namespace topomesh
 		trimesh::TriMesh* letter(LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 	protected:
 		int version() override;
-		bool save(std::fstream& out, ccglobal::Tracer* tracer) override;
-		bool load(std::fstream& in, int ver, ccglobal::Tracer* tracer) override;
+		bool save(boost::nowide::fstream& out, ccglobal::Tracer* tracer) override;
+		bool load(boost::nowide::fstream& in, int ver, ccglobal::Tracer* tracer) override;
 	};
 
 	TOPOMESH_API trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, 

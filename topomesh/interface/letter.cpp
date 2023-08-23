@@ -20,7 +20,7 @@ namespace topomesh
 		return 0;
 	}
 
-	bool LetterInput::save(std::fstream& out, ccglobal::Tracer* tracer)
+	bool LetterInput::save(boost::nowide::fstream& out, ccglobal::Tracer* tracer)
 	{
 		cxnd::cxndSaveT(out, param.concave);
 		cxnd::cxndSaveT(out, param.deep);
@@ -35,7 +35,7 @@ namespace topomesh
 		return true;
 	}
 
-	bool LetterInput::load(std::fstream& in, int ver, ccglobal::Tracer* tracer)
+	bool LetterInput::load(boost::nowide::fstream& in, int ver, ccglobal::Tracer* tracer)
 	{
 		if (ver == 0)
 		{
