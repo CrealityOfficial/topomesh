@@ -512,7 +512,7 @@ namespace topomesh {
                     honeycomb::Hexagon hexagon(center, side);
                     const auto& border = hexagon.Border();
                     HexaPolygon hexa;
-                    hexa.radius = side;
+                    hexa.side = side;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
                         hexa.poly.emplace_back(trimesh::vec3((float)p.x, (float)p.y, p0.z));
@@ -524,7 +524,7 @@ namespace topomesh {
                     honeycomb::Hexagon hexagon(center, side);
                     const auto & border = hexagon.Border();
                     HexaPolygon hexa;
-                    hexa.radius = side;
+                    hexa.side = side;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
                         hexa.poly.emplace_back(trimesh::vec3((float)p.x, (float)p.y, p0.z));
@@ -554,15 +554,15 @@ namespace topomesh {
             }
         }
         for (auto& hexa : hexas) {
-            for (int i = 0; i < 6 && (!hexa.canAdds[i]) && (hexa.neighbors[i] >= 0); i++) {
-                auto& hn = hexas[hexa.neighbors[i]];
-                const auto& r1 = hexa.radius * hexa.ratio;
-                const auto& r2 = hn.radius * hn.ratio;
-                hexa.ctop = r1 + cheight;
-                hn.ctop = r2 + cheight;
-                if ((hexa.depth > hexa.ctop) && (hn.depth > hn.ctop)) {
-                    hexa.canAdds[i] = true;
-                    hn.canAdds[(i + 3) % 6] = true;
+            for (int j = 0; j < 6; j++) {
+                if ((!hexa.canAdds[j]) && (hexa.neighbors[j] >= 0)) {
+                    auto& hn = hexas[hexa.neighbors[j]];
+                    hexa.ctop = hexa.side * hexa.ratio * 0.5f + cheight;
+                    hn.ctop = hn.side * hn.ratio * 0.5f + cheight;
+                    if ((hexa.depth > hexa.ctop) && (hn.depth > hn.ctop)) {
+                        hexa.canAdds[j] = true;
+                        hn.canAdds[(j + 3) % 6] = true;
+                    }
                 }
             }
         }
@@ -684,21 +684,21 @@ namespace topomesh {
                 ++num2;
             }
         }
-        int holesnum = 0, nslices = 17;
+        int holesnum = 0, nslices = param.nslices;
         for (auto& hexa : hexas) {
-            for (int i = 0; i < 6 && hexa.canAdds[i] && (!hexa.hasAdds[i]) && (hexa.neighbors[i] >= 0); ++i) {
-                auto& hn = hexas[hexa.neighbors[i]];
-                if (hexa.depth > hexa.ctop && hn.depth > hn.ctop) {
+            for (int i = 0; i < 6; ++i) {
+                if (hexa.canAdds[i] && (!hexa.hasAdds[i]) && (hexa.neighbors[i] >= 0)) {
+                    auto& hn = hexas[hexa.neighbors[i]];
                     const auto& a = hexa.poly[i];
                     const auto& b = hexa.poly[(i + 1) % 6];
-                    const auto& r1 = hexa.radius * hexa.ratio * 0.5f;
+                    const auto& r1 = hexa.side * hexa.ratio * 0.5f;
                     const auto& c1 = (a + b) / 2.0 + trimesh::vec3(0, 0, cheight);
                     std::vector<int> corner1;
                     const auto& poly1 = traitPlanarCircle(c1, r1, corner1, a - b, nslices);
                     hexa.corners[i].swap(corner1);
                     const auto& c = hn.poly[(i + 3) % 6];
                     const auto& d = hn.poly[(i + 4) % 6];
-                    const auto& r2 = hn.radius * hn.ratio * 0.5f;
+                    const auto& r2 = hn.side * hn.ratio * 0.5f;
                     const auto& c2 = (c + d) / 2.0 + trimesh::vec3(0, 0, cheight);
                     std::vector<int> corner2;
                     const auto& poly2 = traitPlanarCircle(c2, r2, corner2, c - d, nslices);
@@ -710,11 +710,7 @@ namespace topomesh {
                     hexa.holeIndexs[i] = holesnum;
                     hn.holeIndexs[(i + 3) % 6] = holesnum + 1;
                     holesnum += 2;
-                } else {
-                    hexa.canAdds[i] = false;
-                    hn.canAdds[(i + 3) % 6] = false;
                 }
-                
             }
         }
         int holefacenums = holesnum * nslices;
