@@ -28,7 +28,7 @@ namespace topomesh
 
     struct HexaPolygon {
         TriPolygon poly;
-        float radius = 0.0f;
+        float side = 0.0f;
         float ratio = 0.5f;
         float depth = 10.0f;
         float ctop = 0.0f;

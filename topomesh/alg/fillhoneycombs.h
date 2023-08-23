@@ -42,6 +42,7 @@ namespace topomesh {
     TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir);
     struct ColumnarHoleParam {
+        int nslices = 17; ///<Ô²¿×Ä¬ÈÏÕý17±ßÐÎ
         float cheight = 5.0f; ///<Ô²¿×Ô²ÐÄ¸ß¶È
         float radius = 1.0f; ///<Ô²¿×°ë¾¶
     };
