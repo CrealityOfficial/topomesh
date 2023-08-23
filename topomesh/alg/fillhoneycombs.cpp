@@ -4,12 +4,14 @@
 #include "topomesh/math/SVG.h"
 #include "topomesh/data/mmesht.h"
 #include "topomesh/alg/letter.h"
+#include "topomesh/alg/earclipping.h"
 #include "topomesh/honeycomb/Matrix.h"
 #include "topomesh/honeycomb/Polyline.h"
 #include "topomesh/honeycomb/HoneyComb.h"
 
 #include "topomesh/alg/utils.h"
 #include "topomesh/data/CMesh.h"
+
 //#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
 
@@ -811,7 +813,111 @@ namespace topomesh {
         return triMesh;
     }
 
-   
+    void findHoneyCombsCoord(trimesh::TriMesh* mesh, const  honeyLetterOpt& honeycombs, std::vector<std::vector<std::pair<float, float>>>& coord)
+    {
+        std::vector<int> UpVertex;
+        std::vector<int> BotVertex;
+        mesh->need_normals();
+        for (int vi = 0; vi < mesh->normals.size(); vi++)
+        {
+            trimesh::point VertexNormal = trimesh::normalized(mesh->normals[vi]);
+            float dir = VertexNormal ^ trimesh::point(0, 0, 1);
+            if (dir >= 0)
+                UpVertex.push_back(vi);
+            else
+                BotVertex.push_back(vi);
+        }
+        const int width = 200, height = 200;
+        mesh->need_bbox();
+        float start_x = mesh->bbox.min.x;
+        float start_y = mesh->bbox.min.y;
+        float length_x = (mesh->bbox.max.x - mesh->bbox.min.x) / (width * 1.0f);
+        float length_y = (mesh->bbox.max.y - mesh->bbox.min.y) / (height * 1.0f);
+
+        std::vector<std::vector<float>> UpVertexMap(width,std::vector<float>(height,std::numeric_limits<float>::max()));
+        std::vector<std::vector<float>> BotVertexMap(width, std::vector<float>(height,std::numeric_limits<float>::max()));
+        for (int i = 0; i < UpVertex.size(); i++)
+        {
+            float x = mesh->vertices[UpVertex[i]].x - start_x;
+            float y = mesh->vertices[UpVertex[i]].y - start_y;
+            int xi = x / length_x;
+            int yi = y / length_y;
+            if(mesh->vertices[UpVertex[i]].z< UpVertexMap[xi][yi])
+                UpVertexMap[xi][yi]=(mesh->vertices[UpVertex[i]].z);
+        }
+        for (int i = 0; i < BotVertex.size(); i++)
+        {
+            float x = mesh->vertices[BotVertex[i]].x - start_x;
+            float y = mesh->vertices[BotVertex[i]].y - start_y;
+            int xi = x / length_x;
+            int yi = y / length_y;
+            if (mesh->vertices[BotVertex[i]].z < BotVertexMap[xi][yi])
+                BotVertexMap[xi][yi]=mesh->vertices[BotVertex[i]].z;
+        }
+        std::vector<std::vector<trimesh::vec2>> honeycombscoord;
+        for (int i = 0; i < honeycombs.hexgons.size(); i++)
+        {
+            std::vector<trimesh::vec2> dim2;
+            for (int j = 0; j < honeycombs.hexgons[i].borders.size(); j++)
+                dim2.push_back(trimesh::vec2(honeycombs.hexgons[i].borders[j].x,honeycombs.hexgons[i].borders[j].y));
+            honeycombscoord.emplace_back(dim2);
+        }
+        for (int i = 0; i < honeycombscoord.size(); i++)
+        {
+            std::vector<std::pair<float, float>> BeginAndEnd;
+            for (int j = 0; j < honeycombscoord[i].size(); j++)
+            {
+                float x = honeycombscoord[i][j].x - start_x;
+                float y = honeycombscoord[i][j].y - start_y;
+                int xi = x / length_x;
+                int yi = y / length_y;
+                float top_z= UpVertexMap[xi][yi];
+                float bot_z = BotVertexMap[xi][yi];
+
+                if(top_z == std::numeric_limits<float>::max())
+                {
+                    for (int n = 1; n < width; n++)
+                    {
+                        for (int ii = xi - n; ii <= xi + n; ii++)
+                        {
+                            for (int jj = yi - n; jj <= yi + n; jj++)
+                            {
+                                if (std::abs(ii - xi) != n && std::abs(jj - yi) != n) continue;
+                                if (UpVertexMap[ii][jj] < top_z)
+                                {
+                                    top_z = UpVertexMap[ii][jj]; break;
+                                }
+                            }
+                            if (top_z != std::numeric_limits<float>::max()) break;
+                        }
+                        if (top_z != std::numeric_limits<float>::max()) break;
+                    }
+                }
+                if(bot_z == std::numeric_limits<float>::max())
+                {
+                    for (int n = 1; n < width; n++)
+                    {
+                        for (int ii = xi - n; ii <= xi + n; ii++)
+                        {
+                            for (int jj = yi - n; jj <= yi + n; jj++)
+                            {
+                                if (std::abs(ii - xi) != n && std::abs(jj - yi) != n) continue;
+                                if (BotVertexMap[ii][jj] < bot_z)
+                                {
+                                    bot_z = BotVertexMap[ii][jj]; break;
+                                }
+                            }
+                            if (bot_z != std::numeric_limits<float>::max()) break;
+                        }
+                        if (bot_z != std::numeric_limits<float>::max()) break;
+                    }
+                }
+                BeginAndEnd.push_back(std::make_pair(top_z, bot_z));
+            }
+            coord.push_back(BeginAndEnd);
+        }
+        //std::vector<std::vector<std::pair<trimesh::point, trimesh::point>>>& coord
+    }
 
 
 	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, float>>& vertex_distance)
