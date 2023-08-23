@@ -16,8 +16,23 @@ namespace topomesh
 
 	}
 
-	void HoneyComb::checkNeigbour(int indicate, std::vector<int>& faceIndexs, float angle_threshold)
+	void HoneyComb::checkPlane(int indicate, std::vector<int>& faceIndexs)
 	{
-		return m_proxy->checkNeigbour(indicate, faceIndexs, angle_threshold);
+		return m_proxy->checkNeigbour(indicate, faceIndexs, 89.0f);
+	}
+
+	trimesh::TriMesh* HoneyComb::generateModelFitComb(const CombParam& param, const trimesh::vec3& normal)
+	{
+		return nullptr;
+	}
+
+	trimesh::TriMesh* HoneyComb::createInnerCombModel(const CombParam& param, const trimesh::vec3& normal)
+	{
+		return nullptr;
+	}
+
+	trimesh::TriMesh* HoneyComb::createExtCombModel(const CombParam& param, const trimesh::vec3& normal, const std::vector<int>& indices)
+	{
+		return nullptr;
 	}
 }
