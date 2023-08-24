@@ -8,6 +8,9 @@
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
 #include "Eigen/Dense"
+#ifdef _WIN32
+#include "omp.h"
+#endif
 #include "cmath"
 #include <vector>
 #include <queue>
