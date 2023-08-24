@@ -47,24 +47,6 @@ namespace topomesh {
         }
         return HexDirection::NO_NEIGHBOR;
     };
-    struct honeyLetterOpt {
-        std::vector<int>bottom; ///<底面大块平面的面片索引
-        std::vector<int>others; ///<去掉底面后其余面片索引（已保留原模型对应的索引）
-        /*
-        hexagon: 每个六角网格结构体;
-        radius: 包含收缩前的网格边长;
-        borders: 收缩后轮廓顶点(不一定6个点，默认xoy坐标系逆时针排序);
-        neighbors: 六个方向相邻的六角网格索引(6个方向不一定都有相邻，没有记-1);
-        */
-        struct hexagon {
-            double radius = 1.0;
-            std::vector<trimesh::vec3>borders;
-            std::vector<int> neighbors;
-            hexagon() : neighbors(6, -1) {}
-        };
-        //所有六角网格及邻居关系
-        std::vector<hexagon>hexgons;
-    };
 
     honeycomb::Mesh ConstructFromTriMesh(const trimesh::TriMesh* trimesh)
     {

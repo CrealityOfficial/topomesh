@@ -48,28 +48,25 @@ namespace topomesh {
 	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance);
 	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, float>>& vertex_distance);
 	void innerHex(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& inFace, std::vector<int>& outFace,float len);
-<<<<<<< Updated upstream
-=======
-<<<<<<< Updated upstream
 
+    struct honeyLetterOpt {
+        std::vector<int>bottom; ///<底面大块平面的面片索引
+        std::vector<int>others; ///<去掉底面后其余面片索引（已保留原模型对应的索引）
+        /*
+        hexagon: 每个六角网格结构体;
+        radius: 包含收缩前的网格边长;
+        borders: 收缩后轮廓顶点(不一定6个点，默认xoy坐标系逆时针排序);
+        neighbors: 六个方向相邻的六角网格索引(6个方向不一定都有相邻，没有记-1);
+        */
+        struct hexagon {
+            double radius = 1.0;
+            std::vector<trimesh::vec3>borders;
+            std::vector<int> neighbors;
+            hexagon() : neighbors(6, -1) {}
+        };
+        //所有六角网格及邻居关系
+        std::vector<hexagon>hexgons;
+    };
 
-
-
-	class HoneyCombContext
-	{
-	public:
-		HoneyCombContext(std::shared_ptr<trimesh::TriMesh> mesh);
-		~HoneyCombContext();
-
-		void checkNeigbour(int indicate, std::vector<int>& faceIndexs, float angle_threshold);
-
-		trimesh::TriMesh* data();
-	protected:
-		std::shared_ptr<trimesh::TriMesh> m_mesh;
-		std::shared_ptr<MMeshT> innerMesh;
-	};
-=======
     void findHoneyCombsCoord(trimesh::TriMesh* mesh,const  honeyLetterOpt& honeycombs,std::vector<std::vector<std::pair<float,float>>>& coord);
->>>>>>> Stashed changes
->>>>>>> Stashed changes
 }
