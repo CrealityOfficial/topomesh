@@ -10,7 +10,7 @@ namespace topomesh {
 		EarClipping(std::vector<std::pair<trimesh::point, int>>& data);
 		~EarClipping() {};
 
-		std::vector<trimesh::ivec3>& const getResult() { return this->_result; }
+		const std::vector<trimesh::ivec3>& getResult() { return this->_result; }
 	private:
 		std::vector<trimesh::ivec3> _result;
 	};
