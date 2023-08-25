@@ -31,16 +31,18 @@ namespace topomesh {
         double nestWidth = 0.3; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）
     };
     HexaPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
-    void GenerateHexagonNeighbors(HexaPolygons& hexas, float cheight = 5.0);
+    struct ColumnarHoleParam {
+        int nslices = 17; ///<圆孔默认正17边形
+        float height = 5.0f; ///<圆孔圆心高度
+        float ratio = 0.5f; ///<圆孔直径相对网格边长的比例
+        float delta = 1.0f; ///<相邻两圆的圆心距离
+    };
+    void GenerateHexagonNeighbors(HexaPolygons& hexas, const ColumnarHoleParam& param = ColumnarHoleParam());
 	trimesh::vec3 adjustHoneyCombParam(trimesh::TriMesh* trimesh,const HoneyCombParam& honeyparams);
     TriPolygons traitCurrentPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir);
-    struct ColumnarHoleParam {
-        int nslices = 17; ///<圆孔默认正17边形
-        float cheight = 5.0f; ///<圆孔圆心高度
-        float radius = 1.0f; ///<圆孔半径
-    };
+    
     TriPolygon traitPlanarCircle(const trimesh::vec3& c, float r, std::vector<int>& indexs, const trimesh::vec3& edgeDir = trimesh::vec3(0, 0, 1), int nums = 17);
     std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param);
 
