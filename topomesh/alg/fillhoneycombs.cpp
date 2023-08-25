@@ -11,7 +11,7 @@
 
 #include "topomesh/alg/utils.h"
 #include "topomesh/data/CMesh.h"
-
+#include "trimesh2/TriMesh_algo.h"
 //#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
 
@@ -390,7 +390,45 @@ namespace topomesh {
         //第3步，生成六角网格
         GenerateExHexagons(inputMesh, honeyparams, letterOpts, debugger);
         trimesh::TriMesh&& mesh = ConstructFromHoneyMesh(inputMesh);
-		
+        std::vector<bool> delectface(mesh.faces.size(), false);
+        for (int i : bottomFaces)
+            delectface[i] = true;
+        trimesh::remove_faces(&mesh, delectface);      
+        std::vector<std::vector<std::pair<float, float>>> result;
+        findHoneyCombsCoord(&mesh, letterOpts, result);
+       // topomesh::HexaPolygons hexas = topomesh::GenerateHexagons(param);
+        TriPolygons polygons;
+        for (int i = 0; i < letterOpts.hexgons.size(); i++)
+        {
+            std::vector<trimesh::vec3> dim3;
+            for (int j = 0; j < letterOpts.hexgons[i].borders.size(); j++)
+                dim3.push_back(letterOpts.hexgons[i].borders[j]);
+            polygons.emplace_back(dim3);
+        }
+        std::vector<std::vector<float>> h(result.size(),std::vector<float>());
+        for (int i = 0; i < result.size(); i++)
+        {
+            for (int j = 0; j < result[i].size(); j++)
+            {
+              /*  if (result[i][j].first > 50)
+                    std::cout << "result[i][j].first : " << result[i][j].first << "\n";*/
+                h[i].push_back(result[i][j].first);
+            }
+        }
+        ColumnarParam colparam;
+        //trimesh::TriMesh* newmesh = topomesh::generateColumnar(polygons, colparam,&h);
+        trimesh::TriMesh* newmesh = new trimesh::TriMesh();
+        for (int i = 0; i < h.size(); i++)
+        {
+            for (int j = 0; j < h[i].size(); j++)
+            {
+               // h[i].push_back(result[i][j].first);
+                newmesh->vertices.push_back(trimesh::point(polygons[i][j].x, polygons[i][j].y, h[i][j]));
+            }
+        }
+        newmesh->write("newhoneymesh.ply");
+        mesh.write("honeyhole.ply");
+        return &mesh;
 		mesh.need_adjacentfaces();
 		mesh.need_neighbors();
 		MMeshT mt(&mesh);
@@ -442,7 +480,7 @@ namespace topomesh {
 		for (int i = 0; i < vd.size(); i++)
 		{
 			float z = vd[i].second - honeyparams.shellThickness;
-			if (z < mt.vertices[vd[i].first].p.z) continue;;
+			if (z < mt.vertices[vd[i].first].p.z) continue;
 			if (mt.vertices[vd[i].first].IsV())
 				splitPoint(&mt, &mt.vertices[vd[i].first], trimesh::point(0, 0, z));	
 				//mt.appendVertex(trimesh::point(mt.vertices[vd[i].first].p + trimesh::point(0, 0, z)));
@@ -1036,11 +1074,11 @@ namespace topomesh {
         return triMesh;
     }
 
-    void findHoneyCombsCoord(trimesh::TriMesh* mesh, const  honeyLetterOpt& honeycombs, std::vector<std::vector<std::pair<float, float>>>& coord)
+    void findHoneyCombsCoord(trimesh::TriMesh* mesh, const honeyLetterOpt& honeycombs, std::vector<std::vector<std::pair<float, float>>>& coord)
     {
         std::vector<int> UpVertex;
         std::vector<int> BotVertex;
-        mesh->need_normals();
+       /* mesh->need_normals();
         for (int vi = 0; vi < mesh->normals.size(); vi++)
         {
             trimesh::point VertexNormal = trimesh::normalized(mesh->normals[vi]);
@@ -1049,8 +1087,35 @@ namespace topomesh {
                 UpVertex.push_back(vi);
             else
                 BotVertex.push_back(vi);
+        }*/
+
+        for (int fi = 0; fi < mesh->faces.size(); fi++)
+        {
+            trimesh::point v1 = mesh->vertices[mesh->faces[fi][1]] - mesh->vertices[mesh->faces[fi][0]];
+            trimesh::point v2 = mesh->vertices[mesh->faces[fi][2]] - mesh->vertices[mesh->faces[fi][0]];
+            trimesh::point normal = v1 % v2;
+            float dir = normal ^ trimesh::point(0, 0, 1);
+            if (dir >= 0)
+            {
+                UpVertex.push_back(mesh->faces[fi][0]);
+                UpVertex.push_back(mesh->faces[fi][1]);
+                UpVertex.push_back(mesh->faces[fi][2]);
+            }
+            else
+            {
+                BotVertex.push_back(mesh->faces[fi][0]);
+                BotVertex.push_back(mesh->faces[fi][1]);
+                BotVertex.push_back(mesh->faces[fi][2]);
+            }
         }
-        const int width = 200, height = 200;
+        std::sort(UpVertex.begin(), UpVertex.end());
+        std::vector<int>::iterator itu = std::unique(UpVertex.begin(), UpVertex.end());
+        UpVertex.resize(std::distance(UpVertex.begin(), itu));
+        std::sort(BotVertex.begin(), BotVertex.end());
+        std::vector<int>::iterator itb = std::unique(BotVertex.begin(), BotVertex.end());
+        BotVertex.resize(std::distance(BotVertex.begin(), itb));
+        
+        const int width = 100, height = 100;
         mesh->need_bbox();
         float start_x = mesh->bbox.min.x;
         float start_y = mesh->bbox.min.y;
@@ -1065,6 +1130,8 @@ namespace topomesh {
             float y = mesh->vertices[UpVertex[i]].y - start_y;
             int xi = x / length_x;
             int yi = y / length_y;
+            if (xi == 100) xi--;
+            if (yi == 100) yi--;
             if(mesh->vertices[UpVertex[i]].z< UpVertexMap[xi][yi])
                 UpVertexMap[xi][yi]=(mesh->vertices[UpVertex[i]].z);
         }
@@ -1074,6 +1141,8 @@ namespace topomesh {
             float y = mesh->vertices[BotVertex[i]].y - start_y;
             int xi = x / length_x;
             int yi = y / length_y;
+            if (xi == 100) xi--;
+            if (yi == 100) yi--;
             if (mesh->vertices[BotVertex[i]].z < BotVertexMap[xi][yi])
                 BotVertexMap[xi][yi]=mesh->vertices[BotVertex[i]].z;
         }
@@ -1106,6 +1175,7 @@ namespace topomesh {
                             for (int jj = yi - n; jj <= yi + n; jj++)
                             {
                                 if (std::abs(ii - xi) != n && std::abs(jj - yi) != n) continue;
+                                if (ii < 0 || ii >= 100 || jj < 0 || jj <= 100)continue;
                                 if (UpVertexMap[ii][jj] < top_z)
                                 {
                                     top_z = UpVertexMap[ii][jj]; break;
@@ -1116,6 +1186,9 @@ namespace topomesh {
                         if (top_z != std::numeric_limits<float>::max()) break;
                     }
                 }
+                if (top_z == std::numeric_limits<float>::max())
+                    top_z = 50;
+                bot_z = 0;
                 if(bot_z == std::numeric_limits<float>::max())
                 {
                     for (int n = 1; n < width; n++)
@@ -1125,6 +1198,7 @@ namespace topomesh {
                             for (int jj = yi - n; jj <= yi + n; jj++)
                             {
                                 if (std::abs(ii - xi) != n && std::abs(jj - yi) != n) continue;
+                                if (ii < 0 || ii >= 100 || jj < 0 || jj <= 100)continue;
                                 if (BotVertexMap[ii][jj] < bot_z)
                                 {
                                     bot_z = BotVertexMap[ii][jj]; break;

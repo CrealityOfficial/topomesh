@@ -20,6 +20,7 @@ namespace topomesh
 	{
 	public:
 		MMeshT() :VVadjacent(true), VFadjacent(true), FFadjacent(true) { faces.reserve(8192); vertices.reserve(8192); };//��������������1000����
+		MMeshT(int fsize, int vsize) :VVadjacent(true), VFadjacent(true), FFadjacent(true) { faces.reserve(fsize); vertices.reserve(vsize); };
 		MMeshT(const MMeshT& mt);
 		MMeshT(MMeshT&& mt) = default;
 		//MMeshT(MMeshT& mt) {};

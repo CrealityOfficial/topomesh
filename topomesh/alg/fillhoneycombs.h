@@ -5,7 +5,6 @@
 #include <memory>
 
 namespace topomesh {
-
 	
 
 	class HoneyCombDebugger
