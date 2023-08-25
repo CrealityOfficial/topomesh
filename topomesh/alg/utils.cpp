@@ -4,12 +4,12 @@
 
 namespace topomesh
 {
-	trimesh::TriMesh* generateColumnar(const TriPolygons& polys, const ColumnarParam& param)
+	trimesh::TriMesh* generateColumnar(const TriPolygons& polys, const ColumnarParam& param, const std::vector<std::vector<float>>* height)
 	{
 		/*TriPolygon poly = { trimesh::vec3(0.5f,0.0f,0.0f),trimesh::vec3(1.0f,0.0f,0),trimesh::vec3(1.5f,0.5f,0.0f),trimesh::vec3(1.0f,1.0f,0.0),
 			trimesh::vec3(0.5f,1.0f,0.0),trimesh::vec3(0.0f,0.5f,0.0) };
 		TriPolygons polys1 = {poly};*/
-		MMeshT mt;
+		MMeshT mt(polys.size()*50, polys.size() * 20);
 		for (int i = 0; i < polys.size(); i++)
 		{			
 			std::vector<int> vertex_index;			
@@ -28,8 +28,11 @@ namespace topomesh
 				if(((mt.faces[fi].V0(1)->p - mt.faces[fi].V0(0)->p)%(mt.faces[fi].V0(2)->p - mt.faces[fi].V0(0)->p)).z>0)
 					std::swap(mt.faces[fi].connect_vertex[1], mt.faces[fi].connect_vertex[2]);
 			}
-			int before_vertex_index = mt.vertices.size();
-			extendPoint(&mt, copy_vertex, param);
+			int before_vertex_index = mt.vertices.size();	
+			if(height==nullptr)
+				extendPoint(&mt, copy_vertex, param);
+			else
+				extendPoint(&mt, copy_vertex, param, &height->at(i));
 			int after_vertex_index = mt.vertices.size();
 			vertex_index.clear();
 			for (int vi = before_vertex_index; vi < after_vertex_index; vi++)
@@ -42,13 +45,16 @@ namespace topomesh
 		return mesh;
 	}
 
-	void extendPoint(MMeshT* mesh, std::vector<int>& vertex_index, const ColumnarParam& param)
+	void extendPoint(MMeshT* mesh, std::vector<int>& vertex_index, const ColumnarParam& param,const std::vector<float>* height)
 	{		
 		std::vector<int> copy_vertex_index = vertex_index;
 		int size = copy_vertex_index.size();
 		for (int vi = 0; vi < vertex_index.size(); vi++)
 		{
-			mesh->appendVertex(mesh->vertices[vertex_index[vi]].p + trimesh::point(0, 0, param.zEnd));
+			if(height==nullptr)
+				mesh->appendVertex(mesh->vertices[vertex_index[vi]].p + trimesh::point(0, 0, param.zEnd));
+			else
+				mesh->appendVertex(mesh->vertices[vertex_index[vi]].p + trimesh::point(0, 0, height->at(vi)));
 			mesh->appendFace(vertex_index[vi], copy_vertex_index[(vi + 1) % size], mesh->vertices.back().index);
 			mesh->appendFace(vertex_index[vi], copy_vertex_index[(vi + size - 1) % size], mesh->vertices.back().index);
 			copy_vertex_index[vi] = mesh->vertices.back().index;
