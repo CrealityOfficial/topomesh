@@ -41,7 +41,7 @@ namespace topomesh
 		bool isdelect = false; //是否删除标记区域
 		std::vector<int> faces; //所选择的区域面，如果为默认-1则为自定义方向
 		float cheight = 5.0f; ///<圆孔圆心高度
-		float ratio = 0.5f; ///<圆孔半径
+		float ratio = 0.5f; ///<圆孔直径相对网格边长比例
 		float delta = 0.5f; //圆孔间隔
 		int nslices = 17;   //拟合多边形边数
 		//debug
