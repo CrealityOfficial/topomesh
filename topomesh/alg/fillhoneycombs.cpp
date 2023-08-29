@@ -1,24 +1,24 @@
 ﻿#include "fillhoneycombs.h"
-#include "topomesh/math/polygon.h"
-#include "topomesh/math/AABB.h"
-#include "topomesh/math/SVG.h"
 #include "topomesh/data/mmesht.h"
 #include "topomesh/alg/letter.h"
 #include "topomesh/alg/earclipping.h"
-#include "topomesh/honeycomb/Matrix.h"
-#include "topomesh/honeycomb/Polyline.h"
-#include "topomesh/honeycomb/HoneyComb.h"
 
 #include "topomesh/alg/utils.h"
 #include "topomesh/data/CMesh.h"
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
+#include "clipper/clipper.hpp"
+#include "cxutil/math/polygon.h"
+
 //#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
 
 #ifndef EPS
 #define EPS 1e-8f
 #endif // !EPS
+#ifndef SQRT3
+#define SQRT3 1.732050807568877
+#endif // !SQRT3
 
 namespace topomesh {
     enum class HexDirection :int {
@@ -49,59 +49,10 @@ namespace topomesh {
         return HexDirection::NO_NEIGHBOR;
     };
 
-    honeycomb::Mesh ConstructFromTriMesh(const trimesh::TriMesh* trimesh)
-    {
-        honeycomb::Mesh mesh;
-        auto& faces = mesh.GetFaces();
-        auto& points = mesh.GetPoints();
-        auto& indexs = mesh.GetFaceVertexAdjacency();
-        const auto& vertices = trimesh->vertices;
-        const auto& faceVertexs = trimesh->faces;
-        const int facenums = faceVertexs.size();
-        faces.reserve(facenums);
-        for (int i = 0; i < facenums; ++i) {
-            faces.emplace_back(i);
-        }
-        points.reserve(vertices.size());
-        for (const auto& v : vertices) {
-            points.emplace_back(honeycomb::Point{ v[0], v[1], v[2] });
-        }
-        indexs.reserve(faceVertexs.size());
-        for (const auto& fa : faceVertexs) {
-            indexs.emplace_back(std::vector<int>{fa[0], fa[1], fa[2] });
-        }
-        mesh.GenerateFaceNormals();
-        //mesh.WriteSTLFile("trimesh2mesh");
-        return mesh;
-    }
-
-    trimesh::TriMesh ConstructFromHoneyMesh(const honeycomb::Mesh& honeyMesh)
-    {
-        trimesh::TriMesh triMesh;
-        const auto& bound = honeyMesh.Bound();
-        const auto& points = honeyMesh.GetPoints();
-        const auto& indexs = honeyMesh.GetFaceVertexAdjacency();
-        triMesh.vertices.reserve(points.size());
-        triMesh.faces.reserve(indexs.size());
-        for (const auto& p : points) {
-            const auto& pt = trimesh::vec3((float)p.x, (float)p.y, (float)p.z);
-            triMesh.vertices.emplace_back(pt);
-        }
-        for (const auto& f : indexs) {
-            triMesh.faces.emplace_back(trimesh::vec3(f[0], f[1], f[2]));
-        }
-        const auto& min = bound.Min();
-        const auto& max = bound.Max();
-        const auto& p1 = trimesh::vec3((float)min.x, (float)min.y, (float)min.z);
-        const auto& p2 = trimesh::vec3((float)max.x, (float)max.y, (float)max.z);
-        triMesh.bbox = std::move(trimesh::box3(p1, p2));
-        return triMesh;
-    }
-
-    void GenerateExHexagons(honeycomb::Mesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr)
+    void GenerateExHexagons(CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr)
     {
         //拷贝一份数据
-        honeycomb::Mesh cutMesh;
+        CMesh cutMesh;
         cutMesh.MiniCopy(honeyMesh);
         //第3步，剪切掉底面得边界轮廓
         cutMesh.DeleteFaces(letterOpts.bottom, true);
@@ -112,34 +63,21 @@ namespace topomesh {
         std::vector<std::vector<int>>sequentials;
         cutMesh.GetSequentialPoints(edges, sequentials);
         //第5步，构建底面边界轮廓多边形
-        std::vector<honeycomb::Poly2d> polys;
+        TriPolygons polys;
         polys.reserve(sequentials.size());
-        const auto& points = cutMesh.GetPoints();
+        const auto& points = cutMesh.mpoints;
         for (const auto& seq : sequentials) {
-            std::vector<honeycomb::Point2d> border;
+            TriPolygon border;
             border.reserve(seq.size());
             for (const auto& v : seq) {
                 const auto& p = points[v];
-                border.emplace_back(p.x, p.y);
+                border.emplace_back(p.x, p.y, 0);
             }
-            honeycomb::Poly2d poly(border);
-            polys.emplace_back(poly);
+            polys.emplace_back(border);
         }
-        honeycomb::ExPoly2d boundarys(polys);
         if (debugger) {
             //显示底面边界轮廓多边形
-            TriPolygons polygons;
-            polygons.reserve(polys.size());
-            for (const auto& poly : polys) {
-                const auto& pts = poly.Points();
-                TriPolygon polygon;
-                polygon.reserve(pts.size());
-                for (const auto& p : pts) {
-                    polygon.emplace_back(trimesh::vec3((float)p.x, (float)p.y, 0));
-                }
-                polygons.emplace_back(std::move(polygon));
-            }
-            debugger->onGenerateInfillPolygons(polygons);
+            debugger->onGenerateInfillPolygons(polys);
         }
         //第6步，底面边界轮廓抽壳
         const double resolution = honeyparams.resolution;
@@ -150,10 +88,9 @@ namespace topomesh {
         cxutil::Polygons mpolygons; ///<底面边界抽壳多边形
         {
             for (const auto& poly : polys) {
-                const auto& pts = poly.Points();
                 ClipperLib::Path path;
-                path.reserve(pts.size());
-                for (const auto& p : pts) {
+                path.reserve(poly.size());
+                for (const auto& p : poly) {
                     const auto& x = int(p.x / resolution);
                     const auto& y = int(p.y / resolution);
                     path.emplace_back(ClipperLib::IntPoint(x, y));
@@ -179,13 +116,24 @@ namespace topomesh {
             debugger->onGenerateBottomPolygons(polygons);
         }
         //第7步，底面边界抽壳同时，生成六角网格阵列
-        auto min = boundarys.Bound().Min();
-        auto max = boundarys.Bound().Max();
+        trimesh::dvec3 min, max;
+        min.x = std::numeric_limits<double>::max();
+        min.y = std::numeric_limits<double>::max();
+        max.x = std::numeric_limits<double>::lowest();
+        max.y = std::numeric_limits<double>::lowest();
+        for (const auto& poly : polys) {
+            for (const auto& p : poly) {
+                if (p.x < min.x) min.x = p.x;
+                if (p.y < min.y) min.y = p.y;
+                if (p.x > max.x) max.x = p.x;
+                if (p.y > max.y) max.y = p.y;
+            }
+        }
         if (honeyparams.polyline) {
-            min.x = std::numeric_limits<float>::max();
-            min.y = std::numeric_limits<float>::max();
-            max.x = std::numeric_limits<float>::lowest();
-            max.y = std::numeric_limits<float>::lowest();
+            min.x = std::numeric_limits<double>::max();
+            min.y = std::numeric_limits<double>::max();
+            max.x = std::numeric_limits<double>::lowest();
+            max.y = std::numeric_limits<double>::lowest();
             const auto& poly = *honeyparams.polyline;
             for (const auto& p : poly) {
                 if (p.x < min.x) min.x = p.x;
@@ -353,18 +301,21 @@ namespace topomesh {
         ccglobal::Tracer* tracer, HoneyCombDebugger* debugger)
     {	        
         honeyLetterOpt letterOpts;
-        honeycomb::Mesh&& inputMesh = ConstructFromTriMesh(trimesh);
+        CMesh inputMesh(trimesh);
         //inputMesh.WriteSTLFile("inputmesh");
         //第1步，寻找底面（最大平面）朝向
         std::vector<int>bottomFaces;
-        honeycomb::Point dir = inputMesh.FindBottomDirection(&bottomFaces);
-        inputMesh.Rotate(dir, honeycomb::Point(0, 0, -1));
-        honeycomb::BoundBox bound = inputMesh.Bound();
-        const auto& minPt = bound.Min();
+        trimesh::vec3 dir = inputMesh.FindBottomDirection(&bottomFaces);
+        inputMesh.Rotate(dir, trimesh::vec3(0, 0, -1));
+        const auto& minPt = inputMesh.mbox.min;
         inputMesh.Translate(-minPt);
         letterOpts.bottom.resize(bottomFaces.size());
         letterOpts.bottom.assign(bottomFaces.begin(), bottomFaces.end());
-        const auto& honeyFaces = inputMesh.GetFaces();
+        std::vector<int> honeyFaces;
+        honeyFaces.reserve(inputMesh.mfaces.size());
+        for (int i = 0; i < inputMesh.mfaces.size(); ++i) {
+            honeyFaces.emplace_back(i);
+        }
         std::sort(bottomFaces.begin(), bottomFaces.end());
         std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
         std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
@@ -374,8 +325,8 @@ namespace topomesh {
         if (debugger) {
             //显示底面区域
             TriPolygons polygons;
-            const auto& inPoints = inputMesh.GetPoints();
-            const auto& inIndexs = inputMesh.GetFaceVertexAdjacency();
+            const auto& inPoints = inputMesh.mpoints;
+            const auto& inIndexs = inputMesh.mfaces;
             polygons.reserve(bottomFaces.size());
             for (const auto& f : bottomFaces) {
                 TriPolygon poly;
@@ -390,7 +341,8 @@ namespace topomesh {
         }
         //第3步，生成六角网格
         GenerateExHexagons(inputMesh, honeyparams, letterOpts, debugger);
-        trimesh::TriMesh&& mesh = ConstructFromHoneyMesh(inputMesh);
+        trimesh::TriMesh&& mesh = inputMesh.GetTriMesh();
+
         std::vector<bool> delectface(mesh.faces.size(), false);
         for (int i : bottomFaces)
             delectface[i] = true;
@@ -527,9 +479,9 @@ namespace topomesh {
             for (int j = 0; j < ncols; ++j) {
                 const auto& pt = rowPoints[j];
                 if (j % 2 == 0) {
-                    const auto& center = honeycomb::Point2d(pt.x, pt.y);
-                    honeycomb::Hexagon hexagon(center, side);
-                    const auto& border = hexagon.Border();
+                    const auto& center = trimesh::vec2(pt.x, pt.y);
+                    topomesh::Hexagon hexagon(center, side);
+                    const auto& border = hexagon.border;
                     HexaPolygon hexa;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
@@ -538,9 +490,9 @@ namespace topomesh {
                     hexa.coord = trimesh::ivec3(j, -(i + j) / 2, (i - j) / 2);
                     polygons.polys.emplace_back(std::move(hexa));
                 } else {
-                    const auto& center = honeycomb::Point2d(pt.x, (double)pt.y - ydelta);
-                    honeycomb::Hexagon hexagon(center, side);
-                    const auto & border = hexagon.Border();
+                    const auto& center = trimesh::vec2(pt.x, (double)pt.y - ydelta);
+                    topomesh::Hexagon hexagon(center, side);
+                    const auto & border = hexagon.border;
                     HexaPolygon hexa;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
@@ -826,15 +778,15 @@ namespace topomesh {
                             mutiHoleEdges += 2;
                             edge.bmutihole = true;
                             oe.bmutihole = true;
-                            edge.addRects.reserve(n);
-                            oe.addRects.reserve(n);
+                            edge.addPoints.reserve(n);
+                            oe.addPoints.reserve(n);
                         }
                         for (int j = 1; j <= n; ++j) {
                             const auto& z = cheight + float(2 * j - 1) * addz;
-                            edge.addRects.emplace_back(points.size());
+                            edge.addPoints.emplace_back(points.size());
                             points.emplace_back(trimesh::vec3(a.x, a.y, z));
                             points.emplace_back(trimesh::vec3(b.x, b.y, z));
-                            oe.addRects.emplace_back(points.size());
+                            oe.addPoints.emplace_back(points.size());
                             points.emplace_back(trimesh::vec3(c.x, c.y, z));
                             points.emplace_back(trimesh::vec3(d.x, d.y, z));
 
@@ -886,15 +838,15 @@ namespace topomesh {
                                 mutiHoleEdges += 2;
                                 edge.bmutihole = true;
                                 oe.bmutihole = true;
-                                edge.addRects.reserve(size_t(n) - 1);
-                                oe.addRects.reserve(size_t(n) - 1);
+                                edge.addPoints.reserve(size_t(n) - 1);
+                                oe.addPoints.reserve(size_t(n) - 1);
                             }
                             for (int j = n1; j < n2 - 1; ++j) {
                                 const auto& z = cheight + float(2 * j + 1) * addz;
-                                edge.addRects.emplace_back(points.size());
+                                edge.addPoints.emplace_back(points.size());
                                 points.emplace_back(trimesh::vec3(a.x, a.y, z));
                                 points.emplace_back(trimesh::vec3(b.x, b.y, z));
-                                oe.addRects.emplace_back(points.size());
+                                oe.addPoints.emplace_back(points.size());
                                 points.emplace_back(trimesh::vec3(c.x, c.y, z));
                                 points.emplace_back(trimesh::vec3(d.x, d.y, z));
 
@@ -963,7 +915,7 @@ namespace topomesh {
                     if (edge.bmutihole) {
                         //第一个圆孔的第一个顶点的索引
                         int cstart = edge.starts.front();
-                        c = edge.addRects.front(), d = c + 1;
+                        c = edge.addPoints.front(), d = c + 1;
                         faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
                         for (int k = 0; k < s; ++k) {
                             faces.emplace_back(trimesh::ivec3(cstart + k, d, cstart + k + 1));
@@ -984,7 +936,7 @@ namespace topomesh {
                         for (int num = 1; num < edge.holenums - 1; ++num) {
                             cstart = edge.starts[num];
                             a = c; b = d;
-                            c = edge.addRects[num]; d = c + 1;
+                            c = edge.addPoints[num]; d = c + 1;
 
                             faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
                             for (int k = 0; k < s; ++k) {
@@ -1066,7 +1018,7 @@ namespace topomesh {
         std::shared_ptr<trimesh::TriMesh> triMesh(new trimesh::TriMesh());
         triMesh->vertices.swap(points);
         triMesh->faces.swap(faces);
-        triMesh->write("holes.stl");
+        //triMesh->write("holes.stl");
         return triMesh;
     }
 

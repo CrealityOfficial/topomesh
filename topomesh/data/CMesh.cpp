@@ -155,6 +155,9 @@ namespace topomesh {
         }
         return true;
     }
+    void CMesh::DuplicateSTL(double ratio)
+    {
+    }
     bool CMesh::WriteSTLFile(const char* filename, bool bBinary)
     {
         int face_num = mfaces.size();
@@ -327,8 +330,26 @@ namespace topomesh {
         mesh.bbox = mbox;
         return mesh;
     }
+    trimesh::TriMesh CMesh::ConvertToTriMesh()
+    {
+        trimesh::TriMesh mesh;
+        mesh.faces.swap(mfaces);
+        mesh.vertices.swap(mpoints);
+        std::swap(mesh.bbox, mbox);
+        return mesh;
+    }
     void CMesh::Merge(const CMesh& mesh)
     {
+        int pn = mpoints.size();
+        int fn = mfaces.size();
+        const auto& points = mesh.mpoints;
+        const auto& faces = mesh.mfaces;
+        mfaces.reserve(fn + faces.size());
+        mpoints.reserve(pn + points.size());
+        mpoints.insert(mpoints.end(), points.begin(), points.end());
+        for (const auto& f : faces) {
+            mfaces.emplace_back(trimesh::ivec3(pn + f[0], pn + f[1], pn + f[2]));
+        }
     }
     void CMesh::Clone(const CMesh& mesh)
     {
@@ -345,14 +366,17 @@ namespace topomesh {
         for (auto& pt : mpoints) {
             pt += trans;
         }
-        this->mbox.valid = false;
+        mbox.min += trans;
+        mbox.max += trans;
     }
     void CMesh::Rotate(const trimesh::fxform& mat)
     {
         for (auto& pt : mpoints) {
             pt = mat * pt;
         }
-        this->mbox.valid = false;
+        mbox.min = mat * mbox.min;
+        mbox.max = mat * mbox.max;
+        mbox = trimesh::box3(mbox.min, mbox.max);
     }
     void CMesh::Rotate(const PPoint& axis, const double& angle)
     {
