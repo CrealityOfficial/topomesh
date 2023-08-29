@@ -54,6 +54,7 @@ namespace topomesh {
         bool WriteSTLFile(const char* filename, bool bBinary = true);
         CMesh(const trimesh::TriMesh* mesh);
         trimesh::TriMesh GetTriMesh() const;
+        trimesh::TriMesh ConvertToTriMesh();
         void Merge(const CMesh& mesh);
         void Clone(const CMesh& mesh);
         void MiniCopy(const CMesh& mesh);

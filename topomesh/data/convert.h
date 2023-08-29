@@ -1,6 +1,10 @@
 #pragma once
 #include "topomesh/interface/idata.h"
 
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif // !M_PI
+
 namespace topomesh
 {
 	struct CameraParam
@@ -36,11 +40,26 @@ namespace topomesh
         bool bmutihole = false;
         
         std::vector<int> starts;
-        std::vector<int> addRects;
+        std::vector<int> addPoints;
         std::vector<int> corners;
         bool blower = true;
         float lowHeight = 0.f;
         float topHeight = 0.f;
+    };
+    struct Hexagon {
+        trimesh::vec2 centroid;
+        float radius = 1;
+        std::vector<trimesh::vec2> border;
+        Hexagon(const trimesh::vec2& c, const float& d)
+        {
+            centroid = c, radius = d;
+            const auto& theta = 2.0 * M_PI / 6;
+            for (int i = 0; i < 6; ++i) {
+                const auto& phi = float(i) * theta;
+                const auto& p = centroid + trimesh::vec2(std::cos(phi), std::sin(phi)) * radius;
+                border.emplace_back(std::move(p));
+            }
+        }
     };
     struct HexaPolygon {
         TriPolygon poly;
@@ -51,7 +70,7 @@ namespace topomesh
     };
     struct HexaPolygons {
         bool bSewTop = true; ///棱柱的顶部是否需要缝合
-        bool bSewBottom = true; ///<棱柱的底部是否需要缝合
+        bool bSewBottom = true; ///<棱柱的底部连接部分是否需要缝合
         float side = 0.0f; ///< 每个棱柱底面六角网格的边长
         std::vector<HexaPolygon> polys;
     };
