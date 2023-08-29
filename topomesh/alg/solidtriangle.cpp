@@ -72,6 +72,9 @@ namespace topomesh {
 				for (int x = min_xi; x <= max_xi; x++)
 				{
 					if (CX1 >= -EPS && CX2 >= -EPS && CX3 >= -EPS)
+#ifdef _OPENMP
+#pragma omp critical
+#endif 
 						_result[x][y] = min_z;
 					CX1 += I1; CX2 += I2; CX3 += I3;
 				}
