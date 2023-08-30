@@ -9,6 +9,7 @@
 #include "topomesh/alg/solidtriangle.h"
 #include "clipper/clipper.hpp"
 #include "cxutil/math/polygon.h"
+#include "mmesh/trimesh/trimeshutil.h"
 
 //#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
@@ -199,7 +200,7 @@ namespace topomesh {
         return;
     }
 
-    void GenerateBottomHexagons(CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger)
+    void GenerateBottomHexagons(const CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger)
     {
         //拷贝一份数据
         CMesh cutMesh;
@@ -993,7 +994,6 @@ namespace topomesh {
                             }
                             hexa.edges[i].hasAdd = true;
                             oh.edges[(i + 3) % 6].hasAdd = true;
-
                         }
                     }
                 }
@@ -1046,7 +1046,9 @@ namespace topomesh {
                     if (edge.bmutihole) {
                         //第一个圆孔的第一个顶点的索引
                         int cstart = edge.starts.front();
-                        c = edge.addPoints.front(), d = c + 1;
+
+
+                        c = edge.addPoints.front(); d = c + 1;
                         faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
                         for (int k = 0; k < s; ++k) {
                             faces.emplace_back(trimesh::ivec3(cstart + k, d, cstart + k + 1));
@@ -1129,8 +1131,41 @@ namespace topomesh {
                     }
                 } else {
                     ///无孔的侧面
-                    faces.emplace_back(trimesh::ivec3(b, a, c));
-                    faces.emplace_back(trimesh::ivec3(b, c, d));
+                    const auto& ledge = hexa.edges[(j + 5) % 6];
+                    const auto& nedge = hexa.edges[(j + 1) % 6];
+                    if (ledge.canAdd && nedge.canAdd) {
+                        const auto& lIndexs = ledge.addPoints;
+                        const auto& nIndexs = nedge.addPoints;
+                        faces.emplace_back(trimesh::ivec3(b, a, lIndexs.front() + 1));
+                        for (size_t k = 0; k < lIndexs.size() - 1; ++k) {
+                            faces.emplace_back(trimesh::ivec3(b, lIndexs[k] + 1, lIndexs[k + 1] + 1));
+                        }
+                        faces.emplace_back(trimesh::ivec3(b, lIndexs.back() + 1, c));
+                        faces.emplace_back(trimesh::ivec3(b, c, nIndexs.front()));
+                        for (size_t k = 0; k < nIndexs.size() - 1; ++k) {
+                            faces.emplace_back(trimesh::ivec3(nIndexs[k], c, nIndexs[k + 1]));
+                        }
+                        faces.emplace_back(trimesh::ivec3(nIndexs.back(), c, d));
+                    } else if (ledge.canAdd && (!nedge.canAdd)) {
+                        const auto& lIndexs = ledge.addPoints;
+                        faces.emplace_back(trimesh::ivec3(b, a, lIndexs.front() + 1));
+                        for (size_t k = 0; k < lIndexs.size() - 1; ++k) {
+                            faces.emplace_back(trimesh::ivec3(b, lIndexs[k] + 1, lIndexs[k + 1] + 1));
+                        }
+                        faces.emplace_back(trimesh::ivec3(b, lIndexs.back() + 1, c));
+                        faces.emplace_back(trimesh::ivec3(b, c, d));
+                    } else if ((!ledge.canAdd) && nedge.canAdd) {
+                        const auto& nIndexs = nedge.addPoints;
+                        faces.emplace_back(trimesh::ivec3(b, a, c));
+                        faces.emplace_back(trimesh::ivec3(b, c, nIndexs.front()));
+                        for (size_t k = 0; k < nIndexs.size() - 1; ++k) {
+                            faces.emplace_back(trimesh::ivec3(nIndexs[k], c, nIndexs[k + 1]));
+                        }
+                        faces.emplace_back(trimesh::ivec3(nIndexs.back(), c, d));
+                    } else {
+                        faces.emplace_back(trimesh::ivec3(b, a, c));
+                        faces.emplace_back(trimesh::ivec3(b, c, d));
+                    }
                 }
             }
         }
@@ -1149,6 +1184,7 @@ namespace topomesh {
         std::shared_ptr<trimesh::TriMesh> triMesh(new trimesh::TriMesh());
         triMesh->vertices.swap(points);
         triMesh->faces.swap(faces);
+        mmesh::dumplicateMesh(triMesh.get());
         //triMesh->write("holes.stl");
         return triMesh;
     }
