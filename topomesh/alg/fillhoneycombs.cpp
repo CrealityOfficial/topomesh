@@ -49,7 +49,7 @@ namespace topomesh {
         return HexDirection::NO_NEIGHBOR;
     };
 
-    void GeneratePolygonsHexagons(const TriPolygons&polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger) {
+    void GenerateTriPolygonsHexagons(const TriPolygons&polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger) {
         if (debugger) {
             //显示底面边界轮廓多边形
             debugger->onGenerateInfillPolygons(polys);
@@ -221,12 +221,12 @@ namespace topomesh {
             border.reserve(seq.size());
             for (const auto& v : seq) {
                 const auto& p = points[v];
-                border.emplace_back(p.x, p.y, 0);
+                border.emplace_back(p);
             }
             polys.emplace_back(border);
         }
         //第6步，在底面边界轮廓多边形内生成蜂窝六边形
-        GeneratePolygonsHexagons(polys, honeyparams, letterOpts, debugger);
+        GenerateTriPolygonsHexagons(polys, honeyparams, letterOpts, debugger);
         return;
     }
 
@@ -544,6 +544,42 @@ namespace topomesh {
 		newMesh->write("honeycombs.ply");
 		return newMesh;
 	}
+
+    TriPolygons GetOpenMeshBoundarys(const trimesh::TriMesh& triMesh, HoneyCombDebugger* debugger)
+    {
+        CMesh mesh(&triMesh);
+        TriPolygons polys;
+        std::vector<int> edges;
+        mesh.SelectIndividualEdges(edges);
+        //CMesh edgeMesh = mesh.SaveEdgesToMesh(edges);
+        //edgeMesh.WriteSTLFile("edges.stl");
+        //第0步，底面轮廓边界所有边排序
+        std::vector<std::vector<int>>sequentials;
+        mesh.GetSequentialPoints(edges, sequentials);
+        //第1步，构建底面边界轮廓多边形
+        polys.reserve(sequentials.size());
+        const auto& points = mesh.mpoints;
+        for (const auto& seq : sequentials) {
+            TriPolygon border;
+            border.reserve(seq.size());
+            for (const auto& v : seq) {
+                const auto& p = points[v];
+                border.emplace_back(p);
+            }
+            polys.emplace_back(border);
+        }
+        if (debugger) {
+            //显示底面边界轮廓多边形
+            debugger->onGenerateInfillPolygons(polys);
+        }
+        return polys;
+    }
+
+    HexaPolygons GenerateTriPolygonsHexagons(const TriPolygons& polys, const HexagonArrayParam& hexagonparams)
+    {
+
+        return HexaPolygons();
+    }
 
     HexaPolygons GenerateHexagonsGridArray(const HexagonArrayParam& hexagonparams)
     {

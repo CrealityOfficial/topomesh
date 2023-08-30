@@ -24,18 +24,38 @@ namespace topomesh {
 
     struct HexagonArrayParam {
 		trimesh::vec dir=trimesh::vec3(0,0,1);
-        trimesh::vec3 pos; ///<�������Ͻ���ʼ��
+        trimesh::vec3 pos; ///<
         int nrows = 2;
         int ncols = 2;
-        double radius = 2.0; ///<δ����ǰ���������α߳�
-        double nestWidth = 0.3; ///<���������αں����������ľ����2����
+        double radius = 2.0; ///<
+        double nestWidth = 0.3; ///<
     };
+    struct honeyLetterOpt {
+        std::vector<int>bottom; ///<
+        std::vector<int>others; ///<
+        /*
+        hexagon: 
+        radius: 
+        borders: 
+        neighbors: 
+        */
+        struct hexagon {
+            double radius = 1.0;
+            std::vector<trimesh::vec3>borders;
+            std::vector<int> neighbors;
+            hexagon() : neighbors(6, -1) {}
+        };
+        //
+        std::vector<hexagon>hexgons;
+    };
+    TriPolygons GetOpenMeshBoundarys(const trimesh::TriMesh& triMesh, HoneyCombDebugger* debugger = nullptr);
+    void GenerateTriPolygonsHexagons(const TriPolygons& polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
     HexaPolygons GenerateHexagonsGridArray(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
     struct ColumnarHoleParam {
-        int nslices = 17; ///<Բ��Ĭ����17����
-        float height = 5.0f; ///<Բ��Բ�ĸ߶�
-        float ratio = 0.5f; ///<Բ��ֱ���������߳��ı���
-        float delta = 1.0f; ///<������Բ��Բ�ľ���
+        int nslices = 17; ///<
+        float height = 5.0f; ///<
+        float ratio = 0.5f; ///<
+        float delta = 1.0f; ///<
     };
     void GenerateHexagonNeighbors(HexaPolygons& hexas, const ColumnarHoleParam& param = ColumnarHoleParam());
 	trimesh::vec3 adjustHoneyCombParam(trimesh::TriMesh* trimesh,const HoneyCombParam& honeyparams);
@@ -53,23 +73,6 @@ namespace topomesh {
 
     trimesh::TriMesh* findOutlineOfDir(trimesh::TriMesh* mesh);   
 
-    struct honeyLetterOpt {
-        std::vector<int>bottom; ///<������ƽ�����Ƭ����
-        std::vector<int>others; ///<ȥ�������������Ƭ�������ѱ���ԭģ�Ͷ�Ӧ��������
-        /*
-        hexagon: ÿ����������ṹ��;
-        radius: ��������ǰ������߳�;
-        borders: ��������������(��һ��6���㣬Ĭ��xoy����ϵ��ʱ������);
-        neighbors: �����������ڵ�������������(6������һ���������ڣ�û�м�-1);
-        */
-        struct hexagon {
-            double radius = 1.0;
-            std::vector<trimesh::vec3>borders;
-            std::vector<int> neighbors;
-            hexagon() : neighbors(6, -1) {}
-        };
-        //�������������ھӹ�ϵ
-        std::vector<hexagon>hexgons;
-    };
+    
    
 }

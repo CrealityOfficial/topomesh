@@ -843,7 +843,7 @@ namespace topomesh {
     {
         std::vector<int>().swap(edgeIndexs);
         if (medgeFaces.empty()) {
-            GenerateFaceEdgeAdjacency(true);
+            GenerateFaceEdgeAdjacency2(true);
         }
         const size_t edgenums = medgeFaces.size();
         for (int i = 0; i < edgenums; ++i) {
@@ -886,10 +886,10 @@ namespace topomesh {
                 const auto& v1 = mfaces[f][1];
                 const auto& v2 = mfaces[f][2];
                 const auto& n = trimesh::normalized((mpoints[v2] - mpoints[v1]).cross(mpoints[v0] - mpoints[v1]));
-                const auto & a = medges[e].a;
-                const auto & b = medges[e].b;
-                const auto & c = EdgeOppositePoint(e, f);
-                const auto & d = trimesh::normalized((mpoints[b] - mpoints[a]).cross(mpoints[c] - mpoints[a]));
+                const auto& a = medges[e].a;
+                const auto& b = medges[e].b;
+                const auto& c = EdgeOppositePoint(e, f);
+                const auto& d = trimesh::normalized((mpoints[b] - mpoints[a]).cross(mpoints[c] - mpoints[a]));
                 if ((n DOT d) < 0) {
                     medges[e].a = medges[e].a + medges[e].b;
                     medges[e].b = medges[e].a - medges[e].b;
@@ -960,13 +960,14 @@ namespace topomesh {
         }
     }
 
-    void CMesh::SavePointsToMesh(std::vector<int>& pointIndexs, CMesh& mesh, double radius, size_t nrows, size_t ncolumns)
+    CMesh CMesh::SavePointsToMesh(std::vector<int>& pointIndexs, double radius, size_t nrows, size_t ncolumns)
     {
+        CMesh pointMesh;
         const size_t spherenums = pointIndexs.size();
         const size_t nums = nrows * ncolumns + 2;
         const size_t pointnums = nums * spherenums;
         const size_t facenums = 2 * (nums - 2) * spherenums;
-        auto& points = mesh.mpoints;
+        auto& points = pointMesh.mpoints;
         points.reserve(pointnums);
         for (int k = 0; k < spherenums; ++k) {
             const auto& p = mpoints[pointIndexs[k]];
@@ -989,10 +990,10 @@ namespace topomesh {
             for (size_t i = 0; i < ncolumns; ++i) {
                 const auto& i0 = i + 1 + v0;
                 const auto& i1 = (i + 1) % ncolumns + 1 + v0;
-                mesh.AddFace(v0, i0, i1);
+                pointMesh.AddFace(v0, i0, i1);
                 const auto & j0 = i0 + (nrows - 1) * ncolumns;
                 const auto & j1 = i1 + (nrows - 1) * ncolumns;
-                mesh.AddFace(j1, j0, maxInx);
+                pointMesh.AddFace(j1, j0, maxInx);
             }
             //中间部分
             for (size_t i = 0; i < nrows - 1; ++i) {
@@ -1003,22 +1004,24 @@ namespace topomesh {
                     const auto& i1 = j0 + (j + 1) % ncolumns;
                     const auto & i2 = j1 + j;
                     const auto & i3 = j1 + (j + 1) % ncolumns;
-                    mesh.AddFace(i2, i1, i0);
-                    mesh.AddFace(i2, i3, i1);
+                    pointMesh.AddFace(i2, i1, i0);
+                    pointMesh.AddFace(i2, i3, i1);
                 }
             }
         }
+        return pointMesh;
     }
-    void CMesh::SaveEdgesToMesh(std::vector<int>& edgeIndexs, CMesh& mesh, double r, size_t nslices)
+    CMesh CMesh::SaveEdgesToMesh(std::vector<int>& edgeIndexs, double r, size_t nslices)
     {
+        CMesh edgeMesh;
         const size_t nums = edgeIndexs.size();
-        auto& points = mesh.mpoints;
+        auto& points = edgeMesh.mpoints;
         points.reserve(2 * nums * nslices);
         double delta = 2.0 * M_PI / nslices;
         trimesh::vec3 z(0, 0, 1);
         for (size_t i = 0; i < nums; ++i) {
-            const auto& a = points[medges[edgeIndexs[i]].a];
-            const auto& b = points[medges[edgeIndexs[i]].b];
+            const auto& a = mpoints[medges[edgeIndexs[i]].a];
+            const auto& b = mpoints[medges[edgeIndexs[i]].b];
             const auto& n = trimesh::normalized(b - a);
             auto&& x = std::move(z.cross(n));
             if (trimesh::len(x) < EPS) {
@@ -1042,13 +1045,15 @@ namespace topomesh {
                 const auto& i1 = (j + 1) % nslices + 2 * nslices * i;
                 const auto & j0 = i0 + nslices;
                 const auto & j1 = i1 + nslices;
-                mesh.AddFace(j0, i1, i0);
-                mesh.AddFace(j0, j1, i1);
+                edgeMesh.AddFace(j0, i1, i0);
+                edgeMesh.AddFace(j0, j1, i1);
             }
         }
+        return edgeMesh;
     }
-    void CMesh::SaveFacesToMesh(std::vector<int>& faceIndexs, CMesh& faceMesh)
+    CMesh CMesh::SaveFacesToMesh(std::vector<int>& faceIndexs)
     {
+        CMesh faceMesh;
         std::vector<int> selectFaces;
         const int facenums = mfaces.size();
         for (const auto& f : faceIndexs) {
@@ -1066,6 +1071,7 @@ namespace topomesh {
             int v2 = faceMesh.AddPoint(points[vertexs[2]]);
             faceMesh.AddFace(v0, v1, v2);
         }
+        return faceMesh;
     }
 }
 
