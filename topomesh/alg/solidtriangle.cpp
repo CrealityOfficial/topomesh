@@ -75,7 +75,7 @@ namespace topomesh {
 #ifdef _OPENMP
 #pragma omp critical
 #endif 
-						_result[x][y] = min_z;
+						_result[x][y] = i;
 					CX1 += I1; CX2 += I2; CX3 += I3;
 				}
 				CY1 += J1; CY2 += J2; CY3 += J3;

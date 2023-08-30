@@ -251,6 +251,73 @@ namespace topomesh {
              return honeyparams.axisDir;
     }
 
+    trimesh::TriMesh* findOutlineOfDir(trimesh::TriMesh* mesh)
+    {
+        mesh->need_adjacentfaces();
+        mesh->need_across_edge();
+        int index;
+        float min_z = std::numeric_limits<float>::max();
+        for (int i = 0; i < mesh->vertices.size(); i++)
+        {
+            if (mesh->vertices[i].z < min_z)
+            {
+                min_z = mesh->vertices[i].z;
+                index = i;
+            }
+        }
+        int faceindex;
+        for (int i = 0; i < mesh->adjacentfaces[index].size(); i++)
+        {
+            int face = mesh->adjacentfaces[index][i];
+            trimesh::point v1 = mesh->vertices[mesh->faces[face][1]] - mesh->vertices[mesh->faces[face][0]];
+            trimesh::point v2 = mesh->vertices[mesh->faces[face][2]] - mesh->vertices[mesh->faces[face][0]];
+            trimesh::point nor = v1 % v2;
+            float arc = nor ^ trimesh::point(0, 0, 1);
+            if (arc < 0)
+            {
+                faceindex = face;
+                break;
+            }
+        }
+        std::vector<int> botface = { faceindex };
+        std::vector<int> vis(mesh->faces.size(), 0);      
+        std::queue<int> facequeue;
+        facequeue.push(faceindex);
+        while (!facequeue.empty())
+        {
+            vis[facequeue.front()] = 1;
+            for (int i = 0; i < mesh->across_edge[facequeue.front()].size(); i++)
+            {
+                int face = mesh->across_edge[facequeue.front()][i];
+                if (vis[face]) continue;
+                trimesh::point v1 = mesh->vertices[mesh->faces[face][1]] - mesh->vertices[mesh->faces[face][0]];
+                trimesh::point v2 = mesh->vertices[mesh->faces[face][2]] - mesh->vertices[mesh->faces[face][0]];
+                trimesh::point nor = v1 % v2;
+                float arc = trimesh::normalized(nor) ^ trimesh::point(0, 0, 1);
+                arc = arc >= 1.f ? 1.f : arc;
+                arc = arc <= -1.f ? -1.f : arc;
+                float ang = std::acos(arc) * 180 / M_PI;
+                if (arc<0&&ang >120)                                
+                {
+                    vis[face] = 1;
+                    facequeue.push(face);
+                    botface.push_back(face);
+                }
+            }
+            facequeue.pop();
+        }
+       
+        trimesh::TriMesh* newmesh=new trimesh::TriMesh(*mesh);
+        std::vector<bool> deleteFace(mesh->faces.size(), true);
+        for (int i = 0; i < botface.size(); i++)
+            deleteFace[botface[i]] = false;          
+        trimesh::remove_faces(newmesh, deleteFace);
+        trimesh::remove_unused_vertices(newmesh);
+        newmesh->write("removeface.ply");
+        mesh->write("mesh.ply");
+        return newmesh;
+    }
+
     trimesh::TriMesh* GenerateHoneyCombs(trimesh::TriMesh* trimesh , const HoneyCombParam& honeyparams ,
         ccglobal::Tracer* tracer , HoneyCombDebugger* debugger )
     {
