@@ -2,6 +2,7 @@
 #include "topomesh/data/convert.h"
 #include "ccglobal/tracer.h"
 #include "topomesh/interface/idata.h"
+#include "topomesh/data/CMesh.h"
 #include <memory>
 
 namespace topomesh {
@@ -29,27 +30,13 @@ namespace topomesh {
         double radius = 2.0; ///<未收缩前蜂窝六边形边长
         double nestWidth = 0.3; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）
     };
-    HexaPolygons GenerateHexagons(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
+    HexaPolygons GenerateHexagonsGridArray(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
     struct ColumnarHoleParam {
         int nslices = 17; ///<圆孔默认正17边形
         float height = 5.0f; ///<圆孔圆心高度
         float ratio = 0.5f; ///<圆孔直径相对网格边长的比例
         float delta = 1.0f; ///<相邻两圆的圆心距离
     };
-    void GenerateHexagonNeighbors(HexaPolygons& hexas, const ColumnarHoleParam& param = ColumnarHoleParam());
-	trimesh::vec3 adjustHoneyCombParam(trimesh::TriMesh* trimesh,const HoneyCombParam& honeyparams);
-    TriPolygons traitCurrentPolygons(const HexaPolygons& hexas, int index);
-    TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
-    TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir);
-    
-    TriPolygon traitPlanarCircle(const trimesh::vec3& c, float r, std::vector<int>& indexs, const trimesh::vec3& edgeDir = trimesh::vec3(0, 0, 1), int nums = 17);
-    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param);
-
-	class MMeshT;
-	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance);
-	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, float>>& vertex_distance);
-	void innerHex(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& inFace, std::vector<int>& outFace,float len);
-
     struct honeyLetterOpt {
         std::vector<int>bottom; ///<底面大块平面的面片索引
         std::vector<int>others; ///<去掉底面后其余面片索引（已保留原模型对应的索引）
@@ -68,6 +55,22 @@ namespace topomesh {
         //所有六角网格及邻居关系
         std::vector<hexagon>hexgons;
     };
+
+    void GenerateHexagonNeighbors(HexaPolygons& hexas, const ColumnarHoleParam& param = ColumnarHoleParam());
+    void GeneratePolygonsHexagons(const TriPolygons& polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
+    void GenerateBottomHexagons(CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
+    trimesh::vec3 adjustHoneyCombParam(trimesh::TriMesh* trimesh,const HoneyCombParam& honeyparams);
+    TriPolygons traitCurrentPolygons(const HexaPolygons& hexas, int index);
+    TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
+    TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir);
+    
+    TriPolygon traitPlanarCircle(const trimesh::vec3& c, float r, std::vector<int>& indexs, const trimesh::vec3& edgeDir = trimesh::vec3(0, 0, 1), int nums = 17);
+    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param);
+
+	class MMeshT;
+	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance);
+	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, float>>& vertex_distance);
+	void innerHex(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& inFace, std::vector<int>& outFace,float len);
 
     void findHoneyCombsCoord(trimesh::TriMesh* mesh,const  honeyLetterOpt& honeycombs,std::vector<std::vector<std::pair<float,float>>>& coord);
 }
