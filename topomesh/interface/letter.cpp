@@ -83,7 +83,7 @@ namespace topomesh
 		SYSTEM_TICK("letter");
 		trimesh::TriMesh* result = letter(mesh, camera, param, polygons, letterOpState, debugger, tracer);
 		SYSTEM_TICK("letter");
-		if (letterOpState && result)
+		if (!letterOpState && result)
 		{
 			delete result;
 			result = nullptr;
