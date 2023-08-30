@@ -80,9 +80,9 @@ namespace topomesh {
         void SelectIndividualEdges(std::vector<int>& edgeIndexs, bool bCounterClockWise = false);
         void GetSequentialPoints(std::vector<int>& edgeIndexs, std::vector<std::vector<int>>& sequentials);
 
-        void SavePointsToMesh(std::vector<int>& pointIndexs, CMesh& mesh, double r = 0.01, size_t nrows = 20, size_t ncolumns = 20);
-        void SaveEdgesToMesh(std::vector<int>& edgeIndexs, CMesh& mesh, double r = 0.01, size_t nslices = 20);
-        void SaveFacesToMesh(std::vector<int>& faceIndexs, CMesh& faceMesh);
+        CMesh SavePointsToMesh(std::vector<int>& pointIndexs, double r = 0.01, size_t nrows = 20, size_t ncolumns = 20);
+        CMesh SaveEdgesToMesh(std::vector<int>& edgeIndexs, double r = 0.01, size_t nslices = 20);
+        CMesh SaveFacesToMesh(std::vector<int>& faceIndexs);
 
     };
 }
