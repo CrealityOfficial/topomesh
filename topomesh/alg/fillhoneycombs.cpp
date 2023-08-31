@@ -990,7 +990,7 @@ namespace topomesh {
                         const auto & ab = (a + b) * 0.5;
                         const auto & c1 = trimesh::vec3(ab.x, ab.y, cheight);
                         std::vector<int> corner1;
-                        auto & poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
+                        auto poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
                         edge.corners.swap(corner1);
                         edge.starts.emplace_back(points.size());
                         holeStarts.emplace_back(points.size());
@@ -999,7 +999,7 @@ namespace topomesh {
                         const auto & cd = (c + d) * 0.5;
                         const auto & c2 = trimesh::vec3(cd.x, cd.y, cheight);
                         std::vector<int> corner2;
-                        auto & poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
+                        auto poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
                         oe.corners.swap(corner2);
                         oe.starts.emplace_back(points.size());
                         holeStarts.emplace_back(points.size());
@@ -1050,7 +1050,7 @@ namespace topomesh {
                             const auto & ab = (a + b) * 0.5;
                             const auto & c1 = trimesh::vec3(ab.x, ab.y, cheight + n1 * cdelta);
                             std::vector<int> corner1;
-                            auto & poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
+                            auto poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
                             edge.corners.swap(corner1);
                             edge.starts.emplace_back(points.size());
                             holeStarts.emplace_back(points.size());
@@ -1059,7 +1059,7 @@ namespace topomesh {
                             const auto & cd = (c + d) * 0.5;
                             const auto & c2 = trimesh::vec3(cd.x, cd.y, cheight + n1 * cdelta);
                             std::vector<int> corner2;
-                            auto & poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
+                            auto poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
                             oe.corners.swap(corner2);
                             oe.starts.emplace_back(points.size());
                             holeStarts.emplace_back(points.size());
