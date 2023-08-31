@@ -32,7 +32,8 @@ namespace topomesh
 	{
 		double resolution = 1E-4; ///<多边形相交允许误差
 		TriPolygon* polyline = nullptr; ///<自由编辑区域生成内蜂窝（默认底面全部填充）
-		trimesh::vec3 axisDir = trimesh::vec3(0, 0, 1); ///<蜂窝多边形平面朝向（默认z轴正方向）
+		trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///<蜂窝多边形平面朝向（默认z轴正方向）
+		//trimesh::vec3* axisDir = nullptr;
 		trimesh::vec2 arrayDir = trimesh::vec2(1, 0); ///<蜂窝多边形平面布局（默认边朝上结构）
 		double honeyCombRadius = 1.0; ///<未收缩前蜂窝六边形边长
 		double nestWidth = 0.1; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）

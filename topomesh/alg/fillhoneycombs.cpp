@@ -10,7 +10,7 @@
 #include "clipper/clipper.hpp"
 #include "cxutil/math/polygon.h"
 #include "mmesh/trimesh/trimeshutil.h"
-
+#include "random"
 //#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
 
@@ -249,10 +249,10 @@ namespace topomesh {
             *dir = ave_normal;*/
             return ave_normal;
         }else
-             return honeyparams.axisDir;
+             return trimesh::point(0,0,1);
     }
 
-    trimesh::TriMesh* findOutlineOfDir(trimesh::TriMesh* mesh)
+    trimesh::TriMesh* findOutlineOfDir(trimesh::TriMesh* mesh,std::vector<int>& botfaces)
     {
         mesh->need_adjacentfaces();
         mesh->need_across_edge();
@@ -298,7 +298,7 @@ namespace topomesh {
                 arc = arc >= 1.f ? 1.f : arc;
                 arc = arc <= -1.f ? -1.f : arc;
                 float ang = std::acos(arc) * 180 / M_PI;
-                if (arc<0&&ang >120)                                
+                if (arc<0/*&&ang >120*/)                                
                 {
                     vis[face] = 1;
                     facequeue.push(face);
@@ -307,15 +307,19 @@ namespace topomesh {
             }
             facequeue.pop();
         }
+
        
         trimesh::TriMesh* newmesh=new trimesh::TriMesh(*mesh);
         std::vector<bool> deleteFace(mesh->faces.size(), true);
         for (int i = 0; i < botface.size(); i++)
-            deleteFace[botface[i]] = false;          
+            deleteFace[botface[i]] = false; 
         trimesh::remove_faces(newmesh, deleteFace);
         trimesh::remove_unused_vertices(newmesh);
-        newmesh->write("removeface.ply");
-        mesh->write("mesh.ply");
+        for (trimesh::point& v : newmesh->vertices)
+            v = trimesh::point(v.x, v.y, 0);
+        botfaces.swap(botface);
+        /*newmesh->write("removeface.ply");
+        mesh->write("mesh.ply");*/
         return newmesh;
     }
 
@@ -327,54 +331,148 @@ namespace topomesh {
         if(trimesh == nullptr) return result_trimesh;
         CMesh cmesh(trimesh);
         //1.重新整理输入参数
-        trimesh::vec3 dir=adjustHoneyCombParam(trimesh, honeyparams);
-        cmesh.Rotate(dir, trimesh::vec3(0, 0, 1));
+        /*trimesh::vec3 dir=adjustHoneyCombParam(trimesh, honeyparams);
+        cmesh.Rotate(dir, trimesh::vec3(0, 0, 1));*/
         //2.找到生成蜂窝指定的区域（自定义或者是用户自己指定）          
         if (honeyparams.faces.empty()) {
             //自定义最大底面朝向
-            honeyLetterOpt letterOpts;
-            //inputMesh.WriteSTLFile("inputmesh");
-            //第1步，寻找底面（最大平面）朝向
-            std::vector<int>bottomFaces;
-            trimesh::vec3 dir = cmesh.FindBottomDirection(&bottomFaces);
-            cmesh.Rotate(dir, trimesh::vec3(0, 0, -1));
-            const auto & minPt = cmesh.mbox.min;
-            cmesh.Translate(-minPt);
-            letterOpts.bottom.resize(bottomFaces.size());
-            letterOpts.bottom.assign(bottomFaces.begin(), bottomFaces.end());
-            std::vector<int> honeyFaces;
-            honeyFaces.reserve(cmesh.mfaces.size());
-            for (int i = 0; i < cmesh.mfaces.size(); ++i) {
-                honeyFaces.emplace_back(i);
-            }
-            std::sort(bottomFaces.begin(), bottomFaces.end());
-            std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
-            std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
-            letterOpts.others = std::move(otherFaces);
-            //第2步，平移至xoy平面后底面整平
-            cmesh.FlatBottomSurface(&bottomFaces);
-            if (debugger) {
-                //显示底面区域
-                TriPolygons polygons;
-                const auto& inPoints = cmesh.mpoints;
-                const auto& inIndexs = cmesh.mfaces;
-                polygons.reserve(bottomFaces.size());
-                for (const auto& f : bottomFaces) {
-                    TriPolygon poly;
-                    poly.reserve(3);
-                    for (int i = 0; i < 3; ++i) {
-                        const auto& p = inPoints[inIndexs[f][i]];
-                        poly.emplace_back(trimesh::vec3(p.x, p.y, 0));
-                    }
-                    polygons.emplace_back(std::move(poly));
+            if (honeyparams.axisDir == trimesh::vec3(0,0,0))
+            {
+                honeyLetterOpt letterOpts;
+                //inputMesh.WriteSTLFile("inputmesh");
+                //第1步，寻找底面（最大平面）朝向
+                std::vector<int>bottomFaces;
+                trimesh::vec3 dir = cmesh.FindBottomDirection(&bottomFaces);
+                cmesh.Rotate(dir, trimesh::vec3(0, 0, -1));
+                const auto& minPt = cmesh.mbox.min;
+                cmesh.Translate(-minPt);
+                letterOpts.bottom.resize(bottomFaces.size());
+                letterOpts.bottom.assign(bottomFaces.begin(), bottomFaces.end());
+                std::vector<int> honeyFaces;
+                honeyFaces.reserve(cmesh.mfaces.size());
+                for (int i = 0; i < cmesh.mfaces.size(); ++i) {
+                    honeyFaces.emplace_back(i);
                 }
-                debugger->onGenerateBottomPolygons(polygons);
+                std::sort(bottomFaces.begin(), bottomFaces.end());
+                std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
+                std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
+                letterOpts.others = std::move(otherFaces);
+                //第2步，平移至xoy平面后底面整平
+                cmesh.FlatBottomSurface(&bottomFaces);
+                if (debugger) {
+                    //显示底面区域
+                    TriPolygons polygons;
+                    const auto& inPoints = cmesh.mpoints;
+                    const auto& inIndexs = cmesh.mfaces;
+                    polygons.reserve(bottomFaces.size());
+                    for (const auto& f : bottomFaces) {
+                        TriPolygon poly;
+                        poly.reserve(3);
+                        for (int i = 0; i < 3; ++i) {
+                            const auto& p = inPoints[inIndexs[f][i]];
+                            poly.emplace_back(trimesh::vec3(p.x, p.y, 0));
+                        }
+                        polygons.emplace_back(std::move(poly));
+                    }
+                    debugger->onGenerateBottomPolygons(polygons);
+                }
+                //第3步，生成底面六角网格
+                GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
+                trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
+                //mesh.write("result.ply");
+                trimesh = &mesh;
+                trimesh->need_bbox();
+                int row = 200;
+                int col = 200;
+                std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> Upfaces;
+                for (int i : letterOpts.others)
+                    Upfaces.push_back(std::make_tuple(trimesh->vertices[trimesh->faces[i][0]], trimesh->vertices[trimesh->faces[i][1]],
+                        trimesh->vertices[trimesh->faces[i][2]]));
+                topomesh::SolidTriangle upST(&Upfaces, row, col, trimesh->bbox.max.x, trimesh->bbox.min.x, trimesh->bbox.max.y, trimesh->bbox.min.y);
+                upST.work();
+
+                /*trimesh::TriMesh* pointmesh = new trimesh::TriMesh();
+                for(int i=0;i<upST.getResult().size();i++)
+                    for (int j = 0; j < upST.getResult()[i].size(); j++)
+                    {
+                        if (upST.getResult()[i][j] == std::numeric_limits<float>::max())
+                            pointmesh->vertices.push_back(trimesh::point(i, j, 0));
+                        else
+                        {
+                            int faceid = upST.getResult()[i][j];
+                            trimesh::point v0;
+                            trimesh::point v1;
+                            trimesh::point v2;
+                            std::tie(v0, v1, v2) = Upfaces.at(faceid);
+                            float za[] = { v0.z,v1.z,v2.z };
+                            std::sort(za, za + 3);
+                            pointmesh->vertices.push_back(trimesh::point(i, j, za[0]));
+                        }
+                    }
+                pointmesh->write("pointmesh.ply");*/
+                HexaPolygons hexpolys;
+                hexpolys.side = letterOpts.hexgons[0].radius;
+               
+                /*std::random_device rd;
+                std::mt19937 engine(rd());
+                std::uniform_real_distribution<double> ldist(0.0, 1.0);
+                std::uniform_real_distribution<double> udist(12, 15);  */   
+                trimesh::point max_xy = trimesh->bbox.max;
+                trimesh::point min_xy = trimesh->bbox.min;
+                float lengthx = (trimesh->bbox.max.x - trimesh->bbox.min.x)/ (col*1.f);
+                float lengthy = (trimesh->bbox.max.y - trimesh->bbox.min.y)/ (row*1.f);
+
+                for (auto& hg : letterOpts.hexgons)
+                {
+                    HexaPolygon hp;
+                    std::vector<float> height;
+                    for (int i = 0; i < hg.borders.size(); i++)
+                    {
+                        trimesh::point p = hg.borders[i] - min_xy;
+                        int xi = p.x / lengthx;
+                        int yi = p.y / lengthy;
+                        xi = xi == col ? --xi : xi;
+                        yi = yi == row ? --yi : yi;
+                        float min_z = upST.getDataMinZ(xi, yi);
+                        if (min_z != std::numeric_limits<float>::max())
+                            height.push_back(min_z);
+                        else
+                            height.push_back(0.f);                      
+                    }
+                    hp.poly.swap(hg.borders);
+                    for (int i = 0; i < hp.edges.size(); i++)
+                    {
+                        //hp.edges[i].lowHeight = ldist(engine);
+                        hp.edges[i].topHeight = height[i];
+                    }
+                    hexpolys.polys.push_back(hp);                   
+                }
+                topomesh::ColumnarHoleParam columnParam;
+                columnParam.nslices = 65;
+                columnParam.ratio = 0.8f;
+                columnParam.height = 3.0f;
+                std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
+                newmesh->write("holesColumnar.stl");
+
             }
-            //第3步，生成底面六角网格
-            GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
-            trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
+            else {
+                trimesh::vec3 dir = honeyparams.axisDir;
+                trimesh::apply_xform(trimesh, trimesh::xform::rot_into(dir, trimesh::vec3(0, 0, 1)));
+                //Rotate(dir, trimesh::vec3(0, 0, 1));
+
+                std::vector<int> botfaces;
+                trimesh::TriMesh* newmesh = findOutlineOfDir(trimesh, botfaces);
+                trimesh->need_bbox();
+                std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> facecontianer;
+                for (trimesh::TriMesh::Face& f : newmesh->faces)
+                    facecontianer.push_back(std::make_tuple(newmesh->vertices[f[0]], newmesh->vertices[f[1]], newmesh->vertices[f[2]]));
+                topomesh::SolidTriangle soildtri(&facecontianer, 100, 100, trimesh->bbox.max.x, trimesh->bbox.min.x, trimesh->bbox.max.y, trimesh->bbox.min.y);
+                soildtri.work();
+            }
         } else {
             //用户指定方向，需要计算指定面片的轮廓
+            trimesh::vec3 dir = honeyparams.axisDir;
+            trimesh::apply_xform(trimesh, trimesh::xform::rot_into(dir, trimesh::vec3(0, 0, 1)));
 
         }
         cmesh.GenerateBoundBox();
@@ -388,6 +486,8 @@ namespace topomesh {
         hexagonparams.ncols = std::ceil((cmesh.mbox.max.x - cmesh.mbox.min.x) / xdist);
         hexagonparams.nrows = (std::ceil((cmesh.mbox.max.y - cmesh.mbox.min.y) / ydist) + 1) / 2;
         HexaPolygons hexagons = GenerateHexagonsGridArray(hexagonparams);
+
+
 
         
         return result_trimesh;
