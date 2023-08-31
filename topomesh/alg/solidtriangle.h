@@ -1,10 +1,14 @@
 #pragma once
 #include "trimesh2/TriMesh.h"
 
+
+/*光删化方法，使用向量内积填充对应的像素点*/
+
 namespace topomesh {
 	class SolidTriangle {
 	public :
 		SolidTriangle() {};
+		//初始化 输入需要光删化关于面的数组，分辨率精度和面数组的二维boundingbox
 		SolidTriangle(const std::vector<std::tuple<trimesh::point,trimesh::point,trimesh::point>>*,int,int,float,float,float,float);
 		~SolidTriangle() {};
 
