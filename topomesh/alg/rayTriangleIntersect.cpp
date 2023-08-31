@@ -22,4 +22,11 @@ namespace topomesh
 		}
 		return false;
 	}
+
+	bool faceTriangleIntersect(const trimesh::point& va1, const trimesh::point& va2, const trimesh::point& va3,
+		const trimesh::point& vb1, const trimesh::point& vb2, const trimesh::point& vb3,
+		trimesh::point& cross1, trimesh::point& cross2)
+	{
+		return false;
+	}
 }
