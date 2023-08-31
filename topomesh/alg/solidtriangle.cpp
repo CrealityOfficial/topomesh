@@ -2,8 +2,6 @@
 #ifdef _WIN32
 #include "omp.h"
 #endif
-#include <intrin.h>
-
 
 #ifndef EPS
 #define EPS 1e-6f
