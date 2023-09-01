@@ -64,11 +64,11 @@ namespace topomesh
         }
     };
     struct HexaPolygon {
+        bool standard = true;
         TriPolygon poly;
         int startIndex = 0; ///< 六棱柱第一个点的索引
         trimesh::ivec3 coord; ///<三轴坐标系下的坐标
         std::vector<HexaEdge> edges;
-        HexaPolygon() : edges(6) {}
     };
     struct HexaPolygons {
         bool bSewTop = true; ///棱柱的顶部是否需要缝合
