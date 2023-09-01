@@ -38,9 +38,11 @@ namespace topomesh
         bool addTriangle = false;
         int holenums = -1;
         bool bmutihole = false;
-        
+
         std::vector<int> starts;
-        std::vector<int> addPoints;
+        int lowerHoles = 0;
+        std::vector<int> holeIndexs;
+        std::vector<int> pointIndexs;
         std::vector<int> corners;
         bool blower = true;
         float lowHeight = 0.f;
