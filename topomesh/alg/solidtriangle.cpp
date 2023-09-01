@@ -22,6 +22,20 @@ namespace topomesh {
 		_length_y = (_bbox_max_y - _bbox_min_y) * 1.f / (_row * 1.f);
 	}
 
+	float SolidTriangle::getDataMinZ(int r, int c)
+	{
+		if (r >= _row || c >= _col) return std::numeric_limits<float>::max();
+		if (_result[r][c] == std::numeric_limits<float>::max()) return std::numeric_limits<float>::max();
+		int faceid = _result[r][c];
+		trimesh::point v0;
+		trimesh::point v1;
+		trimesh::point v2;
+		std::tie(v0, v1, v2) = _data->at(faceid);
+		float za[] = { v0.z,v1.z,v2.z };
+		std::sort(za, za + 3);
+		return za[0];
+	}
+
 	void SolidTriangle::work()
 	{
 #ifdef _OPENMP
