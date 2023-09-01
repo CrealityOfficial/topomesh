@@ -990,7 +990,7 @@ namespace topomesh {
                         const auto & ab = (a + b) * 0.5;
                         const auto & c1 = trimesh::vec3(ab.x, ab.y, cheight);
                         std::vector<int> corner1;
-                        auto poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
+                        auto & poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
                         edge.corners.swap(corner1);
                         edge.starts.emplace_back(points.size());
                         holeStarts.emplace_back(points.size());
@@ -999,7 +999,7 @@ namespace topomesh {
                         const auto & cd = (c + d) * 0.5;
                         const auto & c2 = trimesh::vec3(cd.x, cd.y, cheight);
                         std::vector<int> corner2;
-                        auto poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
+                        auto & poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
                         oe.corners.swap(corner2);
                         oe.starts.emplace_back(points.size());
                         holeStarts.emplace_back(points.size());
@@ -1010,15 +1010,19 @@ namespace topomesh {
                             mutiHoleEdges += 2;
                             edge.bmutihole = true;
                             oe.bmutihole = true;
-                            edge.addPoints.reserve(n);
-                            oe.addPoints.reserve(n);
+                            edge.pointIndexs.reserve(n);
+                            edge.holeIndexs.reserve(n);
+                            oe.pointIndexs.reserve(n);
+                            oe.holeIndexs.reserve(n);
                         }
                         for (int j = 1; j <= n; ++j) {
                             const auto& z = cheight + float(2 * j - 1) * addz;
-                            edge.addPoints.emplace_back(points.size());
+                            edge.pointIndexs.emplace_back(points.size());
+                            edge.holeIndexs.emplace_back(j);
                             points.emplace_back(trimesh::vec3(a.x, a.y, z));
                             points.emplace_back(trimesh::vec3(b.x, b.y, z));
-                            oe.addPoints.emplace_back(points.size());
+                            oe.pointIndexs.emplace_back(points.size());
+                            oe.holeIndexs.emplace_back(j);
                             points.emplace_back(trimesh::vec3(c.x, c.y, z));
                             points.emplace_back(trimesh::vec3(d.x, d.y, z));
 
@@ -1050,7 +1054,7 @@ namespace topomesh {
                             const auto & ab = (a + b) * 0.5;
                             const auto & c1 = trimesh::vec3(ab.x, ab.y, cheight + n1 * cdelta);
                             std::vector<int> corner1;
-                            auto poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
+                            auto & poly1 = traitPlanarCircle(c1, cradius, corner1, a - b, nslices);
                             edge.corners.swap(corner1);
                             edge.starts.emplace_back(points.size());
                             holeStarts.emplace_back(points.size());
@@ -1059,7 +1063,7 @@ namespace topomesh {
                             const auto & cd = (c + d) * 0.5;
                             const auto & c2 = trimesh::vec3(cd.x, cd.y, cheight + n1 * cdelta);
                             std::vector<int> corner2;
-                            auto poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
+                            auto & poly2 = traitPlanarCircle(c2, cradius, corner2, c - d, nslices);
                             oe.corners.swap(corner2);
                             oe.starts.emplace_back(points.size());
                             holeStarts.emplace_back(points.size());
@@ -1070,15 +1074,21 @@ namespace topomesh {
                                 mutiHoleEdges += 2;
                                 edge.bmutihole = true;
                                 oe.bmutihole = true;
-                                edge.addPoints.reserve(size_t(n) - 1);
-                                oe.addPoints.reserve(size_t(n) - 1);
+                                edge.pointIndexs.reserve(size_t(n) - 1);
+                                oe.pointIndexs.reserve(size_t(n) - 1);
+                                edge.holeIndexs.reserve(size_t(n) - 1);
+                                oe.holeIndexs.reserve(size_t(n) - 1);
                             }
+                            edge.lowerHoles = n1;
+                            oe.lowerHoles = n1;
                             for (int j = n1; j < n2 - 1; ++j) {
                                 const auto& z = cheight + float(2 * j + 1) * addz;
-                                edge.addPoints.emplace_back(points.size());
+                                edge.pointIndexs.emplace_back(points.size());
+                                edge.holeIndexs.emplace_back(j + 1);
                                 points.emplace_back(trimesh::vec3(a.x, a.y, z));
                                 points.emplace_back(trimesh::vec3(b.x, b.y, z));
-                                oe.addPoints.emplace_back(points.size());
+                                oe.pointIndexs.emplace_back(points.size());
+                                oe.holeIndexs.emplace_back(j + 1);
                                 points.emplace_back(trimesh::vec3(c.x, c.y, z));
                                 points.emplace_back(trimesh::vec3(d.x, d.y, z));
 
@@ -1143,21 +1153,60 @@ namespace topomesh {
                     if (nslices % 2 == 0) {
                         u = corner[3];
                     }
+                    const auto& ledge = hexa.edges[(j + 5) % 6];
+                    const auto& nedge = hexa.edges[(j + 1) % 6];
+                    const auto& cIndexs = edge.holeIndexs;
+                    const auto& lIndexs = ledge.holeIndexs;
+                    const auto& nIndexs = nedge.holeIndexs;
+
                     if (edge.bmutihole) {
                         //第一个圆孔的第一个顶点的索引
+                        std::vector<int> ldiffs, ndiffs;
+                        std::set_difference(lIndexs.begin(), lIndexs.end(), cIndexs.begin(), cIndexs.end(), std::back_inserter(ldiffs));
+                        std::set_difference(nIndexs.begin(), nIndexs.end(), cIndexs.begin(), cIndexs.end(), std::back_inserter(ndiffs));
                         int cstart = edge.starts.front();
-
-
-                        c = edge.addPoints.front(); d = c + 1;
+                        c = edge.pointIndexs.front(); d = c + 1;
                         faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
                         for (int k = 0; k < s; ++k) {
                             faces.emplace_back(trimesh::ivec3(cstart + k, d, cstart + k + 1));
                         }
-                        faces.emplace_back(trimesh::ivec3(b, cstart + s, d));
+                        //处理顶端b附近区域
+                        if (!ndiffs.empty()) {
+                            auto bf = std::find(ndiffs.begin(), ndiffs.end(), cIndexs.front() - 1);
+                            if (bf != ndiffs.end()) {
+                                int n0 = nedge.lowerHoles + 1;
+                                int pos = std::distance(ndiffs.begin(), bf);
+                                const auto& npoints = nedge.pointIndexs;
+                                const int& b0 = npoints[(size_t)ndiffs[pos] - n0];
+                                faces.emplace_back(trimesh::ivec3(b0, cstart + s, d));
+                                for (size_t k = 0; k < pos; ++k) {
+                                    faces.emplace_back(trimesh::ivec3(npoints[(size_t)ndiffs[k] - n0], cstart + s, npoints[(size_t)ndiffs[k + 1] - n0]));
+                                }
+                                faces.emplace_back(trimesh::ivec3(b, cstart + s, npoints.front()));
+                            } else {
+                                faces.emplace_back(trimesh::ivec3(b, cstart + s, d));
+                            }
+                        } else {
+                            faces.emplace_back(trimesh::ivec3(b, cstart + s, d));
+                        }
                         for (int k = s; k < t; ++k) {
                             faces.emplace_back(trimesh::ivec3(cstart + k, b, cstart + k + 1));
                         }
                         faces.emplace_back(trimesh::ivec3(b, a, cstart + t));
+                        //处理顶端a附近区域
+                        if (!ldiffs.empty()) {
+                            auto af = std::find(ldiffs.begin(), ldiffs.end(), cIndexs.front() - 1);
+                            if (af != ldiffs.end()) {
+                                int n0 = ledge.lowerHoles + 1;
+                                int pos = std::distance(ldiffs.begin(), af);
+                                const auto& lpoints = ledge.pointIndexs;
+                                faces.emplace_back(trimesh::ivec3(lpoints.front() + 1, cstart + t, a));
+                                for (size_t k = 0; k < pos; ++k) {
+                                    faces.emplace_back(trimesh::ivec3(lpoints[(size_t)ldiffs[k] - n0] + 1, cstart + t, lpoints[(size_t)ldiffs[k + 1] - n0]) + 1);
+                                }
+                                a = lpoints[(size_t)ldiffs[pos] - n0] + 1;
+                            }
+                        }
                         for (int k = t; k < u; ++k) {
                             faces.emplace_back(trimesh::ivec3(a, cstart + k + 1, cstart + k));
                         }
@@ -1169,7 +1218,7 @@ namespace topomesh {
                         for (int num = 1; num < edge.holenums - 1; ++num) {
                             cstart = edge.starts[num];
                             a = c; b = d;
-                            c = edge.addPoints[num]; d = c + 1;
+                            c = edge.pointIndexs[num]; d = c + 1;
 
                             faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
                             for (int k = 0; k < s; ++k) {
@@ -1194,6 +1243,20 @@ namespace topomesh {
                         c = start + j + hexaEdges;
                         d = start + (j + 1) % polynums + hexaEdges;
                         faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
+                        //处理顶端d附近区域
+                        if (!ndiffs.empty()) {
+                            auto df = std::find(ndiffs.begin(), ndiffs.end(), cIndexs.back() + 1);
+                            if (df != ndiffs.end()) {
+                                int n0 = nedge.lowerHoles + 1;
+                                int pos = std::distance(ndiffs.begin(), df);
+                                const auto& npoints = nedge.pointIndexs;
+                                for (size_t k = pos; k < ndiffs.size() - 1; ++k) {
+                                    faces.emplace_back(trimesh::ivec3(npoints[(size_t)ndiffs[k] - n0], cstart + r, npoints[(size_t)ndiffs[k + 1] - n0]));
+                                }
+                                faces.emplace_back(trimesh::ivec3(npoints[(size_t)ndiffs.back() - n0], cstart + r, d));
+                                d = npoints[(size_t)ndiffs[pos] - n0];
+                            }
+                        }
                         for (int k = 0; k < s; ++k) {
                             faces.emplace_back(trimesh::ivec3(cstart + k, d, cstart + k + 1));
                         }
@@ -1205,7 +1268,25 @@ namespace topomesh {
                         for (int k = t; k < u; ++k) {
                             faces.emplace_back(trimesh::ivec3(a, cstart + k + 1, cstart + k));
                         }
-                        faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                        //处理顶端c附近区域
+                        if (!ldiffs.empty()) {
+                            auto cf = std::find(ldiffs.begin(), ldiffs.end(), cIndexs.back() + 1);
+                            if (cf != ldiffs.end()) {
+                                int n0 = ledge.lowerHoles + 1;
+                                int pos = std::distance(ldiffs.begin(), cf);
+                                const auto& lpoints = ledge.pointIndexs;
+                                faces.emplace_back(trimesh::ivec3(a, lpoints[(size_t)ldiffs[pos] - n0] + 1, cstart + u));
+                                for (size_t k = pos; k < ldiffs.size() - 1; ++k) {
+                                    faces.emplace_back(trimesh::ivec3(lpoints[(size_t)ldiffs[k] - n0] + 1, lpoints[(size_t)ldiffs[k + 1] - n0] + 1, cstart + r));
+                                }
+                                faces.emplace_back(trimesh::ivec3(lpoints.back() + 1, c, cstart + r));
+                                c = lpoints[(size_t)ldiffs[pos] - n0] + 1;
+                            } else {
+                                faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                            }
+                        } else {
+                            faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                        }
                         for (int k = u; k < nslices; ++k) {
                             faces.emplace_back(trimesh::ivec3(c, cstart + (k + 1) % nslices, cstart + k));
                         }
@@ -1213,18 +1294,50 @@ namespace topomesh {
                         ///只有单孔的侧面
                         int cstart = edge.starts.front();
                         faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
+                        //处理顶端d附近区域
+                        if (!nIndexs.empty()) {
+                            auto df = std::find(nIndexs.begin(), nIndexs.end(), 1);
+                            if (df != nIndexs.end()) {
+                                int pos = std::distance(nIndexs.begin(), df);
+                                const auto& npoints = nedge.pointIndexs;
+                                for (size_t k = pos; k < nIndexs.size() - 1; ++k) {
+                                    faces.emplace_back(trimesh::ivec3(npoints[(size_t)nIndexs[k] - 1], cstart + r, npoints[(size_t)nIndexs[k + 1] - 1]));
+                                }
+                                faces.emplace_back(trimesh::ivec3(npoints[(size_t)nIndexs.back() - 1], cstart + r, d));
+                                d = npoints[(size_t)nIndexs[pos] - 1];
+                            }
+                        }
                         for (int k = 0; k < s; ++k) {
                             faces.emplace_back(trimesh::ivec3(cstart + k, d, cstart + k + 1));
                         }
+                        //b端不可能插入矩阵点，无需处理
                         faces.emplace_back(trimesh::ivec3(b, cstart + s, d));
                         for (int k = s; k < t; ++k) {
                             faces.emplace_back(trimesh::ivec3(cstart + k, b, cstart + k + 1));
                         }
                         faces.emplace_back(trimesh::ivec3(b, a, cstart + t));
+                        //a端不可能插入矩阵点，无需处理
                         for (int k = t; k < u; ++k) {
                             faces.emplace_back(trimesh::ivec3(a, cstart + k + 1, cstart + k));
                         }
-                        faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                        //处理顶端c附近区域
+                        if (!lIndexs.empty()) {
+                            auto cf = std::find(lIndexs.begin(), lIndexs.end(), 1);
+                            if (cf != lIndexs.end()) {
+                                int pos = std::distance(lIndexs.begin(), cf);
+                                const auto& lpoints = ledge.pointIndexs;
+                                faces.emplace_back(trimesh::ivec3(a, lpoints[(size_t)lIndexs[pos] - 1] + 1, cstart + u));
+                                for (size_t k = pos; k < lIndexs.size() - 1; ++k) {
+                                    faces.emplace_back(trimesh::ivec3(lpoints[(size_t)lIndexs[k] - 1] + 1, lpoints[(size_t)lIndexs[k + 1] - 1] + 1, cstart + r));
+                                }
+                                faces.emplace_back(trimesh::ivec3(lpoints.back() + 1, c, cstart + r));
+                                c = lpoints[(size_t)lIndexs[pos] - 1] + 1;
+                            } else {
+                                faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                            }
+                        } else {
+                            faces.emplace_back(trimesh::ivec3(a, c, cstart + u));
+                        }
                         for (int k = u; k < nslices; ++k) {
                             faces.emplace_back(trimesh::ivec3(c, cstart + (k + 1) % nslices, cstart + k));
                         }
@@ -1233,9 +1346,9 @@ namespace topomesh {
                     ///无孔的侧面
                     const auto& ledge = hexa.edges[(j + 5) % 6];
                     const auto& nedge = hexa.edges[(j + 1) % 6];
-                    if (ledge.canAdd && nedge.canAdd) {
-                        const auto& lIndexs = ledge.addPoints;
-                        const auto& nIndexs = nedge.addPoints;
+                    if (ledge.bmutihole && nedge.bmutihole) {
+                        const auto& lIndexs = ledge.pointIndexs;
+                        const auto& nIndexs = nedge.pointIndexs;
                         faces.emplace_back(trimesh::ivec3(b, a, lIndexs.front() + 1));
                         for (size_t k = 0; k < lIndexs.size() - 1; ++k) {
                             faces.emplace_back(trimesh::ivec3(b, lIndexs[k] + 1, lIndexs[k + 1] + 1));
@@ -1246,16 +1359,16 @@ namespace topomesh {
                             faces.emplace_back(trimesh::ivec3(nIndexs[k], c, nIndexs[k + 1]));
                         }
                         faces.emplace_back(trimesh::ivec3(nIndexs.back(), c, d));
-                    } else if (ledge.canAdd && (!nedge.canAdd)) {
-                        const auto& lIndexs = ledge.addPoints;
+                    } else if (ledge.bmutihole && (!nedge.bmutihole)) {
+                        const auto& lIndexs = ledge.pointIndexs;
                         faces.emplace_back(trimesh::ivec3(b, a, lIndexs.front() + 1));
                         for (size_t k = 0; k < lIndexs.size() - 1; ++k) {
                             faces.emplace_back(trimesh::ivec3(b, lIndexs[k] + 1, lIndexs[k + 1] + 1));
                         }
                         faces.emplace_back(trimesh::ivec3(b, lIndexs.back() + 1, c));
                         faces.emplace_back(trimesh::ivec3(b, c, d));
-                    } else if ((!ledge.canAdd) && nedge.canAdd) {
-                        const auto& nIndexs = nedge.addPoints;
+                    } else if ((!ledge.bmutihole) && nedge.bmutihole) {
+                        const auto& nIndexs = nedge.pointIndexs;
                         faces.emplace_back(trimesh::ivec3(b, a, c));
                         faces.emplace_back(trimesh::ivec3(b, c, nIndexs.front()));
                         for (size_t k = 0; k < nIndexs.size() - 1; ++k) {
@@ -1285,9 +1398,9 @@ namespace topomesh {
         triMesh->vertices.swap(points);
         triMesh->faces.swap(faces);
         mmesh::dumplicateMesh(triMesh.get());
-        //triMesh->write("holes.stl");
         return triMesh;
     }
+
 
 
 	void findNeighVertex(MMeshT* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, float>>& vertex_distance)
