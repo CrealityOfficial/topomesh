@@ -40,6 +40,7 @@ namespace topomesh {
         neighbors: 
         */
         struct hexagon {
+            bool standard = true;
             double radius = 1.0;
             std::vector<trimesh::vec3>borders;
             std::vector<int> neighbors;
