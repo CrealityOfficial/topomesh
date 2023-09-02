@@ -124,6 +124,8 @@ namespace topomesh {
         std::vector<cxutil::Polygons> hpolygons; ///<完整六角网格多边形序列
         std::vector<cxutil::Polygons> ipolygons; ///<初次求交网格多边形序列
         std::vector<trimesh::ivec3> icoords;
+        std::vector<bool> bhexagon;
+        bhexagon.reserve(hexagons.polys.size());
         {
             hpolygons.reserve(hexagons.polys.size());
             for (const auto& hexa : hexagons.polys) {
@@ -135,11 +137,25 @@ namespace topomesh {
                     const auto & y = int(p.y / resolution);
                     path.emplace_back(ClipperLib::IntPoint(x, y));
                 }
+                bool belong = true;
+                for (const auto& p : path) {
+                    if (!mpolygons.inside(p)) {
+                        belong = false;
+                        break;
+                    }
+                }
                 polygons.paths.emplace_back(std::move(path));
-                const cxutil::Polygons & ipolys = mpolygons.intersection(polygons);
-                if (!ipolys.empty()) {
+                if (belong) {
+                    bhexagon.emplace_back(true);
                     icoords.emplace_back(hexa.coord);
-                    ipolygons.emplace_back(std::move(ipolys));
+                    ipolygons.emplace_back(std::move(polygons));
+                } else {
+                    const cxutil::Polygons& ipolys = mpolygons.intersection(polygons);
+                    if (!ipolys.empty()) {
+                        bhexagon.emplace_back(false);
+                        icoords.emplace_back(hexa.coord);
+                        ipolygons.emplace_back(std::move(ipolys));
+                    }
                 }
                 hpolygons.emplace_back(std::move(polygons));
             }
@@ -166,6 +182,8 @@ namespace topomesh {
         std::vector<trimesh::ivec3> ocoords;
         const int isize = ipolygons.size();
         ocoords.reserve(isize);
+        std::vector<bool> obhexagon;
+        obhexagon.reserve(isize);
         for (int i = 0; i < isize; i++) {
             TriPolygon tripolys;
             cxutil::Polygons ipolys = ipolygons[i];
@@ -181,6 +199,7 @@ namespace topomesh {
                     const auto& point = trimesh::vec3(p.X * resolution, p.Y * resolution, 0);
                     tripolys.emplace_back(std::move(point));
                 }
+                obhexagon.emplace_back(bhexagon[i]);
                 ocoords.emplace_back(std::move(icoords[i]));
                 outtripolys.emplace_back(std::move(tripolys));
             }
@@ -191,10 +210,11 @@ namespace topomesh {
         }
         const int osize = outtripolys.size();
         letterOpts.hexgons.reserve(osize);
-        for (const auto& poly : outtripolys) {
+        for (int i = 0; i < osize; ++i) {
             honeyLetterOpt::hexagon hexa;
-            hexa.borders = poly;
+            hexa.borders.swap(outtripolys[i]);
             hexa.radius = radius;
+            hexa.standard = obhexagon[i];
             letterOpts.hexgons.emplace_back(std::move(hexa));
         }
         return;
@@ -440,11 +460,13 @@ namespace topomesh {
                             height.push_back(0.f);                      
                     }
                     hp.poly.swap(hg.borders);
+                    hp.edges.resize(hp.poly.size());
                     for (int i = 0; i < hp.edges.size(); i++)
                     {
                         //hp.edges[i].lowHeight = ldist(engine);
                         hp.edges[i].topHeight = height[i];
                     }
+                    hp.standard = hg.standard;
                     hexpolys.polys.push_back(hp);                   
                 }
                 topomesh::ColumnarHoleParam columnParam;
@@ -762,30 +784,32 @@ namespace topomesh {
         //更新六棱柱每个侧面最低点最高点坐标值
         for (auto& hexa : hexas.polys) {
             for (int j = 0; j < 6; ++j) {
-                if (hexa.edges[j].neighbor >= 0 && (!hexa.edges[j].canAdd)) {
+                if (hexa.edges[j].neighbor >= 0 && (!hexa.edges[j].canAdd) && hexa.standard) {
                     auto& edge = hexa.edges[j];
                     auto& next = hexa.edges[(j + 1) % 6];
                     auto& oh = hexas.polys[hexa.edges[j].neighbor];
-                    auto& oe = oh.edges[(j + 3) % 6];
-                    auto& onext = oh.edges[(j + 4) % 6];
-                    edge.lowHeight = std::max(edge.lowHeight, next.lowHeight);
-                    edge.topHeight = std::min(edge.topHeight, next.topHeight);
-                    oe.lowHeight = std::max(oe.lowHeight, onext.lowHeight);
-                    oe.topHeight = std::min(oe.topHeight, onext.topHeight);
-                    float lowerlimit = std::max(edge.lowHeight, oe.lowHeight);
-                    float upperlimit = std::min(edge.topHeight, oe.topHeight);
-                    float medium = (lowerlimit + upperlimit) * 0.5;
-                    float scope = (upperlimit - lowerlimit) * 0.5;
-                    if (medium < cheight && (cmax - medium) < scope) {
-                        hexa.edges[j].canAdd = true;
-                        oh.edges[(j + 3) % 6].canAdd = true;
-                    } else if (medium >= cheight) {
-                        float appro = std::round((medium - cheight) / cdelta);
-                        float dist = std::abs((medium - cheight) - cdelta * appro);
-                        if (dist + cradius < scope) {
-                            hexa.edges[j].blower = false;
+                    if (oh.standard) {
+                        auto& oe = oh.edges[(j + 3) % 6];
+                        auto& onext = oh.edges[(j + 4) % 6];
+                        edge.lowHeight = std::max(edge.lowHeight, next.lowHeight);
+                        edge.topHeight = std::min(edge.topHeight, next.topHeight);
+                        oe.lowHeight = std::max(oe.lowHeight, onext.lowHeight);
+                        oe.topHeight = std::min(oe.topHeight, onext.topHeight);
+                        float lowerlimit = std::max(edge.lowHeight, oe.lowHeight);
+                        float upperlimit = std::min(edge.topHeight, oe.topHeight);
+                        float medium = (lowerlimit + upperlimit) * 0.5;
+                        float scope = (upperlimit - lowerlimit) * 0.5;
+                        if (medium < cheight && (cmax - medium) < scope) {
                             hexa.edges[j].canAdd = true;
                             oh.edges[(j + 3) % 6].canAdd = true;
+                        } else if (medium >= cheight) {
+                            float appro = std::round((medium - cheight) / cdelta);
+                            float dist = std::abs((medium - cheight) - cdelta * appro);
+                            if (dist + cradius < scope) {
+                                hexa.edges[j].blower = false;
+                                hexa.edges[j].canAdd = true;
+                                oh.edges[(j + 3) % 6].canAdd = true;
+                            }
                         }
                     }
                 }
@@ -897,7 +921,7 @@ namespace topomesh {
             const auto& poly = hexa.poly;
             for (int i = 0; i < poly.size(); ++i) {
                 const auto& p = poly[i];
-                points.emplace_back(p.x, p.y, hexa.edges[i].lowHeight);
+                points.emplace_back(trimesh::vec3(p.x, p.y, hexa.edges[i].lowHeight));
                 ++num2, ++hexaEdges;
             }
         }
@@ -906,7 +930,7 @@ namespace topomesh {
             const auto& poly = hexa.poly;
             for (int i = 0; i < poly.size(); ++i) {
                 const auto& p = poly[i];
-                points.emplace_back(p.x, p.y, hexa.edges[i].topHeight);
+                points.emplace_back(trimesh::vec3(p.x, p.y, hexa.edges[i].topHeight));
                 ++num2;
             }
         }
@@ -929,7 +953,7 @@ namespace topomesh {
         if (hexas.bSewBottom) {
             ///两个网格中间矩形区域
             for (auto& hexa : hexas.polys) {
-                for (int i = 0; i < 6; ++i) {
+                for (int i = 0; i < hexa.edges.size(); ++i) {
                     if ((!hexa.edges[i].addRect) && (hexa.edges[i].neighbor >= 0)) {
                         auto& oh = hexas.polys[hexa.edges[i].neighbor];
                         const int& start = hexa.startIndex;
