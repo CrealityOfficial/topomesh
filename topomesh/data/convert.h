@@ -1,9 +1,17 @@
 #pragma once
+#include <map>
 #include "topomesh/interface/idata.h"
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif // !M_PI
+#ifndef M_PI_2
+#define M_PI_2 1.570796326794897
+#endif // !M_PI_2
+
+#ifndef EPS
+#define EPS 1E-8F
+#endif // !EPS
 
 namespace topomesh
 {
@@ -12,7 +20,7 @@ namespace topomesh
 		trimesh::ivec2 ScreenSize;  // hw
 		trimesh::ivec2 p1;		
 		trimesh::ivec2 p2;
-		//�ڲ�
+		//
 		float n;
 		float f;		
 		float t;
@@ -22,7 +30,7 @@ namespace topomesh
 
 		float fov,aspect;
 
-		//���
+		//
 		trimesh::point pos;
 		trimesh::point lookAt;
 		trimesh::point right;
@@ -31,6 +39,7 @@ namespace topomesh
 	};
 
     struct HexaEdge {
+        std::map<int, bool>edgemap;
         int neighbor = -1;
         bool canAdd = false;
         bool hasAdd = false;
@@ -64,14 +73,15 @@ namespace topomesh
     };
     struct HexaPolygon {
         bool standard = true;
+        trimesh::vec3 center;
         TriPolygon poly;
         int startIndex = 0; ///< 六棱柱第一个点的索引
         trimesh::ivec3 coord; ///<三轴坐标系下的坐标
         std::vector<HexaEdge> edges;
     };
     struct HexaPolygons {
-        bool bSewTop = true; ///棱柱的顶部是否需要缝合
-        bool bSewBottom = true; ///<棱柱的底部连接部分是否需要缝合
+        bool bSewTop = false; ///棱柱的顶部是否需要缝合
+        bool bSewBottom = false; ///<棱柱的底部连接部分是否需要缝合
         float side = 0.0f; ///< 每个棱柱底面六角网格的边长
         std::vector<HexaPolygon> polys;
     };
@@ -79,4 +89,6 @@ namespace topomesh
     void translateTriPolygon(TriPolygon& poly, const trimesh::vec3& trans);
     TriPolygons convertFromHexaPolygons(const HexaPolygons& hexas);
     HexaPolygons convertFromTriPolygons(const TriPolygons& polys, const trimesh::ivec3& coords);
+    trimesh::TriMesh SaveTriPolygonToMesh(const TriPolygon& poly, double r = 0.01, size_t nslices = 20);
+    trimesh::TriMesh SaveTriPolygonsToMesh(const TriPolygons& polys, double r = 0.01, size_t nslices = 20);
 }

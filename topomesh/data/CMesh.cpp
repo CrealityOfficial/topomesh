@@ -8,7 +8,7 @@
 #include <condition_variable>
 
 #ifndef EPS
-#define EPS 1E-8f
+#define EPS 1E-8F
 #endif // !EPS
 namespace topomesh {
     CMesh::CMesh()
