@@ -3,6 +3,7 @@
 #include "ccglobal/tracer.h"
 #include "topomesh/interface/idata.h"
 #include "topomesh/data/CMesh.h"
+#include "clipper/clipper.hpp"
 #include <memory>
 
 namespace topomesh {
@@ -19,7 +20,7 @@ namespace topomesh {
         ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
 
 
-	trimesh::TriMesh* GenerateHoneyCombs(trimesh::TriMesh* trimesh = nullptr, const HoneyCombParam& honeyparams = HoneyCombParam(),
+	std::shared_ptr<trimesh::TriMesh> GenerateHoneyCombs(trimesh::TriMesh* trimesh = nullptr, const HoneyCombParam& honeyparams = HoneyCombParam(),
 		ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
 
     struct HexagonArrayParam {
@@ -57,7 +58,7 @@ namespace topomesh {
     TriPolygons traitCurrentPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir);
-    
+    std::vector<std::map<int, bool>> GetHexagonEdgeMaps(const ClipperLib::Path& path, const HexaPolygon& hexaPolygon);
     TriPolygon traitPlanarCircle(const trimesh::vec3& c, float r, std::vector<int>& indexs, const trimesh::vec3& edgeDir = trimesh::vec3(0, 0, 1), int nums = 17);
     std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param);
 

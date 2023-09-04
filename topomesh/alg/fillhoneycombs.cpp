@@ -7,7 +7,7 @@
 
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
-#include "clipper/clipper.hpp"
+
 #include "cxutil/math/polygon.h"
 #include "mmesh/trimesh/trimeshutil.h"
 #include "random"
@@ -124,7 +124,10 @@ namespace topomesh {
         std::vector<cxutil::Polygons> hpolygons; ///<完整六角网格多边形序列
         std::vector<cxutil::Polygons> ipolygons; ///<初次求交网格多边形序列
         std::vector<trimesh::ivec3> icoords;
+        std::vector<trimesh::vec3> icenters;
         std::vector<bool> bhexagon;
+        icoords.reserve(hexagons.polys.size());
+        icenters.reserve(hexagons.polys.size());
         bhexagon.reserve(hexagons.polys.size());
         {
             hpolygons.reserve(hexagons.polys.size());
@@ -134,7 +137,7 @@ namespace topomesh {
                 path.reserve(hexa.poly.size());
                 for (const auto& p : hexa.poly) {
                     const auto& x = int(p.x / resolution);
-                    const auto & y = int(p.y / resolution);
+                    const auto& y = int(p.y / resolution);
                     path.emplace_back(ClipperLib::IntPoint(x, y));
                 }
                 bool belong = true;
@@ -148,12 +151,14 @@ namespace topomesh {
                 if (belong) {
                     bhexagon.emplace_back(true);
                     icoords.emplace_back(hexa.coord);
+                    icenters.emplace_back(hexa.center);
                     ipolygons.emplace_back(std::move(polygons));
                 } else {
                     const cxutil::Polygons& ipolys = mpolygons.intersection(polygons);
                     if (!ipolys.empty()) {
                         bhexagon.emplace_back(false);
                         icoords.emplace_back(hexa.coord);
+                        icenters.emplace_back(hexa.center);
                         ipolygons.emplace_back(std::move(ipolys));
                     }
                 }
@@ -180,8 +185,10 @@ namespace topomesh {
         const double minrate = honeyparams.keepHexagonRate;
         const double hexarea = 3.0 / 2.0 * SQRT3 * std::pow(side / resolution, 2);
         std::vector<trimesh::ivec3> ocoords;
+        std::vector<trimesh::vec3> ocenters;
         const int isize = ipolygons.size();
         ocoords.reserve(isize);
+        ocenters.reserve(isize);
         std::vector<bool> obhexagon;
         obhexagon.reserve(isize);
         for (int i = 0; i < isize; i++) {
@@ -201,6 +208,7 @@ namespace topomesh {
                 }
                 obhexagon.emplace_back(bhexagon[i]);
                 ocoords.emplace_back(std::move(icoords[i]));
+                ocenters.emplace_back(std::move(icenters[i]));
                 outtripolys.emplace_back(std::move(tripolys));
             }
         }
@@ -215,6 +223,7 @@ namespace topomesh {
             HexaPolygon hexa;
             hexa.poly.swap(outtripolys[i]);
             hexa.coord = ocoords[i];
+            hexa.center = ocenters[i];
             hexa.standard = obhexagon[i];
             letterOpts.hexgons.emplace_back(std::move(hexa));
         }
@@ -344,11 +353,11 @@ namespace topomesh {
         return newmesh;
     }
 
-    trimesh::TriMesh* GenerateHoneyCombs(trimesh::TriMesh* trimesh , const HoneyCombParam& honeyparams ,
+    std::shared_ptr<trimesh::TriMesh> GenerateHoneyCombs(trimesh::TriMesh* trimesh , const HoneyCombParam& honeyparams ,
         ccglobal::Tracer* tracer , HoneyCombDebugger* debugger )
     {
         //0.初始化Cmesh,并旋转
-        trimesh::TriMesh* result_trimesh = new trimesh::TriMesh();
+        std::shared_ptr<trimesh::TriMesh> result_trimesh(new trimesh::TriMesh());
         if(trimesh == nullptr) return result_trimesh;
         CMesh cmesh(trimesh);
         //1.重新整理输入参数
@@ -473,7 +482,7 @@ namespace topomesh {
                 columnParam.height = 3.0f;
                 std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
                 newmesh->write("holesColumnar.stl");
-
+                return newmesh;
             }
             else {
                 trimesh::vec3 dir = honeyparams.axisDir;
@@ -726,6 +735,7 @@ namespace topomesh {
                     topomesh::Hexagon hexagon(center, side);
                     const auto& border = hexagon.border;
                     HexaPolygon hexa;
+                    hexa.center = hexagon.centroid;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
                         hexa.poly.emplace_back(trimesh::vec3((float)p.x, (float)p.y, p0.z));
@@ -737,6 +747,7 @@ namespace topomesh {
                     topomesh::Hexagon hexagon(center, side);
                     const auto & border = hexagon.border;
                     HexaPolygon hexa;
+                    hexa.center = hexagon.centroid;
                     hexa.poly.reserve(border.size());
                     for (const auto& p : border) {
                         hexa.poly.emplace_back(trimesh::vec3((float)p.x, (float)p.y, p0.z));
@@ -844,6 +855,12 @@ namespace topomesh {
             }
         }
         return polys;
+    }
+
+    std::vector<std::map<int, bool>> GetHexagonEdgeMaps(const ClipperLib::Path& path, const HexaPolygon& hexaPolygon)
+    {
+
+        return std::vector<std::map<int, bool>>();
     }
 
     TriPolygon traitPlanarCircle(const trimesh::vec3& center, float r, std::vector<int>& indexs, const trimesh::vec3& dir, int nums)
