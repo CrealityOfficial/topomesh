@@ -915,14 +915,14 @@ namespace topomesh {
     {
         std::vector<trimesh::vec3> points;
         std::vector<trimesh::ivec3> faces;
-        int hexaEdges = 0, num2 = 0;
+        int hexagonsize = 0, columnvertexs = 0;
         for (auto& hexa : hexas.polys) {
-            hexa.startIndex = num2;
+            hexa.startIndex = columnvertexs;
             const auto& poly = hexa.poly;
             for (int i = 0; i < poly.size(); ++i) {
                 const auto& p = poly[i];
                 points.emplace_back(trimesh::vec3(p.x, p.y, hexa.edges[i].lowHeight));
-                ++num2, ++hexaEdges;
+                ++columnvertexs, ++hexagonsize;
             }
         }
 
@@ -931,7 +931,7 @@ namespace topomesh {
             for (int i = 0; i < poly.size(); ++i) {
                 const auto& p = poly[i];
                 points.emplace_back(trimesh::vec3(p.x, p.y, hexa.edges[i].topHeight));
-                ++num2;
+                ++columnvertexs;
             }
         }
         //每条边的最低点最高点可能被更新
@@ -1133,10 +1133,10 @@ namespace topomesh {
                 }
             }
         }
-        int noHoleEdges = hexaEdges - singleHoleEdges - mutiHoleEdges;
+        int noHoleEdges = hexagonsize - singleHoleEdges - mutiHoleEdges;
         int holeFaces = holesnum * singlenums;
         int rectfacenums = noHoleEdges * 2;
-        int upperfacenums = hexaEdges;
+        int upperfacenums = hexagonsize;
         int allfacenums = holeFaces + rectfacenums + upperfacenums + bottomfacenums;
         faces.reserve(allfacenums);
         if (hexas.bSewTop) {
@@ -1146,7 +1146,7 @@ namespace topomesh {
                 int polynums = poly.size();
                 const int& start = hexa.startIndex;
                 ///六角网格顶部
-                const int& upstart = start + hexaEdges;
+                const int& upstart = start + hexagonsize;
                 for (int j = 1; j < polynums - 1; ++j) {
                     const int& cur = upstart + j;
                     const int& next = upstart + j + 1;
@@ -1157,16 +1157,16 @@ namespace topomesh {
         for (int i = 0; i < hexas.polys.size(); ++i) {
             const auto& hexa = hexas.polys[i];
             const auto& poly = hexa.poly;
-            int polynums = poly.size();
+            const int polysize = poly.size();
             const int& start = hexa.startIndex;
             //六角网格侧面
-            for (int j = 0; j < polynums; ++j) {
+            for (int j = 0; j < polysize; ++j) {
                 ///侧面下方两个顶点索引
                 int a = start + j;
-                int b = start + (j + 1) % polynums;
+                int b = start + (j + 1) % polysize;
                 ///侧面上方两个顶点索引
-                int c = a + hexaEdges;
-                int d = b + hexaEdges;
+                int c = a + hexagonsize;
+                int d = b + hexagonsize;
                 if (hexa.edges[j].canAdd) {
                     const auto& edge = hexa.edges[j];
                     const auto& corner = edge.corners;
@@ -1264,8 +1264,8 @@ namespace topomesh {
                         //最上方圆孔构建面
                         cstart = edge.starts.back();
                         a = c; b = d;
-                        c = start + j + hexaEdges;
-                        d = start + (j + 1) % polynums + hexaEdges;
+                        c = start + j + hexagonsize;
+                        d = start + (j + 1) % polysize + hexagonsize;
                         faces.emplace_back(trimesh::ivec3(cstart + r, c, d));
                         //处理顶端d附近区域
                         if (!ndiffs.empty()) {
@@ -1368,8 +1368,8 @@ namespace topomesh {
                     }
                 } else {
                     ///无孔的侧面
-                    const auto& ledge = hexa.edges[(j + 5) % 6];
-                    const auto& nedge = hexa.edges[(j + 1) % 6];
+                    const auto& ledge = hexa.edges[(j + polysize - 1) % polysize];
+                    const auto& nedge = hexa.edges[(j + 1) % polysize];
                     if (ledge.bmutihole && nedge.bmutihole) {
                         const auto& lIndexs = ledge.pointIndexs;
                         const auto& nIndexs = nedge.pointIndexs;

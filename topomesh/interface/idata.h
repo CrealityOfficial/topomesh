@@ -35,8 +35,8 @@ namespace topomesh
 		trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///<蜂窝多边形平面朝向（默认z轴正方向）
 		//trimesh::vec3* axisDir = nullptr;
 		trimesh::vec2 arrayDir = trimesh::vec2(1, 0); ///<蜂窝多边形平面布局（默认边朝上结构）
-		double honeyCombRadius = 1.0; ///<未收缩前蜂窝六边形边长
-		double nestWidth = 0.1; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）
+		double honeyCombRadius = 3.0; ///<未收缩前蜂窝六边形边长
+		double nestWidth = 1.0; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）
 		double shellThickness = 0.1; ///<抽壳厚度
 		double keepHexagonRate = 0.1; ///允许保留网格的最小面积比例
 		bool isdelect = false; //是否删除标记区域
