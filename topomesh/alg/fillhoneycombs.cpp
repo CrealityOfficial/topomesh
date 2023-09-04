@@ -561,40 +561,31 @@ namespace topomesh {
         GenerateBottomHexagons(inputMesh, honeyparams, letterOpts, debugger);
         trimesh::TriMesh&& mesh = inputMesh.GetTriMesh();
 
-        std::vector<bool> delectface(mesh.faces.size(), false);
-        for (int i : bottomFaces)
-            delectface[i] = true;
-        trimesh::remove_faces(&mesh, delectface); 
+        //std::vector<bool> delectface(mesh.faces.size(), false);
+        //for (int i : bottomFaces)
+        //    delectface[i] = true;
+        //trimesh::remove_faces(&mesh, delectface); 
 
-        mesh.need_bbox();
-        std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> data;
-        for (trimesh::TriMesh::Face& f : mesh.faces)
-            data.push_back(std::make_tuple(mesh.vertices[f[0]], mesh.vertices[f[1]], mesh.vertices[f[2]]));
-        topomesh::SolidTriangle sd(&data, 100, 100, mesh.bbox.max.x, mesh.bbox.min.x, mesh.bbox.max.y, mesh.bbox.min.y);
-        sd.work();
-        std::vector<std::vector<float>> result = sd.getResult();
-        trimesh::TriMesh* newmesh = new trimesh::TriMesh();
-        
+        //mesh.need_bbox();
+        //std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> data;
+        //for (trimesh::TriMesh::Face& f : mesh.faces)
+        //    data.push_back(std::make_tuple(mesh.vertices[f[0]], mesh.vertices[f[1]], mesh.vertices[f[2]]));
+        //topomesh::SolidTriangle sd(&data, 100, 100, mesh.bbox.max.x, mesh.bbox.min.x, mesh.bbox.max.y, mesh.bbox.min.y);
+        //sd.work();
+        //std::vector<std::vector<float>> result = sd.getResult();
+        //trimesh::TriMesh* newmesh = new trimesh::TriMesh();
+        //
 
-        for(int i=0;i<result.size();i++)
-            for (int j = 0; j < result[i].size(); j++)
-            {
-                if (result[i][j] == std::numeric_limits<float>::max()) { result[i][j] = 0.f;/* std::cout << "i :" << i << " j : " << j << "\n";*/ }
-                newmesh->vertices.push_back(trimesh::point(i, j, result[i][j]));
-            }
+        //for(int i=0;i<result.size();i++)
+        //    for (int j = 0; j < result[i].size(); j++)
+        //    {
+        //        if (result[i][j] == std::numeric_limits<float>::max()) { result[i][j] = 0.f;/* std::cout << "i :" << i << " j : " << j << "\n";*/ }
+        //        newmesh->vertices.push_back(trimesh::point(i, j, result[i][j]));
+        //    }
     
-       /* for (int i = 0; i < letterOpts.hexgons.size(); i++)
-        {        
-            for (int j = 0; j < letterOpts.hexgons[i].borders.size(); j++)
-            {
-                float h = sd.getCoordData(letterOpts.hexgons[i].borders[j].x, letterOpts.hexgons[i].borders[j].y);
-                if (h == std::numeric_limits<float>::max()) h = 0.f;
-                newmesh->vertices.push_back(trimesh::point(letterOpts.hexgons[i].borders[j].x, letterOpts.hexgons[i].borders[j].y, h));
-            }          
-        }*/
-        newmesh->write("newhoneymesh.ply");   
-        mesh.write("honeyhole.ply");
-        return &mesh;
+        //newmesh->write("newhoneymesh.ply");   
+        //mesh.write("honeyhole.ply");
+        //return &mesh;
 		mesh.need_adjacentfaces();
 		mesh.need_neighbors();
 		MMeshT mt(&mesh);
