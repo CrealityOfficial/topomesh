@@ -210,10 +210,11 @@ namespace topomesh {
         }
         const int osize = outtripolys.size();
         letterOpts.hexgons.reserve(osize);
+        letterOpts.side = side;
         for (int i = 0; i < osize; ++i) {
-            honeyLetterOpt::hexagon hexa;
-            hexa.borders.swap(outtripolys[i]);
-            hexa.radius = radius;
+            HexaPolygon hexa;
+            hexa.poly.swap(outtripolys[i]);
+            hexa.coord = ocoords[i];
             hexa.standard = obhexagon[i];
             letterOpts.hexgons.emplace_back(std::move(hexa));
         }
@@ -431,7 +432,7 @@ namespace topomesh {
                     }
                 pointmesh->write("pointmesh.ply");*/
                 HexaPolygons hexpolys;
-                hexpolys.side = letterOpts.hexgons[0].radius;
+                hexpolys.side = letterOpts.side;
                
                 /*std::random_device rd;
                 std::mt19937 engine(rd());
@@ -444,11 +445,10 @@ namespace topomesh {
 
                 for (auto& hg : letterOpts.hexgons)
                 {
-                    HexaPolygon hp;
                     std::vector<float> height;
-                    for (int i = 0; i < hg.borders.size(); i++)
+                    for (int i = 0; i < hg.poly.size(); i++)
                     {
-                        trimesh::point p = hg.borders[i] - min_xy;
+                        trimesh::point p = hg.poly[i] - min_xy;
                         int xi = p.x / lengthx;
                         int yi = p.y / lengthy;
                         xi = xi == col ? --xi : xi;
@@ -459,15 +459,13 @@ namespace topomesh {
                         else
                             height.push_back(0.f);                      
                     }
-                    hp.poly.swap(hg.borders);
-                    hp.edges.resize(hp.poly.size());
-                    for (int i = 0; i < hp.edges.size(); i++)
+                    hg.edges.resize(hg.poly.size());
+                    for (int i = 0; i < hg.edges.size(); i++)
                     {
-                        //hp.edges[i].lowHeight = ldist(engine);
-                        hp.edges[i].topHeight = height[i];
+                        //hg.edges[i].lowHeight = ldist(engine);
+                        hg.edges[i].topHeight = height[i];
                     }
-                    hp.standard = hg.standard;
-                    hexpolys.polys.push_back(hp);                   
+                    hexpolys.polys.push_back(hg);                   
                 }
                 topomesh::ColumnarHoleParam columnParam;
                 columnParam.nslices = 65;
@@ -602,9 +600,9 @@ namespace topomesh {
 		for (int i = 0; i < letterOpts.hexgons.size(); i++)		
 		{
 			std::vector<trimesh::vec2> tmp;
-			for (int j = 0; j < letterOpts.hexgons[i].borders.size(); j++)
+			for (int j = 0; j < letterOpts.hexgons[i].poly.size(); j++)
 			{
-				tmp.push_back(trimesh::vec2(letterOpts.hexgons[i].borders[j].x, letterOpts.hexgons[i].borders[j].y));
+				tmp.push_back(trimesh::vec2(letterOpts.hexgons[i].poly[j].x, letterOpts.hexgons[i].poly[j].y));
 			}
 			honeycombs.emplace_back(tmp);
 		}	
@@ -783,10 +781,11 @@ namespace topomesh {
         float cmax = param.height + 2 * cradius;
         //更新六棱柱每个侧面最低点最高点坐标值
         for (auto& hexa : hexas.polys) {
-            for (int j = 0; j < 6; ++j) {
+            const int polysize = hexa.poly.size();
+            for (int j = 0; j < polysize; ++j) {
                 if (hexa.edges[j].neighbor >= 0 && (!hexa.edges[j].canAdd) && hexa.standard) {
                     auto& edge = hexa.edges[j];
-                    auto& next = hexa.edges[(j + 1) % 6];
+                    auto& next = hexa.edges[(j + 1) % polysize];
                     auto& oh = hexas.polys[hexa.edges[j].neighbor];
                     if (oh.standard) {
                         auto& oe = oh.edges[(j + 3) % 6];
@@ -806,7 +805,6 @@ namespace topomesh {
                             float appro = std::round((medium - cheight) / cdelta);
                             float dist = std::abs((medium - cheight) - cdelta * appro);
                             if (dist + cradius < scope) {
-                                hexa.edges[j].blower = false;
                                 hexa.edges[j].canAdd = true;
                                 oh.edges[(j + 3) % 6].canAdd = true;
                             }
