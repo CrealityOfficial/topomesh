@@ -31,6 +31,7 @@ namespace topomesh {
         double nestWidth = 0.3; ///<
     };
     struct honeyLetterOpt {
+        double side = 1.0;
         std::vector<int>bottom; ///<
         std::vector<int>others; ///<
         /*
@@ -39,15 +40,7 @@ namespace topomesh {
         borders: 
         neighbors: 
         */
-        struct hexagon {
-            bool standard = true;
-            double radius = 1.0;
-            std::vector<trimesh::vec3>borders;
-            std::vector<int> neighbors;
-            hexagon() : neighbors(6, -1) {}
-        };
-        //
-        std::vector<hexagon>hexgons;
+        std::vector<HexaPolygon>hexgons;
     };
     TriPolygons GetOpenMeshBoundarys(const trimesh::TriMesh& triMesh, HoneyCombDebugger* debugger = nullptr);
     void GenerateBottomHexagons(const CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);

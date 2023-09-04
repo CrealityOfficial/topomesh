@@ -44,7 +44,6 @@ namespace topomesh
         std::vector<int> holeIndexs;
         std::vector<int> pointIndexs;
         std::vector<int> corners;
-        bool blower = true;
         float lowHeight = 0.f;
         float topHeight = 0.f;
     };
