@@ -14,10 +14,11 @@ namespace topomesh {
 
 
 		void work();
-		const std::vector<std::vector<float>>& getResult() { return _result; };
-		float getData(int r, int c) { if (r >= _row || c >= _col) return std::numeric_limits<float>::max(); return _result[r][c]; };
-		float getCoordData(float x, float y) { int xi = (x - _bbox_min_x) / (_col * 1.f); int yi = (y - _bbox_min_y) / (_row * 1.f); return _result[xi][yi]; };
-		float getDataMinZ(int r, int c);
+		const std::vector<std::vector<std::vector<float>>>& getResult() { return _result; };
+		/*float getData(int r, int c) { if (r >= _row || c >= _col) return std::numeric_limits<float>::max(); return _result[r][c]; };
+		float getCoordData(float x, float y) { int xi = (x - _bbox_min_x) / (_col * 1.f); int yi = (y - _bbox_min_y) / (_row * 1.f); return _result[xi][yi]; };*/
+		float getDataMinZ(float x, float y);
+		float getDataMaxZ(float x, float y);
 	private:
 		const std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>>* _data=nullptr;
 		int _row;
@@ -28,6 +29,6 @@ namespace topomesh {
 		float _bbox_max_y;
 		float _length_x;
 		float _length_y;
-		std::vector<std::vector<float>> _result;
+		std::vector<std::vector<std::vector<float>>> _result;
 	};
 }
