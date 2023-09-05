@@ -39,7 +39,6 @@ namespace topomesh
 	};
 
     struct HexaEdge {
-        std::map<int, bool>edgemap;
         int neighbor = -1;
         bool canAdd = false;
         bool hasAdd = false;
@@ -78,6 +77,7 @@ namespace topomesh
         int startIndex = 0; ///< 六棱柱第一个点的索引
         trimesh::ivec3 coord; ///<三轴坐标系下的坐标
         std::vector<HexaEdge> edges;
+        std::map<int, int> edgemap;
     };
     struct HexaPolygons {
         bool bSewTop = false; ///棱柱的顶部是否需要缝合

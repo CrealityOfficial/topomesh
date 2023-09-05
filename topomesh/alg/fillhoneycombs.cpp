@@ -2,13 +2,11 @@
 #include "topomesh/data/mmesht.h"
 #include "topomesh/alg/letter.h"
 #include "topomesh/alg/earclipping.h"
-
 #include "topomesh/alg/utils.h"
-
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
 
-#include "cxutil/math/polygon.h"
+#include "cxutil/util/SVG.h"
 #include "mmesh/trimesh/trimeshutil.h"
 #include "random"
 //#include "topomesh/data/entrance.h"
@@ -67,14 +65,14 @@ namespace topomesh {
                 ClipperLib::Path path;
                 path.reserve(poly.size());
                 for (const auto& p : poly) {
-                    const auto& x = int(p.x / resolution);
-                    const auto & y = int(p.y / resolution);
+                    const auto& x = std::round(p.x / resolution);
+                    const auto& y = std::round(p.y / resolution);
                     path.emplace_back(ClipperLib::IntPoint(x, y));
                 }
                 bpolygons.paths.emplace_back(std::move(path));
             }
             cxutil::Polygons cpolygons(bpolygons);
-            mpolygons = cpolygons.offset(-int(thickness / resolution));
+            mpolygons = cpolygons.offset(-std::round(thickness / resolution));
         }
         if (debugger) {
             //显示底面轮廓抽壳多边形
@@ -136,8 +134,8 @@ namespace topomesh {
                 ClipperLib::Path path;
                 path.reserve(hexa.poly.size());
                 for (const auto& p : hexa.poly) {
-                    const auto& x = int(p.x / resolution);
-                    const auto& y = int(p.y / resolution);
+                    const auto& x = std::round(p.x / resolution);
+                    const auto& y = std::round(p.y / resolution);
                     path.emplace_back(ClipperLib::IntPoint(x, y));
                 }
                 bool belong = true;
@@ -154,8 +152,27 @@ namespace topomesh {
                     icenters.emplace_back(hexa.center);
                     ipolygons.emplace_back(std::move(polygons));
                 } else {
-                    const cxutil::Polygons& ipolys = mpolygons.intersection(polygons);
+                    cxutil::Polygons&& ipolys = mpolygons.intersection(polygons);
                     if (!ipolys.empty()) {
+                        if (ipolys.area() < 0) {
+                            ClipperLib::Path& path = ipolys.paths.front();
+                            ClipperLib::Path tmp;
+                            tmp.swap(path);
+                            std::reverse(tmp.begin(), tmp.end());
+                            ipolys.paths.emplace_back(std::move(tmp));
+                        }
+                        if (debugger) {
+                            cxutil::AABB box(polygons);
+                            box.expand(50000);
+                            std::string filename = "hexagon.svg";
+                            cxutil::SVG svg(filename, box, 0.01);
+                            svg.writePolygons(mpolygons, cxutil::SVG::Color::BLACK, 2);
+                            svg.writePolygons(polygons, cxutil::SVG::Color::RED, 2);
+                            svg.writePolygons(ipolys, cxutil::SVG::Color::BLUE, 2);
+                            svg.writePoints(polygons, false, 2, cxutil::SVG::Color::RAINBOW);
+                            svg.writePoints(ipolys, true, 3, cxutil::SVG::Color::GREEN);
+                        }
+                        const auto& edgemap = GetHexagonEdgeMap(ipolys, polygons.paths[0], hexagons.side, resolution);
                         bhexagon.emplace_back(false);
                         icoords.emplace_back(hexa.coord);
                         icenters.emplace_back(hexa.center);
@@ -195,12 +212,6 @@ namespace topomesh {
             TriPolygon tripolys;
             cxutil::Polygons ipolys = ipolygons[i];
             ClipperLib::Path& path = ipolys.paths.front();
-            if (ipolys.area() < 0) {
-                ClipperLib::Path tmp;
-                tmp.swap(path);
-                std::reverse(tmp.begin(), tmp.end());
-                ipolys.paths.emplace_back(std::move(tmp));
-            }
             if (ipolys.area() >= minrate * hexarea) {
                 for (const auto& p : path) {
                     const auto& point = trimesh::vec3(p.X * resolution, p.Y * resolution, 0);
@@ -857,10 +868,44 @@ namespace topomesh {
         return polys;
     }
 
-    std::vector<std::map<int, bool>> GetHexagonEdgeMaps(const ClipperLib::Path& path, const HexaPolygon& hexaPolygon)
+    std::map<int, int> GetHexagonEdgeMap(const cxutil::Polygons& polygons, const ClipperLib::Path& path, double radius, double resolution)
     {
-
-        return std::vector<std::map<int, bool>>();
+        ClipperLib::IntPoint center;
+        for (const auto& p : path) {
+            center.X += p.X;
+            center.Y += p.Y;
+        }
+        const int side = std::round(radius / resolution);
+        center.X = std::round((double)center.X / (double)path.size());
+        center.Y = std::round((double)center.Y / (double)path.size());
+        cxutil::Polygons hexaPoly;
+        hexaPoly.paths.emplace_back(path);
+        std::map<int, int> edgemap;
+        for (const auto& tempPath : polygons.paths) {
+            const int len = tempPath.size();
+            for (int i = 0; i < len; ++i) {
+                const auto& a = tempPath[i];
+                const auto& b = tempPath[(i + 1) % len];
+                if (hexaPoly.inside(a) || hexaPoly.inside(b)) {
+                    edgemap.emplace(i, -1);
+                } else {
+                    const int d1 = std::round(std::sqrt((a.X - center.X) * (a.X - center.X) + (a.Y - center.Y) * (a.Y - center.Y)));
+                    if (std::fabs(d1 - side) <= 1) {
+                        const int d2 = std::round(std::sqrt((b.X - center.X) * (b.X - center.X) + (b.Y - center.Y) * (b.Y - center.Y)));
+                        if (std::fabs(d2 - side) <= 1) {
+                            const double theta = std::atan2(a.Y - center.Y, a.X - center.X);
+                            const int inx = std::round((theta > 0 ? theta / M_PI * 3.0 : (theta + M_PI * 2.0) / M_PI * 3.0));
+                            edgemap.emplace(i, inx % 6);
+                        } else {
+                            edgemap.emplace(i, -1);
+                        }
+                    } else {
+                        edgemap.emplace(i, -1);
+                    }
+                }
+            }
+        }
+        return edgemap;
     }
 
     TriPolygon traitPlanarCircle(const trimesh::vec3& center, float r, std::vector<int>& indexs, const trimesh::vec3& dir, int nums)
