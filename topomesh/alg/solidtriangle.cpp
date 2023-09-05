@@ -17,23 +17,51 @@ namespace topomesh {
 		_bbox_max_y(bbox_max_y),
 		_bbox_min_y(bbox_min_y)
 	{
-		_result.resize(_row, std::vector<float>(_col, std::numeric_limits<float>::max()));
+		_result.resize(_row, std::vector<std::vector<float>>(_col, std::vector<float>()));
 		_length_x = (_bbox_max_x - _bbox_min_x) * 1.f / (_col * 1.f);
 		_length_y = (_bbox_max_y - _bbox_min_y) * 1.f / (_row * 1.f);
 	}
 
-	float SolidTriangle::getDataMinZ(int r, int c)
+	float SolidTriangle::getDataMinZ(float x, float y)
+	{		
+		int xi = (x - _bbox_min_x) / _length_x; if (xi == _col) xi--;
+		int yi = (y - _bbox_min_y) / _length_y; if (yi == _row) yi--;
+		if(xi>_col||yi>_row) return std::numeric_limits<float>::max();
+		float min_z = std::numeric_limits<float>::max();
+		for (int i = 0; i < _result[xi][yi].size(); i++)
+		{
+			int index = _result[xi][yi][i];			
+			trimesh::point v0;
+			trimesh::point v1;
+			trimesh::point v2;
+			std::tie(v0, v1, v2) = _data->at(index);
+			float za[] = { v0.z,v1.z,v2.z };
+			std::sort(za, za + 3);
+			if (za[0] < min_z)
+				min_z = za[0];
+		}
+		return min_z;
+	}
+
+	float SolidTriangle::getDataMaxZ(float x, float y)
 	{
-		if (r >= _row || c >= _col) return std::numeric_limits<float>::max();
-		if (_result[r][c] == std::numeric_limits<float>::max()) return std::numeric_limits<float>::max();
-		int faceid = _result[r][c];
-		trimesh::point v0;
-		trimesh::point v1;
-		trimesh::point v2;
-		std::tie(v0, v1, v2) = _data->at(faceid);
-		float za[] = { v0.z,v1.z,v2.z };
-		std::sort(za, za + 3);
-		return za[0];
+		int xi = (x - _bbox_min_x) / _length_x; if (xi == _col) xi--;
+		int yi = (y - _bbox_min_y) / _length_y; if (yi == _row) yi--;
+		if (xi > _col || yi > _row) return std::numeric_limits<float>::min();
+		float max_z = std::numeric_limits<float>::min();
+		for (int i = 0; i < _result[xi][yi].size(); i++)
+		{
+			int index = _result[xi][yi][i];
+			trimesh::point v0;
+			trimesh::point v1;
+			trimesh::point v2;
+			std::tie(v0, v1, v2) = _data->at(index);
+			float za[] = { v0.z,v1.z,v2.z };
+			std::sort(za, za + 3);
+			if (za[2] > max_z)
+				max_z = za[2];
+		}
+		return max_z;
 	}
 
 	void SolidTriangle::work()
@@ -87,7 +115,7 @@ namespace topomesh {
 #ifdef _OPENMP
 #pragma omp critical
 #endif 
-						_result[x][y] = i;
+						_result[x][y].push_back(i);
 					CX1 += I1; CX2 += I2; CX3 += I3;
 				}
 				CY1 += J1; CY2 += J2; CY3 += J3;

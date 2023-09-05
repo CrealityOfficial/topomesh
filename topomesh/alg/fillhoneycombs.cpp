@@ -458,11 +458,11 @@ namespace topomesh {
                     for (int i = 0; i < hg.poly.size(); i++)
                     {
                         trimesh::point p = hg.poly[i] - min_xy;
-                        int xi = p.x / lengthx;
+                        /*int xi = p.x / lengthx;
                         int yi = p.y / lengthy;
                         xi = xi == col ? --xi : xi;
-                        yi = yi == row ? --yi : yi;
-                        float min_z = upST.getDataMinZ(xi, yi);
+                        yi = yi == row ? --yi : yi;*/
+                        float min_z = upST.getDataMinZ(p.x, p.y);
                         if (min_z != std::numeric_limits<float>::max())
                             height.push_back(min_z);
                         else
