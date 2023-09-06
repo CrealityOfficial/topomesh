@@ -10,8 +10,6 @@
 #include<Eigen/Eigenvalues>
 #include "queue"
 #include "set"
-#include <CGAL/mesh_segmentation.h>
-
 
 struct Patch
 {
