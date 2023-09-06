@@ -64,6 +64,42 @@ namespace topomesh {
 		return max_z;
 	}
 
+	float SolidTriangle::getDataMinZCoord(int xi, int yi)
+	{
+		float min_z = std::numeric_limits<float>::max();
+		for (int i = 0; i < _result[xi][yi].size(); i++)
+		{
+			int index = _result[xi][yi][i];
+			trimesh::point v0;
+			trimesh::point v1;
+			trimesh::point v2;
+			std::tie(v0, v1, v2) = _data->at(index);
+			float za[] = { v0.z,v1.z,v2.z };
+			std::sort(za, za + 3);
+			if (za[0] < min_z)
+				min_z = za[0];
+		}
+		return min_z;
+	}
+
+	float SolidTriangle::getDataMaxZCoord(int xi, int yi)
+	{
+		float max_z = std::numeric_limits<float>::min();
+		for (int i = 0; i < _result[xi][yi].size(); i++)
+		{
+			int index = _result[xi][yi][i];
+			trimesh::point v0;
+			trimesh::point v1;
+			trimesh::point v2;
+			std::tie(v0, v1, v2) = _data->at(index);
+			float za[] = { v0.z,v1.z,v2.z };
+			std::sort(za, za + 3);
+			if (za[2] > max_z)
+				max_z = za[2];
+		}
+		return max_z;
+	}
+
 	void SolidTriangle::work()
 	{
 #ifdef _OPENMP

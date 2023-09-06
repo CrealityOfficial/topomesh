@@ -462,37 +462,134 @@ namespace topomesh {
                 trimesh::point min_xy = trimesh->bbox.min;
                 float lengthx = (trimesh->bbox.max.x - trimesh->bbox.min.x)/ (col*1.f);
                 float lengthy = (trimesh->bbox.max.y - trimesh->bbox.min.y)/ (row*1.f);
-
+                trimesh::TriMesh* pointmesh = new trimesh::TriMesh();
                 for (auto& hg : letterOpts.hexgons)
                 {
                     std::vector<float> height;
+                    std::vector<trimesh::ivec2> coord;
+                    int max_xi = std::numeric_limits<int>::min();
+                    int min_xi = std::numeric_limits<int>::max();
+                    int max_yi = std::numeric_limits<int>::min();
+                    int min_yi = std::numeric_limits<int>::max();
                     for (int i = 0; i < hg.poly.size(); i++)
                     {
                         trimesh::point p = hg.poly[i] - min_xy;
-                        /*int xi = p.x / lengthx;
+                        int xi = p.x / lengthx;
                         int yi = p.y / lengthy;
                         xi = xi == col ? --xi : xi;
-                        yi = yi == row ? --yi : yi;*/
-                        float min_z = upST.getDataMinZ(p.x, p.y);
+                        yi = yi == row ? --yi : yi;
+                        if (xi > max_xi) max_xi = xi;
+                        if (xi < min_xi) min_xi = xi;
+                        if (yi > max_yi) max_yi = yi;
+                        if (yi < min_yi) min_yi = yi;
+                        float min_z = upST.getDataMinZCoord(xi, yi);
                         if (min_z != std::numeric_limits<float>::max())
+                        {
+                            min_z -= honeyparams.shellThickness;
                             height.push_back(min_z);
+                            pointmesh->vertices.push_back(trimesh::point(p.x, p.y, min_z));                          
+                        }
                         else
-                            height.push_back(0.f);                      
+                        {
+                            height.push_back(0.f);
+                            pointmesh->vertices.push_back(trimesh::point(p.x, p.y, 0.f));
+                        }
+                        coord.push_back(trimesh::ivec2(xi, yi));
                     }
+#if 0
+                    for (int i = 0; i < height.size(); i++)
+                    {
+                        if (height[i] == 0.f) continue;
+                        int next = (i + 1) % height.size();
+                        trimesh::point c = hg.poly[next] - hg.poly[i];
+                        float ch = height[next] - height[i];
+                        int cx = coord[next].x - coord[i].x;
+                        int cy = coord[next].y - coord[i].y;
+                        if (cx == 0 && cy == 0) continue;
+                        cx = std::abs(cx);
+                        cy = std::abs(cy);
+                        if (cx > cy)
+                        {
+                            cx += 1;
+                            trimesh::point t = c / (cx*1.f);
+                            float th = ch / (cx * 1.f);
+                            float max_c = std::numeric_limits<float>::max();
+                            for (int j = 1; j < cx;j++)
+                            {
+                                trimesh::point tt = hg.poly[i] + j*1.f * t;
+                                float min_z = upST.getDataMinZ(tt.x,tt.y)- honeyparams.shellThickness;
+                                float temp_z = height[i] + j * 1.f * th;
+                                if (temp_z > min_z)
+                                {
+                                    if (max_c > (temp_z - min_z))
+                                        max_c = (temp_z - min_z);
+                                }
+                            }
+                            if (max_c != std::numeric_limits<float>::max())
+                            {
+                                if(height[next]> max_c)
+                                    height[next] -= max_c;
+                                if(height[i]>max_c)
+                                    height[i] -= max_c;
+                            }
+                        }
+                        else
+                        {
+                            cy += 1;
+                            trimesh::point t = c / (cy * 1.f);
+                            float th = ch / (cy * 1.f);
+                            float max_c = std::numeric_limits<float>::max();
+                            for (int j = 1; j < cy; j++)
+                            {
+                                trimesh::point tt = hg.poly[i] + j * 1.f * t;
+                                float min_z = upST.getDataMinZ(tt.x, tt.y) - honeyparams.shellThickness;
+                                float temp_z = height[i] + j * 1.f * th;
+                                if (temp_z > min_z)
+                                {
+                                    if (max_c > (temp_z - min_z))
+                                        max_c = (temp_z - min_z);
+                                }
+                            }
+                            if (max_c != std::numeric_limits<float>::max())
+                            {
+                                if (height[next] > max_c)
+                                    height[next] -= max_c;
+                                if (height[i] > max_c)
+                                    height[i] -= max_c;
+                            }
+                        }
+                    }
+#else
+                    float last_z = std::numeric_limits<float>::max();
+                    for (int i = min_yi; i <= max_yi; i++)
+                    {
+                        for (int j = min_xi; j <= max_xi; j++)
+                        {
+                            float min_z = upST.getDataMinZCoord(j, i);
+                            if (min_z < last_z)
+                                last_z = min_z;
+                        }
+                    }
+                    if(last_z>= honeyparams.shellThickness)
+                        last_z -= honeyparams.shellThickness;
+#endif
                     hg.edges.resize(hg.poly.size());
                     for (int i = 0; i < hg.edges.size(); i++)
                     {
                         //hg.edges[i].lowHeight = ldist(engine);
-                        hg.edges[i].topHeight = height[i];
+                       // hg.edges[i].topHeight = height[i];
+                        hg.edges[i].topHeight = last_z;
                     }
                     hexpolys.polys.push_back(hg);                   
                 }
+               /* trimesh->write("trimesh.ply");
+                pointmesh->write("pointmesh.ply");*/
                 topomesh::ColumnarHoleParam columnParam;
                 columnParam.nslices = 65;
                 columnParam.ratio = 0.8f;
                 columnParam.height = 3.0f;
                 std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
-                newmesh->write("holesColumnar.stl");
+               // newmesh->write("holesColumnar.stl");
                 return newmesh;
             }
             else {

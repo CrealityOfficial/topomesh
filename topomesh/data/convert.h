@@ -80,8 +80,8 @@ namespace topomesh
         std::map<int, int> edgemap;
     };
     struct HexaPolygons {
-        bool bSewTop = false; ///棱柱的顶部是否需要缝合
-        bool bSewBottom = false; ///<棱柱的底部连接部分是否需要缝合
+        bool bSewTop = true; ///棱柱的顶部是否需要缝合
+        bool bSewBottom = true; ///<棱柱的底部连接部分是否需要缝合
         float side = 0.0f; ///< 每个棱柱底面六角网格的边长
         std::vector<HexaPolygon> polys;
     };
