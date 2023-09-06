@@ -77,7 +77,10 @@ namespace topomesh
         int startIndex = 0; ///< 六棱柱第一个点的索引
         trimesh::ivec3 coord; ///<三轴坐标系下的坐标
         std::vector<HexaEdge> edges;
-        std::map<int, int> edgemap;
+        std::map<int, int> p2hPointMap;
+        std::map<int, int> h2pPointMap;
+        std::map<int, int> p2hEdgeMap;
+        std::map<int, int> h2pEdgeMap;
     };
     struct HexaPolygons {
         bool bSewTop = true; ///棱柱的顶部是否需要缝合
