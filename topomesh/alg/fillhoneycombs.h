@@ -59,7 +59,7 @@ namespace topomesh {
     TriPolygons traitCurrentPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitNeighborPolygons(const HexaPolygons& hexas, int index);
     TriPolygons traitDirctionPolygon(const HexaPolygons& hexas, int index, int dir);
-    std::map<int, int> GetHexagonEdgeMap(const cxutil::Polygons& polygons, const ClipperLib::Path& path, double radius, double resolution = 1E-4);
+    std::vector<std::map<int, int>> GetHexagonEdgeMap(const cxutil::Polygons& polygons, const ClipperLib::Path& path, double radius, double resolution = 1E-4);
     TriPolygon traitPlanarCircle(const trimesh::vec3& c, float r, std::vector<int>& indexs, const trimesh::vec3& edgeDir = trimesh::vec3(0, 0, 1), int nums = 17);
     std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param);
 
