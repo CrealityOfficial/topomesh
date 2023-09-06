@@ -1,7 +1,6 @@
 #ifndef TOPOMESH_LETTER_1692613164094_H
 #define TOPOMESH_LETTER_1692613164094_H
 #include "topomesh/interface/idata.h"
-#include "cxnd/serial/serial.h"
 
 namespace topomesh
 {
@@ -24,7 +23,7 @@ namespace topomesh
 	};
 
 
-	class TOPOMESH_API LetterInput : public cxnd::Serializeable
+	class TOPOMESH_API LetterInput
 	{
 	public:
 		trimesh::TriMesh mesh;
@@ -37,9 +36,9 @@ namespace topomesh
 
 		trimesh::TriMesh* letter(LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 	protected:
-		int version() override;
-		bool save(std::fstream& out, ccglobal::Tracer* tracer) override;
-		bool load(std::fstream& in, int ver, ccglobal::Tracer* tracer) override;
+		int version();
+		bool save(std::fstream& out, ccglobal::Tracer* tracer);
+		bool load(std::fstream& in, int ver, ccglobal::Tracer* tracer);
 	};
 
 	TOPOMESH_API trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, 

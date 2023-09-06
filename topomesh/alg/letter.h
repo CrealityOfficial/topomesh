@@ -1,8 +1,6 @@
 #ifndef TOPOMESH_LETTER_1680853426716_H
 #define TOPOMESH_LETTER_1680853426716_H
 #include "topomesh/interface/letter.h"
-#include "mmesh/trimesh/polygon.h"
-#include "mmesh/util/mnode.h"
 #include "topomesh/data/mmesht.h"
 #include "topomesh/data/convert.h"
 #include "trimesh2/XForm.h"
