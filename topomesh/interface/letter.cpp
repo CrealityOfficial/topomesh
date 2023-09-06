@@ -1,6 +1,5 @@
 #include "letter.h"
 #include "topomesh/alg/letter.h"
-#include "cxnd/serial/trimeshserial.h"
 #include "ccglobal/profile.h"
 
 namespace topomesh
@@ -22,15 +21,15 @@ namespace topomesh
 
 	bool LetterInput::save(std::fstream& out, ccglobal::Tracer* tracer)
 	{
-		cxnd::cxndSaveT(out, param.concave);
-		cxnd::cxndSaveT(out, param.deep);
-		cxnd::cxndSaveT(out, camera);
-		cxnd::saveTrimesh(out, mesh);
-
-		int size = (int)polys.size();
-		cxnd::cxndSaveT(out, size);
-		for (int i = 0; i < size; ++i)
-			cxnd::savePolys(out, polys.at(i));
+		//cxnd::cxndSaveT(out, param.concave);
+		//cxnd::cxndSaveT(out, param.deep);
+		//cxnd::cxndSaveT(out, camera);
+		//cxnd::saveTrimesh(out, mesh);
+		//
+		//int size = (int)polys.size();
+		//cxnd::cxndSaveT(out, size);
+		//for (int i = 0; i < size; ++i)
+		//	cxnd::savePolys(out, polys.at(i));
 
 		return true;
 	}
@@ -39,19 +38,19 @@ namespace topomesh
 	{
 		if (ver == 0)
 		{
-			cxnd::cxndLoadT(in, param.concave);
-			cxnd::cxndLoadT(in, param.deep);
-			cxnd::cxndLoadT(in, camera);
-			cxnd::loadTrimesh(in, mesh);
-
-			int size = 0;
-			cxnd::cxndLoadT(in, size);
-			if (size > 0)
-			{
-				polys.resize(size);
-				for (int i = 0; i < size; ++i)
-					cxnd::loadPolys(in, polys.at(i));
-			}
+			//cxnd::cxndLoadT(in, param.concave);
+			//cxnd::cxndLoadT(in, param.deep);
+			//cxnd::cxndLoadT(in, camera);
+			//cxnd::loadTrimesh(in, mesh);
+			//
+			//int size = 0;
+			//cxnd::cxndLoadT(in, size);
+			//if (size > 0)
+			//{
+			//	polys.resize(size);
+			//	for (int i = 0; i < size; ++i)
+			//		cxnd::loadPolys(in, polys.at(i));
+			//}
 			return true;
 		}
 		return false;

@@ -7,7 +7,6 @@
 #include "topomesh/alg/solidtriangle.h"
 
 #include "cxutil/util/SVG.h"
-#include "mmesh/trimesh/trimeshutil.h"
 #include "random"
 //#include "topomesh/data/entrance.h"
 //#include "topomesh/alg/remesh.h"
@@ -1636,7 +1635,6 @@ namespace topomesh {
         std::shared_ptr<trimesh::TriMesh> triMesh(new trimesh::TriMesh());
         triMesh->vertices.swap(points);
         triMesh->faces.swap(faces);
-        mmesh::dumplicateMesh(triMesh.get());
         return triMesh;
     }
 
