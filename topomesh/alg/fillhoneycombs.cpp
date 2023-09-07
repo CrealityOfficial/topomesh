@@ -577,14 +577,20 @@ namespace topomesh {
 
                 trimesh::remove_faces(trimesh, deletefaces);
                 trimesh::remove_unused_vertices(trimesh);
-                trimesh->write("trimesh.ply");
+                //trimesh->write("trimesh.ply");
                 //pointmesh->write("pointmesh.ply");
                 topomesh::ColumnarHoleParam columnParam;
                 columnParam.nslices = 65;
                 columnParam.ratio = 0.8f;
                 columnParam.height = 3.0f;
                 std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
-                newmesh->write("holesColumnar.stl");
+               
+                int vertexsize = newmesh->vertices.size();
+                for (int vi = 0; vi < trimesh->vertices.size(); vi++)
+                    newmesh->vertices.push_back(trimesh->vertices[vi]);
+                for (int fi = 0; fi < trimesh->faces.size(); fi++)
+                    newmesh->faces.push_back(trimesh::TriMesh::Face(trimesh->faces[fi][0]+vertexsize, trimesh->faces[fi][1] + vertexsize, trimesh->faces[fi][2] + vertexsize));
+                newmesh->write("holesColumnar.stl"); 
                 return newmesh;
             }
             else {
