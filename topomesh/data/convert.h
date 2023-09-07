@@ -39,7 +39,9 @@ namespace topomesh
 	};
 
     struct HexaEdge {
+        int associate = -1;
         int neighbor = -1;
+        int relate = -1;
         bool canAdd = false;
         bool hasAdd = false;
         bool addRect = false;

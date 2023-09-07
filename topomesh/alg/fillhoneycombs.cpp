@@ -864,10 +864,37 @@ namespace topomesh {
     void GenerateHexagonNeighbors(HexaPolygons& hexas, const ColumnarHoleParam& param)
     {
         const int nums = hexas.polys.size();
-        std::vector<std::vector<int>> hoods(nums, std::vector<int>(nums, 1));
+        std::vector<std::vector<int>> neighborhoods(nums, std::vector<int>(nums, 1));
+        std::vector<std::vector<int>> associatehoods(nums, std::vector<int>(nums, 1));
         for (int i = 0; i < nums; ++i) {
             for (int j = 0; j < nums; ++j) {
-                if (hoods[i][j] && (j != i)) {
+                //更新完整边对应关系
+                if (neighborhoods[i][j] && (j != i)) {
+                    const auto& hexa = hexas.polys[i];
+                    const auto& hexb = hexas.polys[j];
+                    int res = int(hex_neighbor(hexa.coord, hexb.coord));
+                    if (res >= 0) {
+                        const auto& h2pmap1 = hexa.h2pEdgeMap;
+                        auto itr1 = h2pmap1.find(res); ///<当前线段对应六角网格边的索引
+                        if (itr1 != h2pmap1.end()) {
+                            const auto& h2pmap2 = hexb.h2pEdgeMap;
+                            const int inx = (res + 3) % 6; ///<临近线段对应六角网格边的索引
+                            const auto& itr2 = h2pmap2.find(inx);
+                            if (itr2 != h2pmap2.end()) {
+                                hexas.polys[i].edges[itr1->second].neighbor = j;
+                                hexas.polys[j].edges[itr2->second].neighbor = i;
+                                neighborhoods[i][j] = 0;
+                                neighborhoods[i][j] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        for (int i = 0; i < nums; ++i) {
+            for (int j = 0; j < nums; ++j) {
+                //更新裁剪边对应关系
+                if (associatehoods[i][j] && (neighborhoods[i][j]) && (j != i)) {
                     const auto& hexa = hexas.polys[i];
                     const auto& hexb = hexas.polys[j];
                     int res = int(hex_neighbor(hexa.coord, hexb.coord));
@@ -876,18 +903,26 @@ namespace topomesh {
                         auto itr1 = h2pmap1.find(res); ///<当前线段起始点为六角网格网格顶点
                         if (itr1 != h2pmap1.end()) {
                             const auto& h2pmap2 = hexb.h2pPointMap;
-                            const int inx = (res + 3 + 1) % 6; ///<当前线段终点为六角网格网格顶点
+                            const int inx = (res + 3 + 1) % 6; ///<关联线段终点为六角网格网格顶点
                             const auto& itr2 = h2pmap2.find(inx);
                             if (itr2 != h2pmap2.end()) {
                                 const int sizeb = hexb.poly.size();
-                                hexas.polys[i].edges[itr1->second].neighbor = j;
-                                hexas.polys[j].edges[(itr2->second + sizeb - 1) % sizeb].neighbor = i;
-                                hoods[i][j] = 0;
-                                hoods[i][j] = 0;
+                                hexas.polys[i].edges[itr1->second].associate = j;
+                                hexas.polys[j].edges[(itr2->second + sizeb - 1) % sizeb].associate = i;
+                                associatehoods[i][j] = 0;
+                                associatehoods[i][j] = 0;
                             }
                         }
                     }
                 }
+            }
+        }
+        for (int i = 0; i < nums; ++i) {
+            const int size = hexas.polys[i].poly.size();
+            for (int j = 0; j < size; ++j) {
+                const int associate = hexas.polys[i].edges[j].associate;
+                const int neighbor = hexas.polys[i].edges[j].neighbor;
+                hexas.polys[i].edges[j].relate = associate < 0 ? neighbor : associate;
             }
         }
         const float cradius = hexas.side * param.ratio * 0.5f;
@@ -908,8 +943,8 @@ namespace topomesh {
                     auto itr = h2pmap.find(inx);
                     if (itr != h2pmap.end()) {
                         const int ind = itr->second;
-                        const int osize = oh.poly.size();
                         auto& oe = oh.edges[ind];
+                        const int osize = oh.poly.size();
                         auto& onext = oh.edges[(ind + 1) % osize];
                         edge.lowHeight = std::max(edge.lowHeight, next.lowHeight);
                         edge.topHeight = std::min(edge.topHeight, next.topHeight);
@@ -990,7 +1025,7 @@ namespace topomesh {
         hexaPoly.paths.emplace_back(path);
         std::vector<std::map<int, int>> edgemaps;
         std::map<int, int> p2hpmap, h2ppmap;
-        std::map<int,int> p2hmap, h2pmap;
+        std::map<int,int> p2hemap, h2pemap;
         for (const auto& tempPath : polygons.paths) {
             const int len = tempPath.size();
             std::vector<bool> insides(len);
@@ -1002,7 +1037,7 @@ namespace topomesh {
             }
             for (int i = 0; i < len; ++i) {
                 if (insides[i] || insides[(i + 1) % len]) {
-                    p2hmap.emplace(i, -1);
+                    p2hemap.emplace(i, -1);
                 } else {
                     const int d1 = dists[i];
                     if (std::fabs(d1 - side) <= 1) {
@@ -1013,14 +1048,14 @@ namespace topomesh {
                         h2ppmap.emplace(inx % 6, i);
                         const int d2 = dists[(i + 1) % len];
                         if (std::fabs(d2 - side) <= 1) {
-                            p2hmap.emplace(i, inx % 6);
-                            h2pmap.emplace(inx % 6, i);
+                            p2hemap.emplace(i, inx % 6);
+                            h2pemap.emplace(inx % 6, i);
                         } else {
-                            p2hmap.emplace(i, -1);
+                            p2hemap.emplace(i, -1);
                         }
                     } else {
                         p2hpmap.emplace(i, -1);
-                        p2hmap.emplace(i, -1);
+                        p2hemap.emplace(i, -1);
                     }
                 }
             }
@@ -1028,8 +1063,8 @@ namespace topomesh {
         edgemaps.reserve(4);
         edgemaps.emplace_back(p2hpmap);
         edgemaps.emplace_back(h2ppmap);
-        edgemaps.emplace_back(p2hmap);
-        edgemaps.emplace_back(h2pmap);
+        edgemaps.emplace_back(p2hemap);
+        edgemaps.emplace_back(h2pemap);
         return edgemaps;
     }
 
@@ -1127,15 +1162,16 @@ namespace topomesh {
         int bottomfacenums = 0;
         ///六角网格底部
         if (hexas.bSewBottom) {
-            ///底部两个网格中间矩形区域
+            ///底部网格中间矩形区域
             for (auto& hexa : hexas.polys) {
                 const int size = hexa.poly.size();
+                //底部完整网格中间矩形区域
                 for (int i = 0; i < size; ++i) {
-                    const int res = hexa.p2hPointMap[i]; ///<当前线段起始点为六角网格网格顶点
+                    const int res = hexa.p2hEdgeMap[i]; ///<当前线段对应六角网格边长
                     if ((!hexa.edges[i].addRect) && (hexa.edges[i].neighbor >= 0) && (res >= 0)) {
                         auto& oh = hexas.polys[hexa.edges[i].neighbor];
-                        const auto& h2pmap = oh.h2pPointMap;
-                        const int inx = (res + 3 + 1) % 6; ///<当前线段终点为六角网格网格顶点
+                        const auto& h2pmap = oh.h2pEdgeMap;
+                        const int inx = (res + 3) % 6; ///<临近线段对应六角网格的边长
                         auto itr = h2pmap.find(inx);
                         if (itr != h2pmap.end()) {
                             const int& start = hexa.startIndex;
@@ -1146,9 +1182,35 @@ namespace topomesh {
                             const int osize = oh.poly.size();
                             const int ind = itr->second;
                             const int& c = ostart + ind;
-                            const int& d = ostart + (ind + osize - 1) % osize;
-                            faces.emplace_back(trimesh::ivec3(b, d, c));
-                            faces.emplace_back(trimesh::ivec3(b, c, a));
+                            const int& d = ostart + (ind + 1) % osize;
+                            faces.emplace_back(trimesh::ivec3(b, c, d));
+                            faces.emplace_back(trimesh::ivec3(b, d, a));
+                            hexa.edges[i].addRect = true;
+                            oh.edges[ind].addRect = true;
+                            bottomfacenums += 2;
+                        }
+                    }
+                }
+                //底部边界裁剪网格中间矩形区域
+                for (int i = 0; i < size; ++i) {
+                    const int res = hexa.p2hPointMap[i]; ///<当前线段起始点对应六角网格顶点
+                    if ((!hexa.edges[i].addRect) && (hexa.edges[i].associate >= 0) && (res >= 0)) {
+                        auto& oh = hexas.polys[hexa.edges[i].associate];
+                        const auto& h2pmap = oh.h2pPointMap;
+                        const int inx = (res + 3 + 1) % 6; ///<关联线段终点对应六角网格的边顶点
+                        auto itr = h2pmap.find(inx);
+                        if (itr != h2pmap.end()) {
+                            const int& start = hexa.startIndex;
+                            const int& a = start + i;
+                            const int& b = start + (i + 1) % size;
+
+                            const int& ostart = oh.startIndex;
+                            const int osize = oh.poly.size();
+                            const int ind = itr->second;
+                            const int& d = ostart + ind;
+                            const int& c = ostart + (ind + osize - 1) % osize;
+                            faces.emplace_back(trimesh::ivec3(b, c, d));
+                            faces.emplace_back(trimesh::ivec3(b, d, a));
                             hexa.edges[i].addRect = true;
                             oh.edges[(ind + osize - 1) % osize].addRect = true;
                             bottomfacenums += 2;
@@ -1157,19 +1219,19 @@ namespace topomesh {
                 }
             }
             ///底部三个网格中间部分
-            /*for (auto& hexa : hexas.polys) {
+            for (auto& hexa : hexas.polys) {
                 const int size = hexa.poly.size();
                 for (int i = 0; i < size; ++i) {
-                    const int res = hexa.p2hPointMap[i];
-                    const int nb = hexa.edges[i].neighbor;
-                    const int nc = hexa.edges[(i + 1) % size].neighbor;
+                    const int nb = hexa.edges[i].relate;
+                    const int nc = hexa.edges[(i + 1) % size].relate;
+                    const int res = hexa.p2hPointMap[(i + 1) % size];
                     if ((!hexa.edges[i].addTriangle) && (nb >= 0) && (nc >= 0) && (res >= 0)) {
                         auto& ohb = hexas.polys[nb];
                         auto& ohc = hexas.polys[nc];
                         const int& a = hexa.startIndex + (i + 1) % size; ///<线段终点
 
-                        const auto & h2pmapb = ohb.h2pPointMap;
-                        const int inxb = (res + 3 - 1) % 6; ///<线段始点
+                        const auto& h2pmapb = ohb.h2pPointMap;
+                        const int inxb = (res + 2) % 6; ///<线段始点
                         auto itrb = h2pmapb.find(inxb);
                         if (itrb != h2pmapb.end()) {
                             const int indb = itrb->second;
@@ -1181,17 +1243,17 @@ namespace topomesh {
                             if (itrc != h2pmapc.end()) {
                                 const int indc = itrc->second;
                                 const int sizec = ohc.poly.size();
-                                const int& c = ohc.startIndex + indc; 
+                                const int& c = ohc.startIndex + indc;
                                 faces.emplace_back(trimesh::ivec3(a, c, b));
                                 hexa.edges[(i + 1) % size].addTriangle = true;
                                 ohb.edges[indb].addTriangle = true;
-                                ohc.edges[(indc + 1) % sizec].addTriangle = true;
+                                ohc.edges[(indc + sizec - 1) % sizec].addTriangle = true;
                                 ++bottomfacenums;
                             }
                         }
                     }
                 }
-            }*/
+            }
         }
         ///添加连接孔洞的顶点坐标
         for (auto& hexa : hexas.polys) {
