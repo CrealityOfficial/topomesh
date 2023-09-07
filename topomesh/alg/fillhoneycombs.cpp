@@ -143,12 +143,6 @@ namespace topomesh {
                 polygons.paths.emplace_back(std::move(path));
                 if (belong) {
                     hexa.standard = true;
-                    for (int i = 0; i < 6; ++i) {
-                        hexa.p2hPointMap.emplace(i, i);
-                        hexa.h2pPointMap.emplace(i, i);
-                        hexa.p2hEdgeMap.emplace(i, i);
-                        hexa.h2pEdgeMap.emplace(i, i);
-                    }
                     ipolygons.emplace_back(std::move(polygons));
                     ihexagons.emplace_back(std::move(hexa));
                 } else {
@@ -864,6 +858,16 @@ namespace topomesh {
     void GenerateHexagonNeighbors(HexaPolygons& hexas, const ColumnarHoleParam& param)
     {
         const int nums = hexas.polys.size();
+        for (int i = 0; i < nums; ++i) {
+            if (hexas.polys[i].standard) {
+                for (int j = 0; j < 6; ++j) {
+                    hexas.polys[i].h2pPointMap.emplace(j, j);
+                    hexas.polys[i].p2hPointMap.emplace(j, j);
+                    hexas.polys[i].h2pEdgeMap.emplace(j, j);
+                    hexas.polys[i].p2hEdgeMap.emplace(j, j);
+                }
+            }
+        }
         std::vector<std::vector<int>> neighborhoods(nums, std::vector<int>(nums, 1));
         std::vector<std::vector<int>> associatehoods(nums, std::vector<int>(nums, 1));
         for (int i = 0; i < nums; ++i) {
