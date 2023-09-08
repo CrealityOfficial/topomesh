@@ -5,10 +5,7 @@
 #include "topomesh/data/convert.h"
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
-#include "Eigen/Dense"
-#ifdef _WIN32
-#include "omp.h"
-#endif
+
 #include "cmath"
 #include <vector>
 #include <queue>
@@ -24,14 +21,7 @@ namespace topomesh
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);
 	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex);
-	void getScreenWidthAndHeight(const CameraParam& camera,std::pair<float,float>&wh);
-	void getViewMatrixAndProjectionMatrix(const CameraParam& camera,Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void loadCameraParam(CameraParam& camera);
-	void getEmbedingPoint(std::vector<std::vector<trimesh::point>>& lines, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix, std::vector<std::vector<trimesh::vec2>>& poly);
-	void unTransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
-	void unTransformationMesh(trimesh::TriMesh* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
-	void TransformationMesh(MMeshT* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
-	void TransformationMesh(trimesh::TriMesh* mesh, Eigen::Matrix4f& ViewMatrix, Eigen::Matrix4f& ProjectionMatrix);
 	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex);
 	void fillTriangleForTraverse(MMeshT* mesh, std::vector<int>& vindex,bool is_rollback=false);
 	void getMeshFaces(MMeshT* mesh, const std::vector<std::vector<trimesh::vec2>>& polygons, const CameraParam& camera, std::vector<int>& faces);

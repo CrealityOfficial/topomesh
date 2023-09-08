@@ -6,10 +6,9 @@
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
 
-#include "cxutil/util/SVG.h"
+#include "internal/polygon/comb.h"
+
 #include "random"
-//#include "topomesh/data/entrance.h"
-//#include "topomesh/alg/remesh.h"
 
 #ifndef EPS
 #define EPS 1e-8f
@@ -57,8 +56,8 @@ namespace topomesh {
         const double radius = honeyparams.honeyCombRadius;
         const double thickness = honeyparams.shellThickness;
         const double side = radius - honeyparams.nestWidth / SQRT3;
-        cxutil::Polygons bpolygons; ///<底面边界轮廓多边形
-        cxutil::Polygons mpolygons; ///<底面边界抽壳多边形
+        Polygons bpolygons; ///<底面边界轮廓多边形
+        Polygons mpolygons; ///<底面边界抽壳多边形
         {
             for (const auto& poly : polys) {
                 ClipperLib::Path path;
@@ -70,7 +69,7 @@ namespace topomesh {
                 }
                 bpolygons.paths.emplace_back(std::move(path));
             }
-            cxutil::Polygons cpolygons(bpolygons);
+            Polygons cpolygons(bpolygons);
             mpolygons = cpolygons.offset(-std::round(thickness / resolution));
         }
         if (debugger) {
@@ -118,14 +117,14 @@ namespace topomesh {
             debugger->onGenerateBottomPolygons(convertFromHexaPolygons(hexagons));
         }
         //第2步，计算网格阵列与抽壳轮廓交集
-        std::vector<cxutil::Polygons> hpolygons; ///<完整六角网格多边形序列
-        std::vector<cxutil::Polygons> ipolygons; ///<初次求交网格多边形序列
+        std::vector<Polygons> hpolygons; ///<完整六角网格多边形序列
+        std::vector<Polygons> ipolygons; ///<初次求交网格多边形序列
         std::vector<HexaPolygon> ihexagons;
         ihexagons.reserve(hexagons.polys.size());
         {
             hpolygons.reserve(hexagons.polys.size());
             for (auto& hexa : hexagons.polys) {
-                cxutil::Polygons polygons;
+                Polygons polygons;
                 ClipperLib::Path path;
                 path.reserve(hexa.poly.size());
                 for (const auto& p : hexa.poly) {
@@ -146,7 +145,7 @@ namespace topomesh {
                     ipolygons.emplace_back(std::move(polygons));
                     ihexagons.emplace_back(std::move(hexa));
                 } else {
-                    cxutil::Polygons&& ipolys = mpolygons.intersection(polygons);
+                    Polygons&& ipolys = mpolygons.intersection(polygons);
                     if (!ipolys.empty()) {
                         if (ipolys.area() < 0) {
                             ClipperLib::Path& path = ipolys.paths.front();
@@ -155,16 +154,17 @@ namespace topomesh {
                             std::reverse(tmp.begin(), tmp.end());
                             ipolys.paths.emplace_back(std::move(tmp));
                         }
+
                         if (debugger) {
-                            cxutil::AABB box(polygons);
+                            AABB box(polygons);
                             box.expand(50000);
                             std::string filename = "hexagon.svg";
-                            cxutil::SVG svg(filename, box, 0.01);
-                            svg.writePolygons(mpolygons, cxutil::SVG::Color::BLACK, 2);
-                            svg.writePolygons(polygons, cxutil::SVG::Color::RED, 2);
-                            svg.writePolygons(ipolys, cxutil::SVG::Color::BLUE, 2);
-                            svg.writePoints(polygons, false, 2, cxutil::SVG::Color::RAINBOW);
-                            svg.writePoints(ipolys, true, 3, cxutil::SVG::Color::GREEN);
+                            SVG svg(filename, box, 0.01);
+                            svg.writePolygons(mpolygons, SVG::Color::BLACK, 2);
+                            svg.writePolygons(polygons, SVG::Color::RED, 2);
+                            svg.writePolygons(ipolys, SVG::Color::BLUE, 2);
+                            svg.writePoints(polygons, false, 2, SVG::Color::RAINBOW);
+                            svg.writePoints(ipolys, true, 3, SVG::Color::GREEN);
                         }
                         auto&& edgemaps = GetHexagonEdgeMap(ipolys, polygons.paths[0], hexagons.side, resolution);
                         hexa.standard = false;
@@ -203,7 +203,7 @@ namespace topomesh {
         ohexagons.reserve(isize);
         for (int i = 0; i < isize; i++) {
             TriPolygon tripolys;
-            cxutil::Polygons ipolys = ipolygons[i];
+            Polygons ipolys = ipolygons[i];
             ClipperLib::Path& path = ipolys.paths.front();
             if (ipolys.area() >= minrate * hexarea) {
                 for (const auto& p : path) {
@@ -1027,63 +1027,6 @@ namespace topomesh {
             }
         }
         return polys;
-    }
-
-    std::vector<std::map<int, int>> GetHexagonEdgeMap(const cxutil::Polygons& polygons, const ClipperLib::Path& path, double radius, double resolution)
-    {
-        ClipperLib::IntPoint center;
-        for (const auto& p : path) {
-            center.X += p.X;
-            center.Y += p.Y;
-        }
-        const int side = std::round(radius / resolution);
-        center.X = std::round((double)center.X / (double)path.size());
-        center.Y = std::round((double)center.Y / (double)path.size());
-        cxutil::Polygons hexaPoly;
-        hexaPoly.paths.emplace_back(path);
-        std::vector<std::map<int, int>> edgemaps;
-        std::map<int, int> p2hpmap, h2ppmap;
-        std::map<int,int> p2hemap, h2pemap;
-        for (const auto& tempPath : polygons.paths) {
-            const int len = tempPath.size();
-            std::vector<bool> insides(len);
-            std::vector<int> dists(len);
-            for (int i = 0; i < len; ++i) {
-                const auto& a = tempPath[i];
-                insides[i] = hexaPoly.inside(a);
-                dists[i] = std::round(std::sqrt((a.X - center.X) * (a.X - center.X) + (a.Y - center.Y) * (a.Y - center.Y)));
-            }
-            for (int i = 0; i < len; ++i) {
-                if (insides[i] || insides[(i + 1) % len]) {
-                    p2hemap.emplace(i, -1);
-                } else {
-                    const int d1 = dists[i];
-                    if (std::fabs(d1 - side) <= 1) {
-                        const auto& a = tempPath[i];
-                        const double theta = std::atan2(a.Y - center.Y, a.X - center.X);
-                        const int inx = std::round((theta > 0 ? theta / M_PI * 3.0 : (theta + M_PI * 2.0) / M_PI * 3.0));
-                        p2hpmap.emplace(i, inx % 6);
-                        h2ppmap.emplace(inx % 6, i);
-                        const int d2 = dists[(i + 1) % len];
-                        if (std::fabs(d2 - side) <= 1) {
-                            p2hemap.emplace(i, inx % 6);
-                            h2pemap.emplace(inx % 6, i);
-                        } else {
-                            p2hemap.emplace(i, -1);
-                        }
-                    } else {
-                        p2hpmap.emplace(i, -1);
-                        p2hemap.emplace(i, -1);
-                    }
-                }
-            }
-        }
-        edgemaps.reserve(4);
-        edgemaps.emplace_back(p2hpmap);
-        edgemaps.emplace_back(h2ppmap);
-        edgemaps.emplace_back(p2hemap);
-        edgemaps.emplace_back(h2pemap);
-        return edgemaps;
     }
 
     TriPolygon traitPlanarCircle(const trimesh::vec3& center, float r, std::vector<int>& indexs, const trimesh::vec3& dir, int nums)
