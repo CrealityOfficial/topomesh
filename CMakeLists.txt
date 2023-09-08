@@ -18,5 +18,6 @@ else()
     list(APPEND LIBS ${CMAKE_THREAD_LIBS_INIT})
 endif()
 
+set(INTERFACE_DEFS USE_TOPOMESH)
 set(TOPOMESH_STATIC 1)
 __add_common_library(topomesh OPENMP)
