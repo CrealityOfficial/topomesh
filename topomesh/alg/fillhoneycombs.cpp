@@ -2,6 +2,7 @@
 #include "topomesh/data/mmesht.h"
 #include "topomesh/alg/letter.h"
 #include "topomesh/alg/earclipping.h"
+#include "topomesh/alg/subdivision.h"
 #include "topomesh/alg/utils.h"
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
@@ -557,8 +558,8 @@ namespace topomesh {
                                 last_z = min_z;
                         }
                     }
-                    if(last_z>= honeyparams.shellThickness)
-                        last_z -= honeyparams.shellThickness;
+                    if(last_z>= (honeyparams.shellThickness+1.2f))
+                        last_z -= (honeyparams.shellThickness+1.2f);
 #endif
                     hg.edges.resize(hg.poly.size());
                     for (int i = 0; i < hg.edges.size(); i++)
@@ -583,10 +584,32 @@ namespace topomesh {
                 columnParam.nslices = 65;
                 columnParam.ratio = 0.8f;
                 columnParam.height = 3.0f;
-                std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
-               
-                int vertexsize = newmesh->vertices.size();
-                /*for (int vi = 0; vi < trimesh->vertices.size(); vi++)
+                std::vector<int> topfaces;
+                std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam, topfaces));
+                for (int fi = 0; fi < topfaces.size(); fi++)
+                {
+                    trimesh::point v0 = newmesh->vertices[newmesh->faces[topfaces[fi]][0]];
+                    trimesh::point v1 = newmesh->vertices[newmesh->faces[topfaces[fi]][1]];
+                    trimesh::point v2 = newmesh->vertices[newmesh->faces[topfaces[fi]][2]];
+                    trimesh::vec3 a = v0 - v1;
+                    trimesh::vec3 b = v1 - v2;
+                    float are= sqrt(pow((a.y * b.z - a.z * b.y), 2) + pow((a.z * b.x - a.x * b.z), 2)
+                        + pow((a.x * b.y - a.y * b.x), 2)) / 2.0f;
+                    if (are < 0.1f)
+                    {
+                        topfaces.erase(topfaces.begin() + fi);
+                        fi--;
+                    }
+                }
+                int before_vsize = newmesh->vertices.size();
+                topomesh::SimpleMidSubdivision(newmesh.get(), topfaces);
+                int after_vsize = newmesh->vertices.size();
+                for(int vi=before_vsize;vi<after_vsize;vi++)
+                   // newmesh->vertices[vi].z = upST.getDataMinZ(newmesh->vertices[vi].x, newmesh->vertices[vi].y);
+                    newmesh->vertices[vi].z +=0.7f;
+
+                /*int vertexsize = newmesh->vertices.size();
+                for (int vi = 0; vi < trimesh->vertices.size(); vi++)
                     newmesh->vertices.push_back(trimesh->vertices[vi]);
                 for (int fi = 0; fi < trimesh->faces.size(); fi++)
                     newmesh->faces.push_back(trimesh::TriMesh::Face(trimesh->faces[fi][0]+vertexsize, trimesh->faces[fi][1] + vertexsize, trimesh->faces[fi][2] + vertexsize));
@@ -1083,7 +1106,7 @@ namespace topomesh {
         return points;
     }
 
-    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param)
+    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param, std::vector<int>& topfaces)
     {
         std::vector<trimesh::vec3> points;
         std::vector<trimesh::ivec3> faces;
@@ -1388,6 +1411,7 @@ namespace topomesh {
                     const int& cur = upstart + j;
                     const int& next = upstart + j + 1;
                     faces.emplace_back(trimesh::ivec3(upstart, next, cur));
+                    topfaces.push_back(faces.size() - 1);
                 }
             }
         }
