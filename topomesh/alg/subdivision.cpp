@@ -1,4 +1,5 @@
 #include "subdivision.h"
+#include "trimesh2/TriMesh_algo.h"
 #include "set"
 
 namespace topomesh {
@@ -13,6 +14,23 @@ namespace topomesh {
 			mesh->appendFace(mesh->faces[fi].V0(1)->index, mesh->faces[fi].V0(2)->index, mesh->vertices.back().index);
 			mesh->appendFace(mesh->faces[fi].V0(2)->index, mesh->faces[fi].V0(0)->index, mesh->vertices.back().index);
 		}
+	}
+
+	void SimpleMidSubdivision(trimesh::TriMesh* mesh, std::vector<int>& faceindexs)
+	{		
+		for (int fi : faceindexs)
+		{			
+			trimesh::point c = (mesh->vertices[mesh->faces[fi][0]] + mesh->vertices[mesh->faces[fi][1]] + mesh->vertices[mesh->faces[fi][2]]) / 3.f;
+			mesh->vertices.push_back(c);
+			mesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][0], mesh->faces[fi][1], mesh->vertices.size() - 1));
+			mesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][1], mesh->faces[fi][2], mesh->vertices.size() - 1));
+			mesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][2], mesh->faces[fi][0], mesh->vertices.size() - 1));
+		}
+		std::vector<bool> deletefaces(mesh->faces.size(), false);
+		for (int fi : faceindexs)		
+			deletefaces[fi] = true;
+		trimesh::remove_faces(mesh, deletefaces);
+		
 	}
 
 	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs, std::vector<std::tuple<int, trimesh::point>>& vertex,
