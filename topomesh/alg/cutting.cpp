@@ -3,6 +3,7 @@
 #include "topomesh/alg/letter.h"
 #include "topomesh/alg/fillhoneycombs.h"
 
+#include "internal/mesh/trans.h"
 
 namespace topomesh
 {

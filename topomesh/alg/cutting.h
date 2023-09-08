@@ -1,10 +1,8 @@
 #pragma once
 #include "topomesh/data/convert.h"
 
-
 #include "trimesh2/XForm.h"
 #include "trimesh2/quaternion.h"
-#include "Eigen/Dense"
 
 #include <list>
 
