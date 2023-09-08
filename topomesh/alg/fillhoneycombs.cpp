@@ -155,7 +155,7 @@ namespace topomesh {
                             std::reverse(tmp.begin(), tmp.end());
                             ipolys.paths.emplace_back(std::move(tmp));
                         }
-                        if (true) {
+                        if (debugger) {
                             cxutil::AABB box(polygons);
                             box.expand(50000);
                             std::string filename = "hexagon.svg";
@@ -1007,8 +1007,8 @@ namespace topomesh {
             int nums = edges.size();
             polys.reserve(nums);
             for (int i = 0; i < nums; ++i) {
-                if (edges[i].neighbor >= 0)
-                    polys.emplace_back(hexas.polys[edges[i].neighbor].poly);
+                if (edges[i].relate >= 0)
+                    polys.emplace_back(hexas.polys[edges[i].relate].poly);
             }
         }
         return polys;
@@ -1020,7 +1020,7 @@ namespace topomesh {
         if (index >= 0 && index < (hexas.polys.size())) {
             if (dir >= 0 && dir <= 5) {
                 const auto& edges = hexas.polys[index].edges;
-                int val = edges[dir].neighbor;
+                int val = edges[dir].relate;
                 if (val >= 0) {
                     polys.emplace_back(hexas.polys[val].poly);
                 }
