@@ -62,6 +62,8 @@ namespace topomesh {
     std::vector<std::map<int, int>> GetHexagonEdgeMap(const cxutil::Polygons& polygons, const ClipperLib::Path& path, double radius, double resolution = 1E-4);
     TriPolygon traitPlanarCircle(const trimesh::vec3& c, float r, std::vector<int>& indexs, const trimesh::vec3& edgeDir = trimesh::vec3(0, 0, 1), int nums = 17);
     std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param);
+    HexaPolygons generateEmbedHolesColumnar(trimesh::TriMesh* trimesh = nullptr, const HoneyCombParam& honeyparams = HoneyCombParam(),
+        ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
 
 	class MMeshT;
 	void findNeighVertex(trimesh::TriMesh* mesh, const std::vector<int>& upfaceid, const std::vector<int>& botfaceid, std::vector<std::pair<int, int>>& vertex_distance);

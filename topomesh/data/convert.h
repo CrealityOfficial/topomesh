@@ -76,6 +76,7 @@ namespace topomesh
         bool standard = true;
         trimesh::vec3 center;
         TriPolygon poly;
+
         int startIndex = 0; ///< 六棱柱第一个点的索引
         trimesh::ivec3 coord; ///<三轴坐标系下的坐标
         std::vector<HexaEdge> edges;
