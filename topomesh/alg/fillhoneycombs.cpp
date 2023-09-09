@@ -54,9 +54,9 @@ namespace topomesh {
         }
         //第0步，底面边界轮廓抽壳
         const double resolution = honeyparams.resolution;
-        const double radius = honeyparams.honeyCombRadius;
+        const double side = honeyparams.honeyCombRadius;
         const double thickness = honeyparams.shellThickness;
-        const double side = radius - honeyparams.nestWidth / SQRT3;
+        const double radius = side + honeyparams.nestWidth / SQRT3;
         Polygons bpolygons; ///<底面边界轮廓多边形
         Polygons mpolygons; ///<底面边界抽壳多边形
         {
@@ -223,6 +223,24 @@ namespace topomesh {
         const int osize = ohexagons.size();
         letterOpts.hexgons.reserve(osize);
         letterOpts.side = side;
+        if (honeyparams.bKeepHexagon) {
+            for (int i = 0; i < osize; ++i) {
+                HexaPolygon& h = ohexagons[i];
+                Hexagon hexagon(h.center, hexagons.side);
+                h.hexagon.swap(hexagon.border);
+                Polygons polygons = SaveTriPolygonToPolygons(h.hexagon);
+                Polygons ipolys = SaveTriPolygonToPolygons(h.poly);
+                AABB box(polygons);
+                box.expand(50000);
+                std::string filename = "test/hexagon" + std::to_string(i) + ".svg";
+                SVG svg(filename, box, 0.01);
+                svg.writePolygons(mpolygons, SVG::Color::BLACK, 2);
+                svg.writePolygons(polygons, SVG::Color::RED, 2);
+                svg.writePolygons(ipolys, SVG::Color::BLUE, 2);
+                svg.writePoints(polygons, false, 2, SVG::Color::RAINBOW);
+                svg.writePoints(ipolys, true, 3, SVG::Color::GREEN);
+            }
+        }
         for (const auto& hexa : ohexagons) {
             letterOpts.hexgons.emplace_back(std::move(hexa));
         }
@@ -441,11 +459,6 @@ namespace topomesh {
                 pointmesh->write("pointmesh.ply");*/
                 HexaPolygons hexpolys;
                 hexpolys.side = letterOpts.side;
-               
-                /*std::random_device rd;
-                std::mt19937 engine(rd());
-                std::uniform_real_distribution<double> ldist(0.0, 1.0);
-                std::uniform_real_distribution<double> udist(12, 15);  */   
                 trimesh::point max_xy = trimesh->bbox.max;
                 trimesh::point min_xy = trimesh->bbox.min;
                 float lengthx = (trimesh->bbox.max.x - trimesh->bbox.min.x)/ (col*1.f);
@@ -578,14 +591,13 @@ namespace topomesh {
 
                 trimesh::remove_faces(trimesh, deletefaces);
                 trimesh::remove_unused_vertices(trimesh);
-                //trimesh->write("trimesh.ply");
-                //pointmesh->write("pointmesh.ply");
                 topomesh::ColumnarHoleParam columnParam;
-                columnParam.nslices = 65;
-                columnParam.ratio = 0.8f;
-                columnParam.height = 3.0f;
+                columnParam.nslices = honeyparams.nslices;
+                columnParam.ratio = honeyparams.ratio;
+                columnParam.height = honeyparams.cheight;
+                std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
                 std::vector<int> topfaces;
-                std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam, topfaces));
+                topfaces.swap(hexpolys.topfaces);
                 for (int fi = 0; fi < topfaces.size(); fi++)
                 {
                     trimesh::point v0 = newmesh->vertices[newmesh->faces[topfaces[fi]][0]];
@@ -863,7 +875,7 @@ namespace topomesh {
             for (int j = 0; j < ncols; ++j) {
                 const auto& pt = rowPoints[j];
                 if (j % 2 == 0) {
-                    const auto& center = trimesh::vec2(pt.x, pt.y);
+                    const auto& center = trimesh::vec3(pt.x, pt.y, 0);
                     topomesh::Hexagon hexagon(center, side);
                     const auto& border = hexagon.border;
                     HexaPolygon hexa;
@@ -875,9 +887,9 @@ namespace topomesh {
                     hexa.coord = trimesh::ivec3(j, -(i + j) / 2, (i - j) / 2);
                     polygons.polys.emplace_back(std::move(hexa));
                 } else {
-                    const auto& center = trimesh::vec2(pt.x, (double)pt.y - ydelta);
+                    const auto& center = trimesh::vec3(pt.x, (double)pt.y - ydelta, 0);
                     topomesh::Hexagon hexagon(center, side);
-                    const auto & border = hexagon.border;
+                    const auto& border = hexagon.border;
                     HexaPolygon hexa;
                     hexa.center = hexagon.centroid;
                     hexa.poly.reserve(border.size());
@@ -1106,7 +1118,7 @@ namespace topomesh {
         return points;
     }
 
-    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param, std::vector<int>& topfaces)
+    std::shared_ptr<trimesh::TriMesh> generateHolesColumnar(HexaPolygons& hexas, const ColumnarHoleParam& param)
     {
         std::vector<trimesh::vec3> points;
         std::vector<trimesh::ivec3> faces;
@@ -1399,6 +1411,7 @@ namespace topomesh {
         int upperfacenums = hexagonsize;
         int allfacenums = holeFaces + rectfacenums + upperfacenums + bottomfacenums;
         faces.reserve(allfacenums);
+        std::vector<int> topfaces;
         if (hexas.bSewTop) {
             for (int i = 0; i < hexas.polys.size(); ++i) {
                 const auto& hexa = hexas.polys[i];
@@ -1415,6 +1428,7 @@ namespace topomesh {
                 }
             }
         }
+        hexas.topfaces.swap(topfaces);
         for (int i = 0; i < hexas.polys.size(); ++i) {
             const auto& hexa = hexas.polys[i];
             const auto& poly = hexa.poly;

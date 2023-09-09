@@ -58,16 +58,16 @@ namespace topomesh
         float topHeight = 0.f;
     };
     struct Hexagon {
-        trimesh::vec2 centroid;
+        trimesh::vec3 centroid;
         float radius = 1;
-        std::vector<trimesh::vec2> border;
-        Hexagon(const trimesh::vec2& c, const float& d)
+        std::vector<trimesh::vec3> border;
+        Hexagon(const trimesh::vec3& c, const float& d)
         {
             centroid = c, radius = d;
             const auto& theta = 2.0 * M_PI / 6;
             for (int i = 0; i < 6; ++i) {
                 const auto& phi = float(i) * theta;
-                const auto& p = centroid + trimesh::vec2(std::cos(phi), std::sin(phi)) * radius;
+                const auto& p = centroid + trimesh::vec3(std::cos(phi), std::sin(phi), 0) * radius;
                 border.emplace_back(std::move(p));
             }
         }
@@ -76,7 +76,7 @@ namespace topomesh
         bool standard = true;
         trimesh::vec3 center;
         TriPolygon poly;
-
+        TriPolygon hexagon;
         int startIndex = 0; ///< 六棱柱第一个点的索引
         trimesh::ivec3 coord; ///<三轴坐标系下的坐标
         std::vector<HexaEdge> edges;
@@ -90,6 +90,7 @@ namespace topomesh
         bool bSewBottom = true; ///<棱柱的底部连接部分是否需要缝合
         float side = 0.0f; ///< 每个棱柱底面六角网格的边长
         std::vector<HexaPolygon> polys;
+        std::vector<int> topfaces;
     };
 
     void translateTriPolygon(TriPolygon& poly, const trimesh::vec3& trans);
