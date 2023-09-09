@@ -1216,8 +1216,7 @@ namespace topomesh {
                 }
             }
             ///底部三个网格中间部分
-            for (int j = 0; j < hexas.polys.size(); ++j) {
-                auto& hexa = hexas.polys[j];
+            for (auto& hexa : hexas.polys) {
                 const int size = hexa.poly.size();
                 for (int i = 0; i < size; ++i) {
                     const int nb = hexa.edges[i].relate;
