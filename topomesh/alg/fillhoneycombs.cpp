@@ -595,6 +595,7 @@ namespace topomesh {
                 columnParam.nslices = honeyparams.nslices;
                 columnParam.ratio = honeyparams.ratio;
                 columnParam.height = honeyparams.cheight;
+                columnParam.delta = honeyparams.delta;
                 std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
                 std::vector<int> topfaces;
                 topfaces.swap(hexpolys.topfaces);
@@ -1215,13 +1216,14 @@ namespace topomesh {
                 }
             }
             ///底部三个网格中间部分
-            for (auto& hexa : hexas.polys) {
+            for (int j = 0; j < hexas.polys.size(); ++j) {
+                auto& hexa = hexas.polys[j];
                 const int size = hexa.poly.size();
                 for (int i = 0; i < size; ++i) {
                     const int nb = hexa.edges[i].relate;
                     const int nc = hexa.edges[(i + 1) % size].relate;
                     const int res = hexa.p2hPointMap[(i + 1) % size];
-                    if ((!hexa.edges[i].addTriangle) && (nb >= 0) && (nc >= 0) && (res >= 0)) {
+                    if ((!hexa.edges[(i + 1) % size].addTriangle) && (nb >= 0) && (nc >= 0) && (res >= 0)) {
                         auto& ohb = hexas.polys[nb];
                         auto& ohc = hexas.polys[nc];
                         const int& a = hexa.startIndex + (i + 1) % size; ///<线段终点

@@ -7,7 +7,7 @@
 #include "internal/polygon/polygon.h"
 #include "internal/polygon/aabb.h"
 #include "internal/polygon/svg.h"
-#include "../../topomesh/interface/idata.h"
+#include "topomesh/interface/idata.h"
 
 namespace topomesh
 {
