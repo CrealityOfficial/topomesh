@@ -22,5 +22,5 @@ set(INTERFACE_DEFS USE_TOPOMESH)
 __add_common_library(topomesh OPENMP)
 
 if(CC_INSTALL_TOPOMESH)
-	__install_directory_specif(${CMAKE_CURRENT_SOURCE_DIR}/topomesh/ topomesh)
+	__install_directory_specif(${CMAKE_CURRENT_SOURCE_DIR}/topomesh topomesh)
 endif()
