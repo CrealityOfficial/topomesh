@@ -1,7 +1,6 @@
 #ifndef TOPOMESH_HONEYCOMB_1692753685514_H
 #define TOPOMESH_HONEYCOMB_1692753685514_H
 #include "topomesh/interface/idata.h"
-#include "topomesh/interface/mmproxy.h"
 
 namespace topomesh
 {
@@ -9,6 +8,7 @@ namespace topomesh
 	{
 		float width = 1.0f;
 		float radius = 1.0f;
+		float combShell = 1.0f;
 
 		bool holeConnect = false;
 		float holeHeight = 1.0f;
@@ -16,21 +16,16 @@ namespace topomesh
 		float holeGap = 1.0f;
 	};
 
-	class HoneyComb
-	{
-	public:
-		HoneyComb(TopoTriMeshPtr mesh);
-		~HoneyComb();
+	TOPOMESH_API std::shared_ptr<trimesh::TriMesh> honeyCombGenerate(trimesh::TriMesh* trimesh, const CombParam& honeyparams = CombParam(),
+		ccglobal::Tracer* tracer = nullptr);
 
-		void checkPlane(int indicate, std::vector<int>& faceIndexs);
-	
-		trimesh::TriMesh* generateModelFitComb(const CombParam& param, const trimesh::vec3& normal);
-
-		trimesh::TriMesh* createInnerCombModel(const CombParam& param, const trimesh::vec3& normal);
-		trimesh::TriMesh* createExtCombModel(const CombParam& param, const trimesh::vec3& normal, const std::vector<int>& indices);
-	protected:
-		std::unique_ptr<MMProxy> m_proxy;
-	};
+	/// <summary>
+	/// 0  
+	/// 1
+	/// </summary>
+	/// <param name="param"></param>
+	/// <returns></returns>
+	TOPOMESH_API int checkParam(const CombParam& param);
 }
 
 #endif // TOPOMESH_HONEYCOMB_1692753685514_H
