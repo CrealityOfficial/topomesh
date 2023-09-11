@@ -6,7 +6,7 @@
 #include "topomesh/alg/utils.h"
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
-
+#include "mmesh/trimesh/trimeshutil.h"
 #include "internal/polygon/comb.h"
 
 #include "random"
@@ -1729,6 +1729,7 @@ namespace topomesh {
         std::shared_ptr<trimesh::TriMesh> triMesh(new trimesh::TriMesh());
         triMesh->vertices.swap(points);
         triMesh->faces.swap(faces);
+        mmesh::dumplicateMesh(triMesh.get());
         return triMesh;
     }
 

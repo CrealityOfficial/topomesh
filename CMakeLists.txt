@@ -10,7 +10,7 @@ __files_group(${CMAKE_CURRENT_SOURCE_DIR}/topomesh/ SRCS)
 __files_group(${CMAKE_CURRENT_SOURCE_DIR}/internal/ Inters)
 		 
 list(APPEND SRCS ${Inters})
-set(ILIBS trimesh2)
+set(ILIBS trimesh2 mmesh)
 set(LIBS clipper eigen)
 if(CC_BC_WIN)
 else()
