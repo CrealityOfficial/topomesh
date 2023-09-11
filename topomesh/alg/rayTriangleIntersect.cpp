@@ -1,4 +1,5 @@
 #include "rayTriangleIntersect.h"
+#pragma once
 #include "Eigen/Dense"
 
 

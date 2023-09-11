@@ -5,11 +5,12 @@
 #include "topomesh/clustering/k-means.h"
 #include "laplacian.h"
 #include "utils.h"
+#include "queue"
+#include "set"
+#pragma once
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 #include<Eigen/Eigenvalues>
-#include "queue"
-#include "set"
 
 struct Patch
 {

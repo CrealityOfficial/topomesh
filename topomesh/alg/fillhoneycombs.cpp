@@ -573,8 +573,10 @@ namespace topomesh {
                                 last_z = min_z;
                         }
                     }
-                    if(last_z>= (honeyparams.shellThickness+1.2f))
-                        last_z -= (honeyparams.shellThickness+1.2f);
+                   // if(last_z>= (honeyparams.shellThickness+1.2f))
+                       
+                    last_z -= (honeyparams.shellThickness+1.2f);
+                    last_z = last_z < 0.f ? 0.f : last_z;
 #endif
                     hg.edges.resize(hg.poly.size());
                     for (int i = 0; i < hg.edges.size(); i++)
