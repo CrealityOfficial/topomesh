@@ -1415,17 +1415,49 @@ namespace topomesh {
         std::vector<int> topfaces;
         if (hexas.bSewTop) {
             for (int i = 0; i < hexas.polys.size(); ++i) {
-                const auto& hexa = hexas.polys[i];
+                auto&& hexa = hexas.polys[i];
                 const auto& poly = hexa.poly;
                 int polynums = poly.size();
                 const int& start = hexa.startIndex;
+                int upstart = start + hexagonsize;
                 ///六角网格顶部
-                const int& upstart = start + hexagonsize;
-                for (int j = 1; j < polynums - 1; ++j) {
-                    const int& cur = upstart + j;
-                    const int& next = upstart + j + 1;
-                    faces.emplace_back(trimesh::ivec3(upstart, next, cur));
-                    topfaces.push_back(faces.size() - 1);
+                if (hexa.standard) {
+                    for (int j = 1; j < polynums - 1; ++j) {
+                        const int& cur = upstart + j;
+                        const int& next = upstart + j + 1;
+                        faces.emplace_back(trimesh::ivec3(upstart, next, cur));
+                        topfaces.push_back(faces.size() - 1);
+                    }
+                } else {
+                    int near = 0, far = 0;
+                    const auto& center = hexa.center;
+                    float mindist = trimesh::len2(poly[0] - center);
+                    for (int j = 1; j < polynums; ++j) {
+                        float d = trimesh::len2(poly[j] - hexa.center);
+                        if (d < mindist) {
+                            mindist = d;
+                            near = j;
+                        }
+                    }
+                    const trimesh::vec3& nearPt = poly[near];
+                    const auto& dir = nearPt - center;
+                    float maxdist = 0;
+                    for (int j = 0; j < polynums; ++j) {
+                        if (hexa.p2hPointMap[j] >= 0) {
+                            float d = std::fabs((poly[j] - center) DOT dir);
+                            if (d > maxdist) {
+                                maxdist = d;
+                                far = j;
+                            }
+                        }
+                    }
+                    int newupstart = start + hexagonsize + far;
+                    for (int j = far + 1; j < polynums + far - 1; ++j) {
+                        const int& cur = upstart + j % polynums;
+                        const int& next = upstart + (j + 1) % polynums;
+                        faces.emplace_back(trimesh::ivec3(newupstart, next, cur));
+                        topfaces.push_back(faces.size() - 1);
+                    }
                 }
             }
         }
@@ -1453,8 +1485,8 @@ namespace topomesh {
                     if (nslices % 2 == 0) {
                         u = corner[3];
                     }
-                    const auto& ledge = hexa.edges[(j + 5) % 6];
-                    const auto& nedge = hexa.edges[(j + 1) % 6];
+                    const auto& ledge = hexa.edges[(j + polysize - 1) % polysize];
+                    const auto& nedge = hexa.edges[(j + 1) % polysize];
                     const auto& cIndexs = edge.holeIndexs;
                     const auto& lIndexs = ledge.holeIndexs;
                     const auto& nIndexs = nedge.holeIndexs;
