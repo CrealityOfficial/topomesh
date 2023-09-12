@@ -6,12 +6,12 @@ namespace topomesh
 		ccglobal::Tracer* tracer)
 	{
         HoneyCombParam params;
-        params.honeyCombRadius = honeyparams.diameter / 2.0;
+        params.honeyCombRadius = honeyparams.diameter / 2.0f;
         params.nestWidth = honeyparams.width;
         params.shellThickness = honeyparams.combShell;
         params.cheight = honeyparams.holeHeight;
         params.delta = honeyparams.holeGap;
-        params.ratio = honeyparams.holeDiameter / honeyparams.diameter;
+        params.ratio = honeyparams.holeDiameter / (honeyparams.diameter / 2.0f);
         params.holeConnect = honeyparams.holeConnect;
         std::shared_ptr<trimesh::TriMesh> mesh = GenerateHoneyCombs(trimesh, params, tracer);
 		return mesh;
