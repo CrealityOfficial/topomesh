@@ -6,13 +6,13 @@ namespace topomesh
 {
 	struct CombParam
 	{
-		float width = 1.0f;
-		float radius = 1.0f;
-		float combShell = 1.0f;
+		float width = 2.0f;
+		float diameter = 6.0f;
+		float combShell = 2.0f;
 
-		bool holeConnect = false;
+		bool holeConnect = true;
 		float holeHeight = 1.0f;
-		float holeRadius = 1.0f;
+		float holeDiameter = 2.5f;
 		float holeGap = 1.0f;
 	};
 
@@ -20,8 +20,13 @@ namespace topomesh
 		ccglobal::Tracer* tracer = nullptr);
 
 	/// <summary>
-	/// 0  
-	/// 1
+	/// 0: parameters qualified.  
+	/// 1: combShell is not qualified.
+    /// 2: diameter is not qualified.
+    /// 3: width is not qualified.
+    /// 4: holeDiameter is not qualified.
+    /// 5: holeGap is not qualified.
+    /// 6: holeHeight is not qualified.
 	/// </summary>
 	/// <param name="param"></param>
 	/// <returns></returns>
