@@ -596,6 +596,7 @@ namespace topomesh {
                 columnParam.ratio = honeyparams.ratio;
                 columnParam.height = honeyparams.cheight;
                 columnParam.delta = honeyparams.delta;
+                columnParam.holeConnect = honeyparams.holeConnect;
                 std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
                 std::vector<int> topfaces;
                 topfaces.swap(hexpolys.topfaces);
@@ -1004,19 +1005,21 @@ namespace topomesh {
                         edge.topHeight = std::min(edge.topHeight, next.topHeight);
                         oe.lowHeight = std::max(oe.lowHeight, onext.lowHeight);
                         oe.topHeight = std::min(oe.topHeight, onext.topHeight);
-                        float lowerlimit = std::max(edge.lowHeight, oe.lowHeight);
-                        float upperlimit = std::min(edge.topHeight, oe.topHeight);
-                        float medium = (lowerlimit + upperlimit) * 0.5;
-                        float scope = (upperlimit - lowerlimit) * 0.5;
-                        if (medium < cheight && (cmax - medium) < scope) {
-                            hexa.edges[j].canAdd = true;
-                            oh.edges[ind].canAdd = true;
-                        } else if (medium >= cheight) {
-                            float appro = std::round((medium - cheight) / cdelta);
-                            float dist = std::abs((medium - cheight) - cdelta * appro);
-                            if (dist + cradius < scope) {
+                        if (param.holeConnect) {
+                            float lowerlimit = std::max(edge.lowHeight, oe.lowHeight);
+                            float upperlimit = std::min(edge.topHeight, oe.topHeight);
+                            float medium = (lowerlimit + upperlimit) * 0.5;
+                            float scope = (upperlimit - lowerlimit) * 0.5;
+                            if (medium < cheight && (cmax - medium) < scope) {
                                 hexa.edges[j].canAdd = true;
                                 oh.edges[ind].canAdd = true;
+                            } else if (medium >= cheight) {
+                                float appro = std::round((medium - cheight) / cdelta);
+                                float dist = std::abs((medium - cheight) - cdelta * appro);
+                                if (dist + cradius < scope) {
+                                    hexa.edges[j].canAdd = true;
+                                    oh.edges[ind].canAdd = true;
+                                }
                             }
                         }
                     }
@@ -1244,7 +1247,43 @@ namespace topomesh {
                                 faces.emplace_back(trimesh::ivec3(a, c, b));
                                 hexa.edges[(i + 1) % size].addTriangle = true;
                                 ohb.edges[indb].addTriangle = true;
-                                ohc.edges[(indc + sizec - 1) % sizec].addTriangle = true;
+                                ohc.edges[indc].addTriangle = true;
+                                ++bottomfacenums;
+                            }
+                        }
+                    }
+                }
+            }
+            for (auto& hexa : hexas.polys) {
+                const int size = hexa.poly.size();
+                for (int i = 0; i < size; ++i) {
+                    const int nb = hexa.edges[i].relate;
+                    const int nc = hexa.edges[(i + 1) % size].relate;
+                    const int res = hexa.p2hPointMap[(i + 1) % size];
+                    if ((!hexa.edges[(i + 1) % size].addTriangle) && (nb >= 0) && (nc >= 0) && (res >= 0)) {
+                        auto& ohb = hexas.polys[nb];
+                        auto& ohc = hexas.polys[nc];
+                        const int& a = hexa.startIndex + (i + 1) % size; ///<六角网格顶点
+
+                        const auto& h2pmapb = ohb.h2pPointMap;
+                        const int inxb = (res + 3) % 6; ///<下一个是六角网格顶点
+                        auto itrb = h2pmapb.find(inxb);
+                        if (itrb != h2pmapb.end()) {
+                            const int sizeb = ohb.poly.size();
+                            const int indb = (itrb->second + sizeb - 1) % sizeb;
+                            const int& b = ohb.startIndex + indb;
+
+                            const auto& h2pmapc = ohc.h2pPointMap;
+                            const int inxc = (res + 3) % 6; ///<上一个是六角网格顶点
+                            auto itrc = h2pmapc.find(inxc);
+                            if (itrc != h2pmapc.end()) {
+                                const int sizec = ohc.poly.size();
+                                const int indc = (itrc->second + 1) % sizec;
+                                const int& c = ohc.startIndex + indc;
+                                faces.emplace_back(trimesh::ivec3(a, c, b));
+                                hexa.edges[(i + 1) % size].addTriangle = true;
+                                ohb.edges[indb].addTriangle = true;
+                                ohc.edges[indc].addTriangle = true;
                                 ++bottomfacenums;
                             }
                         }

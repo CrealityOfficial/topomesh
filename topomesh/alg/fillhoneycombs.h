@@ -51,6 +51,7 @@ namespace topomesh {
         float height = 5.0f; ///<
         float ratio = 0.5f; ///<
         float delta = 1.0f; ///<
+        bool holeConnect = true;
     };
     void GenerateHexagonNeighbors(HexaPolygons& hexas, const ColumnarHoleParam& param = ColumnarHoleParam());
 	trimesh::vec3 adjustHoneyCombParam(trimesh::TriMesh* trimesh,const HoneyCombParam& honeyparams);
