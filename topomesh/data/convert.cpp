@@ -96,6 +96,7 @@ namespace topomesh
         faces.reserve(2 * pointnums * nslices);
         double delta = 2.0 * M_PI / nslices;
         trimesh::vec3 z(0, 0, 1);
+        int start = 0;
         for (size_t k = 0; k < polys.size(); ++k) {
             const auto& poly = polys[k];
             const int polysize = poly.size();
@@ -121,14 +122,15 @@ namespace topomesh
             }
             for (size_t i = 0; i < polysize; ++i) {
                 for (size_t j = 0; j < nslices; ++j) {
-                    const auto& i0 = j + 2 * nslices * i;
-                    const auto& i1 = (j + 1) % nslices + 2 * nslices * i;
+                    const auto& i0 = start + j + 2 * nslices * i;
+                    const auto& i1 = start + (j + 1) % nslices + 2 * nslices * i;
                     const auto & j0 = i0 + nslices;
                     const auto & j1 = i1 + nslices;
                     faces.emplace_back(j0, i1, i0);
                     faces.emplace_back(j0, j1, i1);
                 }
             }
+            start = points.size();
         }
         edgeMesh.faces.swap(faces);
         edgeMesh.vertices.swap(points);
