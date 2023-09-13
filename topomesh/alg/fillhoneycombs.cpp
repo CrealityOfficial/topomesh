@@ -1397,7 +1397,7 @@ namespace topomesh {
                 const int res = hexa.p2hEdgeMap[i];
                 if (hexa.edges[i].canAdd && (!hexa.edges[i].hasAdd) && (hexa.edges[i].neighbor >= 0) && (res >= 0)) {
                     auto& edge = hexa.edges[i];
-                    auto& next = hexa.edges[(i + 1) % 6];
+                    auto& next = hexa.edges[(i + 1) % size];
                     auto& oh = hexas.polys[hexa.edges[i].neighbor];
                     const int inx = (res + 3) % 6;
                     const auto& h2pmap = oh.h2pEdgeMap;
