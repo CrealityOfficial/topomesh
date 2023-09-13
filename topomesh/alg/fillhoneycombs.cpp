@@ -1580,11 +1580,23 @@ namespace topomesh {
                     const trimesh::vec3& nearPt = poly[near];
                     const auto& dir = nearPt - center;
                     float maxdist = 0;
-                    for (int j = 0; j < polynums; ++j) {
-                        float d = std::fabs((poly[j] - center) DOT dir);
-                        if (d > maxdist) {
-                            maxdist = d;
-                            far = j;
+                    if (hexa.h2pPointMap.size() > 0) {
+                        for (int j = 0; j < polynums; ++j) {
+                            if (hexa.p2hPointMap[j] >= 0) {
+                                float d = std::fabs((poly[j] - center) DOT dir);
+                                if (d > maxdist) {
+                                    maxdist = d;
+                                    far = j;
+                                }
+                            }
+                        }
+                    } else {
+                        for (int j = 0; j < polynums; ++j) {
+                            float d = std::fabs((poly[j] - center) DOT dir);
+                            if (d > maxdist) {
+                                maxdist = d;
+                                far = j;
+                            }
                         }
                     }
                     int newupstart = start + hexagonsize + far;
