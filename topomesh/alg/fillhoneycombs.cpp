@@ -2041,6 +2041,7 @@ namespace topomesh {
                     }
                     if (last_z >= honeyparams.shellThickness)
                         last_z -= honeyparams.shellThickness;
+                    last_z += 1.0f;
 #endif
                     hg.edges.resize(hg.poly.size());
                     for (int i = 0; i < hg.edges.size(); i++) {
