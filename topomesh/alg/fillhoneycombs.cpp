@@ -1581,12 +1581,10 @@ namespace topomesh {
                     const auto& dir = nearPt - center;
                     float maxdist = 0;
                     for (int j = 0; j < polynums; ++j) {
-                        if (hexa.p2hPointMap[j] >= 0) {
-                            float d = std::fabs((poly[j] - center) DOT dir);
-                            if (d > maxdist) {
-                                maxdist = d;
-                                far = j;
-                            }
+                        float d = std::fabs((poly[j] - center) DOT dir);
+                        if (d > maxdist) {
+                            maxdist = d;
+                            far = j;
                         }
                     }
                     int newupstart = start + hexagonsize + far;
