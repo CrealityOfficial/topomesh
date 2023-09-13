@@ -972,6 +972,49 @@ namespace topomesh {
                 }
             }
         }
+        //更新内外轮廓之间的网格相邻关系
+        for (int i = 0; i < nums; ++i) {
+            for (int j = 0; j < nums; ++j) {
+                if (associatehoods[i][j] && (neighborhoods[i][j]) && (j != i)) {
+                    const auto& hexa = hexas.polys[i];
+                    const auto& hexb = hexas.polys[j];
+                    int res = int(hex_neighbor(hexa.coord, hexb.coord));
+                    if (res >= 0) {
+                        const auto& h2pmap1 = hexa.h2pPointMap;
+                        auto itr1 = h2pmap1.find(res); ///<当前线段起始点为六角网格网格顶点
+                        if (itr1 != h2pmap1.end()) {
+                            const auto& h2pmap2 = hexb.h2pPointMap;
+                            const int inx = (res + 3) % 6; ///<关联线段始点为六角网格网格顶点
+                            const auto & itr2 = h2pmap2.find(inx);
+                            if (itr2 != h2pmap2.end()) {
+                                const int sizeb = hexb.poly.size();
+                                hexas.polys[i].edges[itr1->second].associate = j;
+                                hexas.polys[j].edges[itr2->second].associate = i;
+                                associatehoods[i][j] = 0;
+                                associatehoods[j][i] = 0;
+                            }
+                        }
+                    }
+                    if (res >= 0) {
+                        const auto& h2pmap1 = hexa.h2pPointMap;
+                        auto itr1 = h2pmap1.find((res + 1) % 6); ///<当前线段终点点为六角网格网格顶点
+                        if (itr1 != h2pmap1.end()) {
+                            const auto& h2pmap2 = hexb.h2pPointMap;
+                            const int inx = (res + 3 + 1) % 6; ///<关联线终点为六角网格网格顶点
+                            const auto& itr2 = h2pmap2.find(inx);
+                            if (itr2 != h2pmap2.end()) {
+                                const int sizea = hexa.poly.size();
+                                const int sizeb = hexb.poly.size();
+                                hexas.polys[i].edges[(itr1->second + sizea - 1) % sizea].associate = j;
+                                hexas.polys[j].edges[(itr2->second + sizeb - 1) % sizeb].associate = i;
+                                associatehoods[i][j] = 0;
+                                associatehoods[j][i] = 0;
+                            }
+                        }
+                    }
+                }
+            }
+        }
         for (int i = 0; i < nums; ++i) {
             const int size = hexas.polys[i].poly.size();
             for (int j = 0; j < size; ++j) {
@@ -1209,6 +1252,60 @@ namespace topomesh {
                             const int ind = itr->second;
                             const int& d = ostart + ind;
                             const int& c = ostart + (ind + osize - 1) % osize;
+                            faces.emplace_back(trimesh::ivec3(b, c, d));
+                            faces.emplace_back(trimesh::ivec3(b, d, a));
+                            hexa.edges[i].addRect = true;
+                            oh.edges[(ind + osize - 1) % osize].addRect = true;
+                            bottomfacenums += 2;
+                        }
+                    }
+                }
+            }
+            //内外轮廓之间的两个裁剪网格
+            for (auto& hexa : hexas.polys) {
+                const int size = hexa.poly.size();
+                for (int i = 0; i < size; ++i) {
+                    const int res = hexa.p2hPointMap[i]; ///<当前线段始点对应六角网格顶点
+                    if ((!hexa.edges[i].addRect) && (hexa.edges[i].associate >= 0) && (res >= 0)) {
+                        auto& oh = hexas.polys[hexa.edges[i].associate];
+                        const auto& h2pmap = oh.h2pPointMap;
+                        const int inx = (res + 3) % 6; ///<始点
+                        auto itr = h2pmap.find(inx);
+                        if (itr != h2pmap.end()) {
+                            const int& start = hexa.startIndex;
+                            const int& a = start + i;
+                            const int& b = start + (i + 1) % size;
+
+                            const int& ostart = oh.startIndex;
+                            const int osize = oh.poly.size();
+                            const int ind = itr->second;
+                            const int& c = ostart + ind;
+                            const int& d = ostart + (ind + 1) % osize;
+                            faces.emplace_back(trimesh::ivec3(b, c, d));
+                            faces.emplace_back(trimesh::ivec3(b, d, a));
+                            hexa.edges[i].addRect = true;
+                            oh.edges[ind].addRect = true;
+                            bottomfacenums += 2;
+                        }
+                    }
+                }
+                for (int i = 0; i < size; ++i) {
+                    const int res = hexa.p2hPointMap[(i + 1) % size]; ///<当前线段终点对应六角网格顶点
+                    if ((!hexa.edges[i].addRect) && (hexa.edges[i].associate >= 0) && (res >= 0)) {
+                        auto& oh = hexas.polys[hexa.edges[i].associate];
+                        const auto& h2pmap = oh.h2pPointMap;
+                        const int inx = (res + 3) % 6; ///<终点
+                        auto itr = h2pmap.find(inx);
+                        if (itr != h2pmap.end()) {
+                            const int& start = hexa.startIndex;
+                            const int& a = start + i;
+                            const int& b = start + (i + 1) % size;
+
+                            const int& ostart = oh.startIndex;
+                            const int osize = oh.poly.size();
+                            const int ind = itr->second;
+                            const int& c = ostart + (ind + osize - 1) % osize;
+                            const int& d = ostart + ind;
                             faces.emplace_back(trimesh::ivec3(b, c, d));
                             faces.emplace_back(trimesh::ivec3(b, d, a));
                             hexa.edges[i].addRect = true;
