@@ -198,7 +198,9 @@ namespace topomesh {
         //第3步，筛选符合需求的网格多边形
         TriPolygons outtripolys; ///<最终保留求交网格多边形序列
         const double minrate = honeyparams.keepHexagonRate;
-        const double hexarea = 3.0 / 2.0 * SQRT3 * std::pow(side / resolution, 2);
+        const double keeprate = 3.0 / 2.0 * SQRT3 * std::pow(side / resolution, 2) * minrate;
+        const double keeparea = honeyparams.keepHexagonArea / std::pow(resolution, 2);
+        const double minhexarea = std::min(keeprate, keeparea);
         std::vector<HexaPolygon> ohexagons;
         const int isize = ipolygons.size();
         ohexagons.reserve(isize);
@@ -206,7 +208,7 @@ namespace topomesh {
             TriPolygon tripolys;
             Polygons ipolys = ipolygons[i];
             ClipperLib::Path& path = ipolys.paths.front();
-            if (ipolys.area() >= minrate * hexarea) {
+            if (ipolys.area() >= minhexarea) {
                 for (const auto& p : path) {
                     const auto& point = trimesh::vec3(p.X * resolution, p.Y * resolution, 0);
                     tripolys.emplace_back(std::move(point));

@@ -39,6 +39,7 @@ namespace topomesh
 		double nestWidth = 1.0; ///<蜂窝六边形壁厚（向内收缩的距离的2倍）
 		double shellThickness = 0.6; ///<抽壳厚度
 		double keepHexagonRate = 0.1; ///允许保留网格的最小面积比例
+        double keepHexagonArea = 2.0; ///允许保留网格的最小面积绝对值参考量
 		bool isdelect = false; //是否删除标记区域
 		std::vector<int> faces; //所选择的区域面，如果为默认-1则为自定义方向
         bool holeConnect = true;
