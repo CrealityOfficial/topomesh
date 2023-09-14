@@ -157,6 +157,58 @@ namespace topomesh {
     }
     void CMesh::DuplicateSTL(double ratio)
     {
+        const size_t pointnums = mpoints.size();
+        const size_t facenums = mfaces.size();
+        std::vector<PPoint> originPts;
+        std::vector<FFace> originFs;
+        originPts.swap(mpoints);
+        originFs.swap(mfaces);
+        Clear();
+        //定义点的哈希函数
+        struct PointHash {
+            int operator()(const PPoint& p) const
+            {
+                return (int(p.x * 99971)) ^ (int(p.y * 99989) << 2) ^ (int(p.z * 99991) << 3);
+            }
+        };
+        //判定两个点是否相同
+        struct PointEqual {
+            bool operator()(const PPoint& p1, const PPoint& p2) const
+            {
+                auto isEqual = [&](double a, double b, double eps = EPS) {
+                    return std::fabs(a - b) < eps;
+                };
+                return isEqual(p1.x, p2.x) && isEqual(p1.y, p2.y) && isEqual(p1.z, p2.z);
+            }
+        };
+        std::unordered_map<PPoint, int, PointHash, PointEqual> pointIndexMap;
+        pointIndexMap.rehash(pointnums * ratio);
+        std::vector<PPoint> points;
+        points.reserve(pointnums);
+        std::vector<int> indexs;
+        indexs.reserve(pointnums);
+        for (int i = 0; i < pointnums; ++i) {
+            const auto& p = originPts[i];
+            const auto& iter = pointIndexMap.find(p);
+            if (iter != pointIndexMap.end()) {
+                indexs.emplace_back(iter->second);
+            } else {
+                const int index = points.size();
+                pointIndexMap.emplace(p, index);
+                indexs.emplace_back(index);
+                points.emplace_back(p);
+            }
+        }
+        std::vector<FFace> faces;
+        faces.resize(facenums);
+        for (int i = 0; i < facenums; ++i) {
+            for (int j = 0; j < 3; ++j) {
+                faces[i][j] = indexs[originFs[i][j]];
+            }
+        }
+        mpoints.swap(points);
+        mfaces.swap(faces);
+        return;
     }
     bool CMesh::WriteSTLFile(const char* filename, bool bBinary)
     {
@@ -338,7 +390,7 @@ namespace topomesh {
         std::swap(mesh.bbox, mbox);
         return mesh;
     }
-    void CMesh::Merge(const CMesh& mesh)
+    void CMesh::Merge(const CMesh& mesh, bool bDuplicate)
     {
         int pn = mpoints.size();
         int fn = mfaces.size();
@@ -349,6 +401,28 @@ namespace topomesh {
         mpoints.insert(mpoints.end(), points.begin(), points.end());
         for (const auto& f : faces) {
             mfaces.emplace_back(trimesh::ivec3(pn + f[0], pn + f[1], pn + f[2]));
+        }
+        if (bDuplicate) {
+            DuplicateSTL();
+        }
+    }
+    void CMesh::JoinTogether(const std::vector<CMesh>& meshes, bool bDuplicate)
+    {
+        int pn = mpoints.size();
+        int fn = mfaces.size();
+        for (int i = 0; i < meshes.size(); ++i) {
+            const auto& mesh = meshes[i];
+            const auto& points = mesh.mpoints;
+            const auto& faces = mesh.mfaces;
+            mpoints.insert(mpoints.end(), points.begin(), points.end());
+            for (const auto& f : faces) {
+                mfaces.emplace_back(trimesh::ivec3(pn + f[0], pn + f[1], pn + f[2]));
+            }
+            fn += faces.size();
+            pn += points.size();
+        }
+        if (bDuplicate) {
+            DuplicateSTL();
         }
     }
     void CMesh::Clone(const CMesh& mesh)

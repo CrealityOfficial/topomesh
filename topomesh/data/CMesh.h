@@ -4,38 +4,38 @@
 
 
 namespace topomesh {
-    struct EEdge {
-        int a, b; ///< a < b
-        EEdge(int a0, int b0) :a(a0), b(b0) {}
-        inline bool operator<(const EEdge& e) const
-        {
-            return a < e.a || (a == e.a && b < e.b);
-        };
-        inline bool operator==(const EEdge & e) const
-        {
-            return a == e.a && b == e.b;
-        };
-    };
-    struct EdgeToFace {
-        int vertex_low;
-        int vertex_high;
-        int at_face;
-        int which_edge;
-        bool operator==(const EdgeToFace& e2f)const
-        {
-            return vertex_low == e2f.vertex_low && vertex_high == e2f.vertex_high;
-        }
-        bool operator<(const EdgeToFace& e2f)const
-        {
-            return vertex_low < e2f.vertex_low || (vertex_low == e2f.vertex_low && vertex_high < e2f.vertex_high);
-        }
-    };
     class CMesh{
+    public:
+        struct EEdge {
+            int a, b; ///< a < b
+            EEdge(int a0, int b0) :a(a0), b(b0) {}
+            inline bool operator<(const EEdge& e) const
+            {
+                return a < e.a || (a == e.a && b < e.b);
+            };
+            inline bool operator==(const EEdge & e) const
+            {
+                return a == e.a && b == e.b;
+            };
+        };
+        struct EdgeToFace {
+            int vertex_low;
+            int vertex_high;
+            int at_face;
+            int which_edge;
+            bool operator==(const EdgeToFace& e2f)const
+            {
+                return vertex_low == e2f.vertex_low && vertex_high == e2f.vertex_high;
+            }
+            bool operator<(const EdgeToFace& e2f)const
+            {
+                return vertex_low < e2f.vertex_low || (vertex_low == e2f.vertex_low && vertex_high < e2f.vertex_high);
+            }
+        };
     public:
         typedef trimesh::Vec<3, float> PPoint;
         typedef trimesh::Vec<3, int> FFace;
         typedef trimesh::Box<3, float>BBox;
-        BBox mbox;
         ::std::vector<PPoint> mpoints;
         ::std::vector<FFace> mfaces;
         ::std::vector<FFace> mffaces;
@@ -45,6 +45,7 @@ namespace topomesh {
         ::std::vector<float> medgeLengths;
         ::std::vector<std::vector<int>> mfaceEdges;
         ::std::vector<std::vector<int>> medgeFaces;
+        BBox mbox;
         CMesh();
         ~CMesh();
         void Clear();
@@ -55,7 +56,8 @@ namespace topomesh {
         CMesh(const trimesh::TriMesh* mesh);
         trimesh::TriMesh GetTriMesh() const;
         trimesh::TriMesh ConvertToTriMesh();
-        void Merge(const CMesh& mesh);
+        void Merge(const CMesh& mesh, bool bDuplicate = false);
+        void JoinTogether(const std::vector<CMesh>& meshes, bool bDuplicate = false);
         void Clone(const CMesh& mesh);
         void MiniCopy(const CMesh& mesh);
         void Translate(const PPoint& trans);
