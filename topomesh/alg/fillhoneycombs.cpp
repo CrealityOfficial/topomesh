@@ -613,6 +613,8 @@ namespace topomesh {
                    // newmesh->vertices[vi].z = upST.getDataMinZ(newmesh->vertices[vi].x, newmesh->vertices[vi].y);
                     newmesh->vertices[vi].z +=0.7f;
 
+                if (sequentials.size() != sequentials2.size())
+                    return result_trimesh;
 
                 for (int m = 0; m < sequentials.size(); m++)
                 {
