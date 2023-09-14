@@ -70,7 +70,6 @@ namespace topomesh {
 	void innerHex(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& inFace, std::vector<int>& outFace,float len);
 
     trimesh::TriMesh* findOutlineOfDir(trimesh::TriMesh* mesh,std::vector<int>& botfaces);   
-
-    
+    void JointBotMesh(trimesh::TriMesh* mesh);
    
 }

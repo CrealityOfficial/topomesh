@@ -375,8 +375,7 @@ namespace topomesh {
         ccglobal::Tracer* tracer , HoneyCombDebugger* debugger )
     {
         //0.初始化Cmesh,并旋转
-        std::shared_ptr<trimesh::TriMesh> result_trimesh(new trimesh::TriMesh());
-        if(trimesh == nullptr) return result_trimesh;
+        if(trimesh == nullptr) return nullptr;
         CMesh cmesh(trimesh);
         //1.重新整理输入参数
         /*trimesh::vec3 dir=adjustHoneyCombParam(trimesh, honeyparams);
@@ -429,8 +428,8 @@ namespace topomesh {
                 trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
                 trimesh = &mesh;
                 trimesh->need_bbox();
-                int row = 200;
-                int col = 200;
+                int row = 300;
+                int col = 300;
                 std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> Upfaces;
                 for (int i : letterOpts.others)
                     Upfaces.push_back(std::make_tuple(trimesh->vertices[trimesh->faces[i][0]], trimesh->vertices[trimesh->faces[i][1]],
@@ -583,10 +582,7 @@ namespace topomesh {
                 columnParam.delta = honeyparams.delta;
                 columnParam.holeConnect = honeyparams.holeConnect;
                 std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
-                std::vector<std::vector<int>> sequentials;
-                getMeshBoundarys(*trimesh, sequentials);
-                std::vector<std::vector<int>> sequentials2;
-                getMeshBoundarys(*newmesh, sequentials2);
+               
 
                 std::vector<int> topfaces;
                 topfaces.swap(hexpolys.topfaces);
@@ -613,8 +609,14 @@ namespace topomesh {
                    // newmesh->vertices[vi].z = upST.getDataMinZ(newmesh->vertices[vi].x, newmesh->vertices[vi].y);
                     newmesh->vertices[vi].z +=0.7f;
 
+#if 0
+                std::vector<std::vector<int>> sequentials;
+                getMeshBoundarys(*trimesh, sequentials);
+                std::vector<std::vector<int>> sequentials2;
+                getMeshBoundarys(*newmesh, sequentials2);
+
                 if (sequentials.size() != sequentials2.size())
-                    return result_trimesh;
+                    return nullptr;
 
                 for (int m = 0; m < sequentials.size(); m++)
                 {
@@ -715,7 +717,7 @@ namespace topomesh {
                         newmesh->faces.push_back(trimesh::TriMesh::Face(pointmesh1->faces[fi][0] + vertexsize, pointmesh1->faces[fi][1] + vertexsize, pointmesh1->faces[fi][2] + vertexsize));
 
                 }
-
+#endif
 
                 int vertexsize = newmesh->vertices.size();
                 for (int vi = 0; vi < trimesh->vertices.size(); vi++)
@@ -723,10 +725,11 @@ namespace topomesh {
                 for (int fi = 0; fi < trimesh->faces.size(); fi++)
                     newmesh->faces.push_back(trimesh::TriMesh::Face(trimesh->faces[fi][0]+vertexsize, trimesh->faces[fi][1] + vertexsize, trimesh->faces[fi][2] + vertexsize));
                
+                JointBotMesh(newmesh.get());
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
-                
-               // newmesh->write("holesColumnar.stl"); 
+                               
+                newmesh->write("holesColumnar.stl");
                 return newmesh;
             }           
         } 
@@ -736,10 +739,10 @@ namespace topomesh {
             trimesh::apply_xform(trimesh, trimesh::xform::rot_into(dir, trimesh::vec3(0, 0, 1)));
 
 
-            return result_trimesh;
+            
         }
               
-        return result_trimesh;
+        return nullptr;
     }
 
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
@@ -885,6 +888,88 @@ namespace topomesh {
 		newMesh->write("honeycombs.ply");
 		return newMesh;
 	}
+
+
+    void JointBotMesh(trimesh::TriMesh* mesh)
+    {
+        topomesh::MMeshT joinmesh(81960,81960);
+        std::vector<std::vector<trimesh::point>> sequentials=GetOpenMeshBoundarys(*mesh);             
+        std::vector<std::pair<float,int>> arc_array;
+        std::vector<std::pair<int, int>> begin_and_end;
+        std::vector<bool> is_reverse(sequentials.size(),false);
+        for (int li = 0; li < sequentials.size(); li++)
+        {
+            float arc = 0.f;
+            begin_and_end.push_back(std::make_pair(joinmesh.vertices.size(), joinmesh.vertices.size()+ sequentials[li].size()));
+            for (int vi = 0; vi < sequentials[li].size(); vi++)
+            {
+                joinmesh.appendVertex(sequentials[li][vi]);
+                int next_vi = (vi + 1) % sequentials[li].size();
+                arc += (sequentials[li][vi].x * sequentials[li][next_vi].y - sequentials[li][vi].y * sequentials[li][next_vi].x);
+            }
+            if (arc < 0) is_reverse[li] = true;
+            arc_array.push_back(std::make_pair(std::abs(arc),li));           
+        }
+
+        auto arc_sort = [](std::pair<float, int>& a, std::pair<float, int>& b) {
+            return a.first > b.first;
+        };
+
+        std::sort(arc_array.begin(), arc_array.end(), arc_sort);
+
+        for (int begin = 0; begin < arc_array.size(); begin++)
+        {
+            std::vector<int> outfaceIndex;
+            if (begin != 0)
+            {
+                std::vector<std::vector<std::vector<trimesh::vec2>>> polygon(1, std::vector<std::vector<trimesh::vec2>>(1, std::vector<trimesh::vec2>()));
+                for (int vi = begin_and_end[arc_array[begin].second].first; vi < begin_and_end[arc_array[begin].second].second; vi++)
+                {
+                    polygon[0][0].push_back(trimesh::vec2(joinmesh.vertices[vi].p.x, joinmesh.vertices[vi].p.y));
+                }
+                std::vector<int> infaceIndex(joinmesh.faces.size());
+                std::iota(infaceIndex.begin(), infaceIndex.end(), 0);
+                topomesh::embedingAndCutting(&joinmesh, polygon[0], infaceIndex);
+                std::vector<int> newinfaceIndex(joinmesh.faces.size());
+                std::iota(newinfaceIndex.begin(), newinfaceIndex.end(), 0);
+                topomesh::polygonInnerFaces(&joinmesh, polygon, newinfaceIndex, outfaceIndex);
+            }
+            if (outfaceIndex.empty())
+            {
+                std::vector<std::pair<trimesh::point, int>> lines;
+                if (is_reverse[begin])
+                    for (int vi = begin_and_end[arc_array[begin].second].first; vi < begin_and_end[arc_array[begin].second].second; vi++)
+                    {
+                        lines.push_back(std::make_pair(joinmesh.vertices[vi].p, vi));
+                    }
+                else
+                    for (int vi = begin_and_end[arc_array[begin].second].second - 1; vi >= begin_and_end[arc_array[begin].second].first; vi--)
+                    {
+                        lines.push_back(std::make_pair(joinmesh.vertices[vi].p, vi));
+                    }
+                topomesh::EarClipping earclip(lines);
+                std::vector<trimesh::ivec3> result = earclip.getResult();
+                for (int fi = 0; fi < result.size(); fi++)
+                {
+                    joinmesh.appendFace(result[fi].x, result[fi].z, result[fi].y);
+                }
+            }
+            else
+            {
+                for (int fi = 0; fi < outfaceIndex.size(); fi++)
+                    joinmesh.deleteFace(outfaceIndex[fi]);
+            }
+        }
+
+        trimesh::TriMesh* jointmesh = new trimesh::TriMesh();
+        joinmesh.quickTransform(jointmesh);
+        int vertexsize = mesh->vertices.size();
+        for (int vi = 0; vi < jointmesh->vertices.size(); vi++)
+            mesh->vertices.push_back(jointmesh->vertices[vi]);
+        for (int fi = 0; fi < jointmesh->faces.size(); fi++)
+            mesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][1] + vertexsize, jointmesh->faces[fi][2] + vertexsize));
+    }
+
 
     void getMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials)
     {
