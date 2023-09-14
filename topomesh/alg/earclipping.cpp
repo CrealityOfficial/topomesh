@@ -79,7 +79,7 @@ namespace topomesh {
 			}	
 			if (before == data.size())
 			{
-				float k = data[0].first.y / data[0].first.x;
+				/*float k = data[0].first.y / data[0].first.x;
 				std::vector<int> triangle(data.size(), 0);
 				triangle[0] = 1;
 				for (int i = 1; i < data.size(); i++)
@@ -91,7 +91,7 @@ namespace topomesh {
 				{
 					if (triangle[i] == 1 && triangle[i + 1] == 1)						
 						_result.push_back(trimesh::ivec3(data[0].second, data[i].second, data[(i+1)%data.size()].second));
-				}
+				}*/
 				break;
 			}
 		}
