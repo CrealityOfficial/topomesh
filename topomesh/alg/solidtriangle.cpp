@@ -100,6 +100,18 @@ namespace topomesh {
 		return max_z;
 	}
 
+	const std::vector<float> SolidTriangle::getResult(float x, float y)
+	{
+		int xi = (x - _bbox_min_x) / _length_x; if (xi == _col) xi--;
+		int yi = (y - _bbox_min_y) / _length_y; if (yi == _row) yi--;
+		return _result[xi][yi];
+	}
+
+	const std::vector<float> SolidTriangle::getResult(int xi, int yi)
+	{
+		return _result[xi][yi];
+	}
+
 	void SolidTriangle::work()
 	{
 #ifdef _OPENMP

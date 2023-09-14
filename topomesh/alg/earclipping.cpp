@@ -20,8 +20,11 @@ namespace topomesh {
 					data.clear();
 					break;
 				}
-				float b = trimesh::point((data[(i+1)%size].first - data[i].first) % (data[(i+size-1)%size].first - data[i].first)).z;
+				//trimesh::point b1 = trimesh::normalized(data[(i + 1) % size].first - data[i].first);
+				//trimesh::point b2 = trimesh::normalized(data[(i + size - 1) % size].first - data[i].first);
+				float b = trimesh::point((data[(i + 1) % size].first - data[i].first) % (data[(i + size - 1) % size].first - data[i].first)).z;
 				float a = trimesh::normalized(trimesh::point(data[(i + 1)%size].first - data[i].first)) ^ trimesh::normalized(trimesh::point(data[(i + size - 1)%size].first - data[i].first));
+				//if(a<=-0.9999f)
 				if (a <= -0.9999f || b < 0.f)
 					continue;
 				std::vector<trimesh::vec2> triangle = { trimesh::vec2(data[i].first.x,data[i].first.y),trimesh::vec2(data[(i + 1) % size].first.x, data[(i + 1) % size].first.y),

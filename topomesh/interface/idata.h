@@ -52,5 +52,4 @@ namespace topomesh
 		int step_return = 9999; // debug quick return
 	};
 }
-
 #endif // TOPOMESH_IDATA_1692613164081_H

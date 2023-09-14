@@ -21,6 +21,8 @@ namespace topomesh {
 		float getDataMaxZ(float x, float y);
 		float getDataMinZCoord(int xi,int yi);
 		float getDataMaxZCoord(int xi,int yi);
+		const std::vector<float> getResult(float x,float y);
+		const std::vector<float> getResult(int xi, int yi);
 	private:
 		const std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>>* _data=nullptr;
 		int _row;

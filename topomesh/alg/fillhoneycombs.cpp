@@ -8,7 +8,6 @@
 #include "topomesh/alg/solidtriangle.h"
 #include "mmesh/trimesh/trimeshutil.h"
 #include "internal/polygon/comb.h"
-
 #include "random"
 
 #ifndef EPS
@@ -393,7 +392,7 @@ namespace topomesh {
                 std::vector<int>bottomFaces;
                 trimesh::vec3 dir = cmesh.FindBottomDirection(&bottomFaces);
                 cmesh.Rotate(dir, trimesh::vec3(0, 0, -1));
-                const auto& minPt = cmesh.mbox.min;
+                const auto minPt = cmesh.mbox.min;
                 cmesh.Translate(-minPt);
                 letterOpts.bottom.resize(bottomFaces.size());
                 letterOpts.bottom.assign(bottomFaces.begin(), bottomFaces.end());
@@ -427,8 +426,7 @@ namespace topomesh {
                 }
                 //第3步，生成底面六角网格
                 GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
-                trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
-                //mesh.write("result.ply");
+                trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
                 trimesh = &mesh;
                 trimesh->need_bbox();
                 int row = 200;
@@ -438,27 +436,7 @@ namespace topomesh {
                     Upfaces.push_back(std::make_tuple(trimesh->vertices[trimesh->faces[i][0]], trimesh->vertices[trimesh->faces[i][1]],
                         trimesh->vertices[trimesh->faces[i][2]]));
                 topomesh::SolidTriangle upST(&Upfaces, row, col, trimesh->bbox.max.x, trimesh->bbox.min.x, trimesh->bbox.max.y, trimesh->bbox.min.y);
-                upST.work();
-
-                /*trimesh::TriMesh* pointmesh = new trimesh::TriMesh();
-                for(int i=0;i<upST.getResult().size();i++)
-                    for (int j = 0; j < upST.getResult()[i].size(); j++)
-                    {
-                        if (upST.getResult()[i][j] == std::numeric_limits<float>::max())
-                            pointmesh->vertices.push_back(trimesh::point(i, j, 0));
-                        else
-                        {
-                            int faceid = upST.getResult()[i][j];
-                            trimesh::point v0;
-                            trimesh::point v1;
-                            trimesh::point v2;
-                            std::tie(v0, v1, v2) = Upfaces.at(faceid);
-                            float za[] = { v0.z,v1.z,v2.z };
-                            std::sort(za, za + 3);
-                            pointmesh->vertices.push_back(trimesh::point(i, j, za[0]));
-                        }
-                    }
-                pointmesh->write("pointmesh.ply");*/
+                upST.work();              
                 HexaPolygons hexpolys;
                 hexpolys.side = letterOpts.side;
                 trimesh::point max_xy = trimesh->bbox.max;
@@ -571,12 +549,15 @@ namespace topomesh {
                             float min_z = upST.getDataMinZCoord(j, i);
                             if (min_z < last_z)
                                 last_z = min_z;
+                           // if(last_z<=0.001f)
+
                         }
                     }
                    // if(last_z>= (honeyparams.shellThickness+1.2f))
                        
+
                     last_z -= (honeyparams.shellThickness+1.2f);
-                    last_z = last_z < 0.f ? 0.f : last_z;
+                    last_z = last_z < 0.f ? 0.2f : last_z;
 #endif
                     hg.edges.resize(hg.poly.size());
                     for (int i = 0; i < hg.edges.size(); i++)
@@ -594,7 +575,7 @@ namespace topomesh {
                 }
 
                 trimesh::remove_faces(trimesh, deletefaces);
-                trimesh::remove_unused_vertices(trimesh);
+                trimesh::remove_unused_vertices(trimesh);                          
                 topomesh::ColumnarHoleParam columnParam;
                 columnParam.nslices = honeyparams.nslices;
                 columnParam.ratio = honeyparams.ratio;
@@ -602,6 +583,11 @@ namespace topomesh {
                 columnParam.delta = honeyparams.delta;
                 columnParam.holeConnect = honeyparams.holeConnect;
                 std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
+                std::vector<std::vector<int>> sequentials;
+                getMeshBoundarys(*trimesh, sequentials);
+                std::vector<std::vector<int>> sequentials2;
+                getMeshBoundarys(*newmesh, sequentials2);
+
                 std::vector<int> topfaces;
                 topfaces.swap(hexpolys.topfaces);
                 for (int fi = 0; fi < topfaces.size(); fi++)
@@ -619,6 +605,7 @@ namespace topomesh {
                         fi--;
                     }
                 }
+                
                 int before_vsize = newmesh->vertices.size();
                 topomesh::SimpleMidSubdivision(newmesh.get(), topfaces);
                 int after_vsize = newmesh->vertices.size();
@@ -626,49 +613,130 @@ namespace topomesh {
                    // newmesh->vertices[vi].z = upST.getDataMinZ(newmesh->vertices[vi].x, newmesh->vertices[vi].y);
                     newmesh->vertices[vi].z +=0.7f;
 
-                /*int vertexsize = newmesh->vertices.size();
+
+                for (int m = 0; m < sequentials.size(); m++)
+                {
+                    trimesh::TriMesh* pointmesh1 = new trimesh::TriMesh();
+                    for (int vii = 0; vii < sequentials[m].size(); vii++)
+                    {
+                        pointmesh1->vertices.push_back(trimesh->vertices[sequentials[m][vii]]);
+                    }
+                    int linesize = pointmesh1->vertices.size();
+                    for (int vii = 0; vii < sequentials2[m].size(); vii++)
+                    {
+                        pointmesh1->vertices.push_back(newmesh->vertices[sequentials2[m][vii]]);
+                    }
+                    const int lineNum = 8;
+                    std::vector<float> min_dist(lineNum, std::numeric_limits<float>::max());
+                    std::vector<int> f_index;
+                    for (int nn = 0; nn < lineNum; nn++)
+                    {
+                        int ln = (int)(linesize * nn / lineNum);
+                        f_index.push_back(ln);
+                    }
+                    std::vector<int> near_index(lineNum, 0);
+                    for (int vi = linesize; vi < pointmesh1->vertices.size(); vi++)
+                    {
+                        for (int nn = 0; nn < lineNum; nn++)
+                        {
+                            float dist = trimesh::distance(pointmesh1->vertices[f_index[nn]], pointmesh1->vertices[vi]);
+                            if (dist < min_dist[nn])
+                            {
+                                near_index[nn] = vi;
+                                min_dist[nn] = dist;
+                            }
+                        }
+                    }
+                    std::vector<std::vector<int>> sequent(lineNum, std::vector<int>());
+                    //std::cout << "linesize : " << linesize << "\n";
+                    for (int nn = 0; nn < lineNum; nn++)
+                    {
+                        //std::cout << "f_index : " << f_index[nn]<<" near_index : "<< near_index[nn]<< "\n";
+                        if (nn != lineNum - 1)
+                        {
+                            for (int vi = f_index[nn]; vi <= f_index[nn + 1]; vi++)
+                                sequent[nn].push_back(vi);
+                            if (near_index[nn + 1] < near_index[nn])
+                                for (int vi = near_index[nn + 1]; vi <= near_index[nn]; vi++)
+                                    sequent[nn].push_back(vi);
+                            else
+                            {
+                                for (int vi = near_index[nn + 1]; vi < pointmesh1->vertices.size(); vi++)
+                                    sequent[nn].push_back(vi);
+                                for (int vi = linesize; vi <= near_index[nn]; vi++)
+                                    sequent[nn].push_back(vi);
+                            }
+                        }
+                        else
+                        {
+                            for (int vi = f_index[nn]; vi < linesize; vi++)
+                                sequent[nn].push_back(vi);
+                            sequent[nn].push_back(f_index[0]);
+                            if (near_index[0] < near_index[nn])
+                                for (int vi = near_index[0]; vi <= near_index[nn]; vi++)
+                                    sequent[nn].push_back(vi);
+                            else
+                            {
+                                for (int vi = near_index[0]; vi < pointmesh1->vertices.size(); vi++)
+                                    sequent[nn].push_back(vi);
+                                for (int vi = linesize; vi <= near_index[nn]; vi++)
+                                    sequent[nn].push_back(vi);
+                            }
+                        }
+                    }
+                    for (int nn = 0; nn < lineNum; nn++)
+                    {
+                        /* for (int ni = 0; ni < sequent[nn].size(); ni++)
+                             std::cout << " " << sequent[nn][ni] << " ";
+                         std::cout << "\n";*/
+                        std::vector<std::pair<trimesh::point, int>> lines;
+                        for (int vi = 0; vi < sequent[nn].size(); vi++)
+                        {
+                            lines.push_back(std::make_pair(pointmesh1->vertices[sequent[nn][vi]], sequent[nn][vi]));
+                        }
+                        topomesh::EarClipping earclip(lines);
+                        std::vector<trimesh::ivec3> result = earclip.getResult();
+                        for (int fi = 0; fi < result.size(); fi++)
+                        {
+                            result[fi] = trimesh::ivec3(result[fi].x, result[fi].z, result[fi].y);
+                            pointmesh1->faces.push_back(result[fi]);
+                        }
+                    }
+
+                   // std::string name = "pointmesh" + std::to_string(m) + ".ply";
+                   // pointmesh1->write(name);
+
+                    int vertexsize = newmesh->vertices.size();
+                    for (int vi = 0; vi < pointmesh1->vertices.size(); vi++)
+                        newmesh->vertices.push_back(pointmesh1->vertices[vi]);
+                    for (int fi = 0; fi < pointmesh1->faces.size(); fi++)
+                        newmesh->faces.push_back(trimesh::TriMesh::Face(pointmesh1->faces[fi][0] + vertexsize, pointmesh1->faces[fi][1] + vertexsize, pointmesh1->faces[fi][2] + vertexsize));
+
+                }
+
+
+                int vertexsize = newmesh->vertices.size();
                 for (int vi = 0; vi < trimesh->vertices.size(); vi++)
                     newmesh->vertices.push_back(trimesh->vertices[vi]);
                 for (int fi = 0; fi < trimesh->faces.size(); fi++)
                     newmesh->faces.push_back(trimesh::TriMesh::Face(trimesh->faces[fi][0]+vertexsize, trimesh->faces[fi][1] + vertexsize, trimesh->faces[fi][2] + vertexsize));
-                newmesh->write("holesColumnar.stl"); */
+               
+                trimesh::trans(newmesh.get(), minPt);
+                trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
+                
+               // newmesh->write("holesColumnar.stl"); 
                 return newmesh;
-            }
-            else {
-                trimesh::vec3 dir = honeyparams.axisDir;
-                trimesh::apply_xform(trimesh, trimesh::xform::rot_into(dir, trimesh::vec3(0, 0, 1)));
-                //Rotate(dir, trimesh::vec3(0, 0, 1));
-
-                std::vector<int> botfaces;
-                trimesh::TriMesh* newmesh = findOutlineOfDir(trimesh, botfaces);
-                trimesh->need_bbox();
-                std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> facecontianer;
-                for (trimesh::TriMesh::Face& f : newmesh->faces)
-                    facecontianer.push_back(std::make_tuple(newmesh->vertices[f[0]], newmesh->vertices[f[1]], newmesh->vertices[f[2]]));
-                topomesh::SolidTriangle soildtri(&facecontianer, 100, 100, trimesh->bbox.max.x, trimesh->bbox.min.x, trimesh->bbox.max.y, trimesh->bbox.min.y);
-                soildtri.work();
-            }
-        } else {
-            //用户指定方向，需要计算指定面片的轮廓
+            }           
+        } 
+        else {
+            //user indication faceindex
             trimesh::vec3 dir = honeyparams.axisDir;
             trimesh::apply_xform(trimesh, trimesh::xform::rot_into(dir, trimesh::vec3(0, 0, 1)));
 
+
+            return result_trimesh;
         }
-        cmesh.GenerateBoundBox();
-        HexagonArrayParam hexagonparams;
-        hexagonparams.dir = honeyparams.axisDir;
-        hexagonparams.pos = trimesh::vec3(cmesh.mbox.min.x, cmesh.mbox.max.y, 0);
-        hexagonparams.radius = honeyparams.honeyCombRadius;
-        hexagonparams.nestWidth = honeyparams.nestWidth;
-        const auto& xdist = 3.0 / 2.0 * hexagonparams.radius;
-        const auto& ydist = SQRT3 / 2.0 * hexagonparams.radius;
-        hexagonparams.ncols = std::ceil((cmesh.mbox.max.x - cmesh.mbox.min.x) / xdist);
-        hexagonparams.nrows = (std::ceil((cmesh.mbox.max.y - cmesh.mbox.min.y) / ydist) + 1) / 2;
-        HexaPolygons hexagons = GenerateHexagonsGridArray(hexagonparams);
-
-
-
-        
+              
         return result_trimesh;
     }
 
@@ -815,6 +883,14 @@ namespace topomesh {
 		newMesh->write("honeycombs.ply");
 		return newMesh;
 	}
+
+    void getMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials)
+    {
+        CMesh mesh(&trimesh);
+        std::vector<int> edges;
+        mesh.SelectIndividualEdges(edges);             
+        mesh.GetSequentialPoints(edges, sequentials);
+    }
 
     TriPolygons GetOpenMeshBoundarys(const trimesh::TriMesh& triMesh, HoneyCombDebugger* debugger)
     {
