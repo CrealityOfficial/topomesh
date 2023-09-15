@@ -968,6 +968,7 @@ namespace topomesh {
             mesh->vertices.push_back(jointmesh->vertices[vi]);
         for (int fi = 0; fi < jointmesh->faces.size(); fi++)
             mesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][1] + vertexsize, jointmesh->faces[fi][2] + vertexsize));
+        mmesh::dumplicateMesh(mesh);
     }
 
 
