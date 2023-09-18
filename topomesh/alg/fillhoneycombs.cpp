@@ -376,6 +376,7 @@ namespace topomesh {
     {
         //0.初始化Cmesh,并旋转
         if(trimesh == nullptr) return nullptr;
+
         CMesh cmesh(trimesh);
         //1.重新整理输入参数
         /*trimesh::vec3 dir=adjustHoneyCombParam(trimesh, honeyparams);
@@ -586,7 +587,7 @@ namespace topomesh {
 
                 std::vector<int> topfaces;
                 topfaces.swap(hexpolys.topfaces);
-                for (int fi = 0; fi < topfaces.size(); fi++)
+                /*for (int fi = 0; fi < topfaces.size(); fi++)
                 {
                     trimesh::point v0 = newmesh->vertices[newmesh->faces[topfaces[fi]][0]];
                     trimesh::point v1 = newmesh->vertices[newmesh->faces[topfaces[fi]][1]];
@@ -601,14 +602,43 @@ namespace topomesh {
                         fi--;
                     }
                 }
-                
-                int before_vsize = newmesh->vertices.size();
-                topomesh::SimpleMidSubdivision(newmesh.get(), topfaces);
-                int after_vsize = newmesh->vertices.size();
-                for(int vi=before_vsize;vi<after_vsize;vi++)
-                   // newmesh->vertices[vi].z = upST.getDataMinZ(newmesh->vertices[vi].x, newmesh->vertices[vi].y);
-                    newmesh->vertices[vi].z +=0.7f;
-
+                */
+                                        
+                std::vector<int> outfaces;
+               // topomesh::SimpleMidSubdivision(newmesh.get(), topfaces);
+                for (int l = 0; l < 2; l++)
+                {
+                    topomesh::loopSubdivision(newmesh.get(), topfaces, outfaces);
+                    outfaces.swap(topfaces);
+                    outfaces.clear();
+                }
+                for (int fi : topfaces)
+                {
+                    for (int vi = 0; vi < 3; vi++)
+                    {
+                        float min_x = newmesh->vertices[newmesh->faces[fi][vi]].x - honeyparams.shellThickness/3.f;
+                        float min_y = newmesh->vertices[newmesh->faces[fi][vi]].y - honeyparams.shellThickness/3.f;
+                        float max_x = newmesh->vertices[newmesh->faces[fi][vi]].x + honeyparams.shellThickness/3.f;
+                        float max_y = newmesh->vertices[newmesh->faces[fi][vi]].y + honeyparams.shellThickness/3.f;
+                        int min_xi = (min_x - min_xy.x) / lengthx;
+                        int min_yi = (min_y - min_xy.y) / lengthy;
+                        int max_xi = (max_x - min_xy.x) / lengthx;
+                        int max_yi = (max_y - min_xy.y) / lengthy;
+                        float min_z = std::numeric_limits<float>::max();
+                        for(int xii=min_xi;xii<=max_xi;xii++)
+                            for (int yii = min_yi; yii <= max_yi; yii++)
+                            {
+                                float zz = upST.getDataMinZCoord(xii,yii);
+                                if (zz < min_z)
+                                    min_z = zz;
+                            }
+                        //float min_z = upST.getDataMinZ(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y)- honeyparams.shellThickness;
+                        if (min_z > honeyparams.shellThickness)
+                            min_z -= honeyparams.shellThickness;
+                        newmesh->vertices[newmesh->faces[fi][vi]] = trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z);
+                    }
+                }
+               
 #if 0
                 std::vector<std::vector<int>> sequentials;
                 getMeshBoundarys(*trimesh, sequentials);
@@ -725,11 +755,12 @@ namespace topomesh {
                 for (int fi = 0; fi < trimesh->faces.size(); fi++)
                     newmesh->faces.push_back(trimesh::TriMesh::Face(trimesh->faces[fi][0]+vertexsize, trimesh->faces[fi][1] + vertexsize, trimesh->faces[fi][2] + vertexsize));
                
+
                 JointBotMesh(newmesh.get());
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
-                               
-                newmesh->write("holesColumnar.stl");
+                //trimesh->write("trimesh.ply");
+                //newmesh->write("holesColumnar.stl");
                 return newmesh;
             }           
         } 
@@ -951,7 +982,7 @@ namespace topomesh {
                 std::vector<trimesh::ivec3> result = earclip.getResult();
                 for (int fi = 0; fi < result.size(); fi++)
                 {
-                    joinmesh.appendFace(result[fi].x, result[fi].z, result[fi].y);
+                    joinmesh.appendFace(result[fi].x, result[fi].y, result[fi].z);
                 }
             }
             else
@@ -967,7 +998,7 @@ namespace topomesh {
         for (int vi = 0; vi < jointmesh->vertices.size(); vi++)
             mesh->vertices.push_back(jointmesh->vertices[vi]);
         for (int fi = 0; fi < jointmesh->faces.size(); fi++)
-            mesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][1] + vertexsize, jointmesh->faces[fi][2] + vertexsize));
+            mesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][2] + vertexsize, jointmesh->faces[fi][1] + vertexsize));
         mmesh::dumplicateMesh(mesh);
     }
 

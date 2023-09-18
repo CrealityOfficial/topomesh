@@ -8,5 +8,6 @@ namespace topomesh {
 	void SimpleMidSubdivision(trimesh::TriMesh* mesh, std::vector<int>& faceindexs);
 	void loopSubdivision(MMeshT* mesh, std::vector<int>& faceindexs,std::vector<std::tuple<int, trimesh::point>>& vertex,
 		std::vector<std::tuple<int,trimesh::ivec3>>& face_vertex , bool is_move,int iteration);
+	void loopSubdivision(trimesh::TriMesh* mesh, std::vector<int>& faceindexs,std::vector<int>& outfaces);
 	void sqrt3Subdivision(MMeshT* mesh, std::vector<int>& faceindexs);
 }
