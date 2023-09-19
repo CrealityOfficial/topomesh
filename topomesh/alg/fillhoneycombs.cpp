@@ -6,8 +6,8 @@
 #include "topomesh/alg/utils.h"
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
-#include "mmesh/trimesh/trimeshutil.h"
 #include "internal/polygon/comb.h"
+#include "internal/mesh/dumplicate.h"
 #include "random"
 
 #ifndef EPS
@@ -999,7 +999,7 @@ namespace topomesh {
             mesh->vertices.push_back(jointmesh->vertices[vi]);
         for (int fi = 0; fi < jointmesh->faces.size(); fi++)
             mesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][2] + vertexsize, jointmesh->faces[fi][1] + vertexsize));
-        mmesh::dumplicateMesh(mesh);
+        dumplicateMesh(mesh);
     }
 
 
@@ -2074,7 +2074,7 @@ namespace topomesh {
         std::shared_ptr<trimesh::TriMesh> triMesh(new trimesh::TriMesh());
         triMesh->vertices.swap(points);
         triMesh->faces.swap(faces);
-        mmesh::dumplicateMesh(triMesh.get());
+        dumplicateMesh(triMesh.get());
         return triMesh;
     }
 

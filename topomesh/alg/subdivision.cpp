@@ -1,6 +1,6 @@
 #include "subdivision.h"
 #include "trimesh2/TriMesh_algo.h"
-#include "mmesh/trimesh/trimeshutil.h"
+#include "internal/mesh/dumplicate.h"
 #include "set"
 
 namespace topomesh {
@@ -241,7 +241,7 @@ namespace topomesh {
 		}
 		trimesh::remove_faces(mesh, deletefaces);
 		trimesh::remove_unused_vertices(mesh);
-		mmesh::dumplicateMesh(mesh);
+		dumplicateMesh(mesh);
 	}
 
 
