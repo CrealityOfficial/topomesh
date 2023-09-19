@@ -40,4 +40,14 @@ namespace topomesh
 			facequeue.pop();
 		}
 	}
+
+	void findBoundary(trimesh::TriMesh* trimesh)
+	{
+
+	}
+
+	void triangulate()
+	{
+
+	}
 }
