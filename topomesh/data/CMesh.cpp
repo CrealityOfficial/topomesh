@@ -794,6 +794,7 @@ namespace topomesh {
                     currentQueue.pop();
                     const FFace& neighbor = mffaces[fr];
                     for (const auto& fa : neighbor) {
+                        if (fa < 0) continue;
                         if (masks[fa]) {
                             const auto& na = mnorms[fa];
                             const auto& nr = mnorms[fr];
