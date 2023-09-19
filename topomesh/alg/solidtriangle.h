@@ -21,6 +21,9 @@ namespace topomesh {
 		float getDataMaxZ(float x, float y);
 		float getDataMinZCoord(int xi,int yi);
 		float getDataMaxZCoord(int xi,int yi);
+		float getDataMinZInterpolation(float x, float y);
+		float getDataMaxZInterpolation(float x, float y);
+		float getDataMinZInterpolation(int xi, int yi);
 		const std::vector<float> getResult(float x,float y);
 		const std::vector<float> getResult(int xi, int yi);
 	private:

@@ -429,21 +429,33 @@ namespace topomesh {
                 trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
                 trimesh = &mesh;
                 trimesh->need_bbox();
-                int row = 300;
-                int col = 300;
+                int row = 400;
+                int col = 400;
                 std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> Upfaces;
                 for (int i : letterOpts.others)
                     Upfaces.push_back(std::make_tuple(trimesh->vertices[trimesh->faces[i][0]], trimesh->vertices[trimesh->faces[i][1]],
                         trimesh->vertices[trimesh->faces[i][2]]));
                 topomesh::SolidTriangle upST(&Upfaces, row, col, trimesh->bbox.max.x, trimesh->bbox.min.x, trimesh->bbox.max.y, trimesh->bbox.min.y);
-                upST.work();              
+                upST.work();    
+             
+                //-------print------
+               /* trimesh::TriMesh* pointmesh1 = new trimesh::TriMesh();
+                for(int r=0;r<row;r++)
+                    for (int c = 0; c < col; c++)
+                    {
+                        float z = upST.getDataMinZCoord(c, r);
+                        if(z!=std::numeric_limits<float>::max())
+                            pointmesh1->vertices.push_back(trimesh::point(c,r,z));
+                    }
+                pointmesh1->write("pointmesh1.ply");*/
+
                 HexaPolygons hexpolys;
                 hexpolys.side = letterOpts.side;
                 trimesh::point max_xy = trimesh->bbox.max;
                 trimesh::point min_xy = trimesh->bbox.min;
                 float lengthx = (trimesh->bbox.max.x - trimesh->bbox.min.x)/ (col*1.f);
                 float lengthy = (trimesh->bbox.max.y - trimesh->bbox.min.y)/ (row*1.f);
-                trimesh::TriMesh* pointmesh = new trimesh::TriMesh();
+               
                 for (auto& hg : letterOpts.hexgons)
                 {
                     std::vector<float> height;
@@ -468,12 +480,12 @@ namespace topomesh {
                         {
                             min_z -= honeyparams.shellThickness;
                             height.push_back(min_z);
-                            pointmesh->vertices.push_back(trimesh::point(p.x, p.y, min_z));                          
+                            //pointmesh->vertices.push_back(trimesh::point(p.x, p.y, min_z));                          
                         }
                         else
                         {
                             height.push_back(0.f);
-                            pointmesh->vertices.push_back(trimesh::point(p.x, p.y, 0.f));
+                           // pointmesh->vertices.push_back(trimesh::point(p.x, p.y, 0.f));
                         }
                         coord.push_back(trimesh::ivec2(xi, yi));
                     }
@@ -568,6 +580,8 @@ namespace topomesh {
                     }
                     hexpolys.polys.push_back(hg);                   
                 }
+
+              
                 std::vector<bool> deletefaces(trimesh->faces.size(), false);
                 for (int f = 0; f < bottomFaces.size(); f++)
                 {
@@ -611,15 +625,15 @@ namespace topomesh {
                     topomesh::loopSubdivision(newmesh.get(), topfaces, outfaces);
                     outfaces.swap(topfaces);
                     outfaces.clear();
-                }
+                }                         
                 for (int fi : topfaces)
                 {
                     for (int vi = 0; vi < 3; vi++)
                     {
-                        float min_x = newmesh->vertices[newmesh->faces[fi][vi]].x - honeyparams.shellThickness/3.f;
-                        float min_y = newmesh->vertices[newmesh->faces[fi][vi]].y - honeyparams.shellThickness/3.f;
-                        float max_x = newmesh->vertices[newmesh->faces[fi][vi]].x + honeyparams.shellThickness/3.f;
-                        float max_y = newmesh->vertices[newmesh->faces[fi][vi]].y + honeyparams.shellThickness/3.f;
+                        float min_x = newmesh->vertices[newmesh->faces[fi][vi]].x - honeyparams.shellThickness * 2.f/5.f;
+                        float min_y = newmesh->vertices[newmesh->faces[fi][vi]].y - honeyparams.shellThickness * 2.f /5.f;
+                        float max_x = newmesh->vertices[newmesh->faces[fi][vi]].x + honeyparams.shellThickness * 2.f /5.f;
+                        float max_y = newmesh->vertices[newmesh->faces[fi][vi]].y + honeyparams.shellThickness * 2.f /5.f;
                         int min_xi = (min_x - min_xy.x) / lengthx;
                         int min_yi = (min_y - min_xy.y) / lengthy;
                         int max_xi = (max_x - min_xy.x) / lengthx;
@@ -628,17 +642,21 @@ namespace topomesh {
                         for(int xii=min_xi;xii<=max_xi;xii++)
                             for (int yii = min_yi; yii <= max_yi; yii++)
                             {
-                                float zz = upST.getDataMinZCoord(xii,yii);
+                                float zz = upST.getDataMinZInterpolation(xii,yii);
                                 if (zz < min_z)
                                     min_z = zz;
                             }
-                        //float min_z = upST.getDataMinZ(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y)- honeyparams.shellThickness;
-                        if (min_z > honeyparams.shellThickness)
-                            min_z -= honeyparams.shellThickness;
+                       // float min_z = upST.getDataMinZ(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y)/*- honeyparams.shellThickness*/;
+                       // float min_z = upST.getDataMinZInterpolation(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y) - 1.2*honeyparams.shellThickness;
+                        if (min_z > 1.2*honeyparams.shellThickness)
+                            min_z -= 1.2*honeyparams.shellThickness;
                         newmesh->vertices[newmesh->faces[fi][vi]] = trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z);
+                       // pointmesh->vertices.push_back(trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z));
+                                             
                     }
                 }
                
+                
 #if 0
                 std::vector<std::vector<int>> sequentials;
                 getMeshBoundarys(*trimesh, sequentials);
@@ -755,7 +773,6 @@ namespace topomesh {
                 for (int fi = 0; fi < trimesh->faces.size(); fi++)
                     newmesh->faces.push_back(trimesh::TriMesh::Face(trimesh->faces[fi][0]+vertexsize, trimesh->faces[fi][1] + vertexsize, trimesh->faces[fi][2] + vertexsize));
                
-
                 JointBotMesh(newmesh.get());
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));

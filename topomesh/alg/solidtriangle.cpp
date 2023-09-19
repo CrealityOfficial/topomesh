@@ -43,6 +43,74 @@ namespace topomesh {
 		return min_z;
 	}
 
+	float SolidTriangle::getDataMinZInterpolation(float x, float y)
+	{
+		int xi = (x - _bbox_min_x) / _length_x; if (xi == _col) xi--;
+		int yi = (y - _bbox_min_y) / _length_y; if (yi == _row) yi--;
+		if (xi > _col || yi > _row) return std::numeric_limits<float>::max();
+		float min_z = std::numeric_limits<float>::max();
+		trimesh::point a, b, c;
+		for (int i = 0; i < _result[xi][yi].size(); i++)
+		{
+			int index = _result[xi][yi][i];
+			trimesh::point v0;
+			trimesh::point v1;
+			trimesh::point v2;
+			std::tie(v0, v1, v2) = _data->at(index);
+			float za[] = { v0.z,v1.z,v2.z };
+			std::sort(za, za + 3);
+			if (za[0] < min_z)
+			{
+				min_z = za[0];
+				a = v0;
+				b = v1;
+				c = v2;
+			}
+		}		
+		trimesh::point v1 = b - a;
+		trimesh::point v2 = c - a;
+		float det = v1.x * v2.y - v2.x * v1.y;
+		float n = (v2.y*(x-a.x)-v2.x*(y-a.y)) *1.f/ det * 1.f;
+		float m = (-v1.y * (x-a.x) + v1.x * (y-a.y)) * 1.f / det * 1.f;
+		return a.z + n * v1.z + m * v2.z;
+	}
+
+	float SolidTriangle::getDataMinZInterpolation(int xi, int yi)
+	{
+		float min_z = std::numeric_limits<float>::max();
+		trimesh::point a, b, c;
+		for (int i = 0; i < _result[xi][yi].size(); i++)
+		{
+			int index = _result[xi][yi][i];
+			trimesh::point v0;
+			trimesh::point v1;
+			trimesh::point v2;
+			std::tie(v0, v1, v2) = _data->at(index);
+			float za[] = { v0.z,v1.z,v2.z };
+			std::sort(za, za + 3);
+			if (za[0] < min_z)
+			{
+				min_z = za[0];
+				a = v0;
+				b = v1;
+				c = v2;
+			}
+		}
+		float x = _bbox_min_x + (xi + 0.5f) * _length_x;
+		float y = _bbox_min_y + (yi + 0.5f) * _length_y;
+		trimesh::point v1 = b - a;
+		trimesh::point v2 = c - a;
+		float det = v1.x * v2.y - v2.x * v1.y;
+		float n = (v2.y * (x - a.x) - v2.x * (y - a.y)) * 1.f / det * 1.f;
+		float m = (-v1.y * (x - a.x) + v1.x * (y - a.y)) * 1.f / det * 1.f;
+		return a.z + n * v1.z + m * v2.z;
+	}
+
+	float SolidTriangle::getDataMaxZInterpolation(float x, float y)
+	{
+		return 1;
+	}
+
 	float SolidTriangle::getDataMaxZ(float x, float y)
 	{
 		int xi = (x - _bbox_min_x) / _length_x; if (xi == _col) xi--;
