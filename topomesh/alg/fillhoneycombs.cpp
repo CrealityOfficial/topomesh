@@ -429,8 +429,9 @@ namespace topomesh {
                 //第3步，生成底面六角网格
                 GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
                 trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
-                trimesh = &mesh;
-                trimesh->need_bbox();
+                trimesh = &mesh; 
+                trimesh->bbox.valid = false;
+                trimesh->need_bbox();             
                 int row = 400;
                 int col = 400;
                 std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> Upfaces;
@@ -584,14 +585,14 @@ namespace topomesh {
                 }
 
               
-                std::vector<bool> deletefaces(trimesh->faces.size(), false);
+               /* std::vector<bool> deletefaces(trimesh->faces.size(), false);
                 for (int f = 0; f < bottomFaces.size(); f++)
                 {
                     deletefaces[bottomFaces[f]] = true;
                 }
-
                 trimesh::remove_faces(trimesh, deletefaces);
-                trimesh::remove_unused_vertices(trimesh);                          
+                trimesh::remove_unused_vertices(trimesh);  */     
+
                 topomesh::ColumnarHoleParam columnParam;
                 columnParam.nslices = honeyparams.nslices;
                 columnParam.ratio = honeyparams.ratio;
@@ -768,14 +769,8 @@ namespace topomesh {
 
                 }
 #endif
-
-                int vertexsize = newmesh->vertices.size();
-                for (int vi = 0; vi < trimesh->vertices.size(); vi++)
-                    newmesh->vertices.push_back(trimesh->vertices[vi]);
-                for (int fi = 0; fi < trimesh->faces.size(); fi++)
-                    newmesh->faces.push_back(trimesh::TriMesh::Face(trimesh->faces[fi][0]+vertexsize, trimesh->faces[fi][1] + vertexsize, trimesh->faces[fi][2] + vertexsize));
-               
-                JointBotMesh(newmesh.get());
+                             
+                JointBotMesh(trimesh,newmesh.get(), bottomFaces);
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
                 //trimesh->write("trimesh.ply");
@@ -940,8 +935,9 @@ namespace topomesh {
 	}
 
 
-    void JointBotMesh(trimesh::TriMesh* mesh)
+    void JointBotMesh(trimesh::TriMesh* mesh, trimesh::TriMesh* newmesh,  std::vector<int>& botfaces)
     {
+#if 0
         topomesh::MMeshT joinmesh(81960,81960);
         std::vector<std::vector<trimesh::point>> sequentials=GetOpenMeshBoundarys(*mesh);             
         std::vector<std::pair<float,int>> arc_array;
@@ -1019,6 +1015,99 @@ namespace topomesh {
         for (int fi = 0; fi < jointmesh->faces.size(); fi++)
             mesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][2] + vertexsize, jointmesh->faces[fi][1] + vertexsize));
         dumplicateMesh(mesh);
+#else
+        std::map<int, int> vmap;
+        std::map<int, int> fmap;        
+        topomesh::MMeshT mt(mesh, botfaces, vmap, fmap);
+        std::vector<bool> deletefaces(mesh->faces.size(), false);
+        for (int f = 0; f < botfaces.size(); f++)
+        {
+            deletefaces[botfaces[f]] = true;
+        }
+        trimesh::remove_faces(mesh, deletefaces);
+        trimesh::remove_unused_vertices(mesh);
+
+        std::vector<std::vector<trimesh::point>> sequentials = GetOpenMeshBoundarys(*newmesh);
+        std::vector<std::vector<std::vector<trimesh::vec2>>> polygon(1, std::vector<std::vector<trimesh::vec2>>(1, std::vector<trimesh::vec2>()));
+        for (int i = 0; i < sequentials.size(); i++)
+        {
+            for(int j=0;j<sequentials[i].size();j++)
+                polygon[0][i].push_back(trimesh::vec2(sequentials[i][j].x, sequentials[i][j].y));
+        }
+        std::vector<int> faces(mt.faces.size());
+        std::iota(faces.begin(), faces.end(), 0);
+        topomesh::embedingAndCutting(&mt, polygon[0], faces);
+        std::vector<int> newinfaceIndex(mt.faces.size());
+        std::iota(newinfaceIndex.begin(), newinfaceIndex.end(), 0);
+        std::vector<int> outfaceIndex;
+        topomesh::polygonInnerFaces(&mt, polygon, newinfaceIndex, outfaceIndex);
+        for (int i = 0; i < outfaceIndex.size(); i++)
+            mt.deleteFace(outfaceIndex[i]);
+        trimesh::TriMesh* resultmesh=new trimesh::TriMesh();
+        mt.quickTransform(resultmesh);
+
+        for (int fi = 0; fi < resultmesh->faces.size(); fi++)
+        {
+            trimesh::point v1 = resultmesh->vertices[resultmesh->faces[fi][1]] - resultmesh->vertices[resultmesh->faces[fi][0]];
+            trimesh::point v2 = resultmesh->vertices[resultmesh->faces[fi][2]] - resultmesh->vertices[resultmesh->faces[fi][0]];
+            float z = (v1 % v2).z;
+            if (z > 0)
+                resultmesh->faces[fi] = trimesh::TriMesh::Face(resultmesh->faces[fi][0], resultmesh->faces[fi][2], resultmesh->faces[fi][1]);
+        }
+
+        int facesize = newmesh->faces.size();
+        int vertexsize = newmesh->vertices.size();
+        for (int vi = 0; vi < resultmesh->vertices.size(); vi++)
+            newmesh->vertices.push_back(resultmesh->vertices[vi]);
+        for (int fi = 0; fi < resultmesh->faces.size(); fi++)
+            newmesh->faces.push_back(trimesh::TriMesh::Face(resultmesh->faces[fi][0] + vertexsize, resultmesh->faces[fi][1] + vertexsize, resultmesh->faces[fi][2] + vertexsize));
+
+        vertexsize = newmesh->vertices.size();
+        for (int vi = 0; vi < mesh->vertices.size(); vi++)
+            newmesh->vertices.push_back(mesh->vertices[vi]);
+        for (int fi = 0; fi < mesh->faces.size(); fi++)
+            newmesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][0] + vertexsize, mesh->faces[fi][1] + vertexsize, mesh->faces[fi][2] + vertexsize));
+      
+        dumplicateMesh(newmesh);
+
+        newmesh->need_across_edge();
+        std::vector<bool> deleteface1(newmesh->faces.size(), false);
+        for (int fi = 0; fi < facesize; fi++)
+        {
+            bool is_boundary = false;
+            for (int fii = 0; fii < newmesh->across_edge[fi].size(); fii++)
+            {
+                if (newmesh->across_edge[fi][fii] == -1)
+                {
+                    is_boundary = true;
+                    break;
+                }
+            }
+            if (is_boundary)
+            {
+                deleteface1[fi] = true;
+            }
+        }
+        trimesh::remove_faces(newmesh, deleteface1);
+        trimesh::remove_unused_vertices(newmesh);
+        
+        std::vector<std::vector<int>> sequentialsindex;
+        getMeshBoundarys(*newmesh,sequentialsindex);
+        for (int i = 0; i < sequentialsindex.size(); i++)
+        {
+            std::vector<std::pair<trimesh::point, int>> lines;
+            for (int j = 0; j < sequentialsindex[i].size(); j++)
+                lines.push_back(std::make_pair(newmesh->vertices[sequentialsindex[i][j]], sequentialsindex[i][j]));
+            topomesh::EarClipping earclip(lines);
+            std::vector<trimesh::ivec3> result = earclip.getResult();
+            for (int fi = 0; fi < result.size(); fi++)
+            {         
+                newmesh->faces.push_back(result[fi]);
+            }
+        }
+
+        newmesh->write("newmesh.ply");
+#endif
     }
 
 
