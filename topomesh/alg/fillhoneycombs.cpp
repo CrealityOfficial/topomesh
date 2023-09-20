@@ -1134,6 +1134,7 @@ namespace topomesh {
                     hexas.polys[i].p2hEdgeMap.emplace(j, j);
                 }
             }
+            if (hexas.polys[i].edges.size() == 0) hexas.polys[i].edges.resize(6);
         }
         std::vector<std::vector<int>> neighborhoods(nums, std::vector<int>(nums, 1));
         std::vector<std::vector<int>> associatehoods(nums, std::vector<int>(nums, 1));
