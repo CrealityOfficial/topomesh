@@ -405,6 +405,7 @@ namespace topomesh {
         if (bDuplicate) {
             DuplicateSTL();
         }
+        mbox.valid = false;
     }
     void CMesh::JoinTogether(const std::vector<CMesh>& meshes, bool bDuplicate)
     {
@@ -424,6 +425,7 @@ namespace topomesh {
         if (bDuplicate) {
             DuplicateSTL();
         }
+        mbox.valid = false;
     }
     void CMesh::Clone(const CMesh& mesh)
     {
@@ -448,9 +450,7 @@ namespace topomesh {
         for (auto& pt : mpoints) {
             pt = mat * pt;
         }
-        mbox.min = mat * mbox.min;
-        mbox.max = mat * mbox.max;
-        mbox = trimesh::box3(mbox.min, mbox.max);
+        mbox.valid = false;
     }
     void CMesh::Rotate(const PPoint& axis, const double& angle)
     {
@@ -837,7 +837,6 @@ namespace topomesh {
                 mpoints[neighbor[j]].z = minz;
             }
         }
-        mbox.min.z = minz;
     }
 
     CMesh::PPoint CMesh::FindBottomDirection(std::vector<int>* bottomfaces, float threshold)
@@ -868,7 +867,6 @@ namespace topomesh {
         if (bKeepPoints) {
             mfaces = std::move(otherFaces);
             GenerateFaceNormals();
-            mbox.valid = false;
             return;
         }
         //定义点的哈希函数

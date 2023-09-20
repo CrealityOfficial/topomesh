@@ -393,6 +393,7 @@ namespace topomesh {
                 std::vector<int>bottomFaces;
                 trimesh::vec3 dir = cmesh.FindBottomDirection(&bottomFaces);
                 cmesh.Rotate(dir, trimesh::vec3(0, 0, -1));
+                cmesh.GenerateBoundBox();
                 const auto minPt = cmesh.mbox.min;
                 cmesh.Translate(-minPt);
                 letterOpts.bottom.resize(bottomFaces.size());
