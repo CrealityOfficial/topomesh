@@ -508,6 +508,7 @@ namespace topomesh {
     }
     int CMesh::AddPoint(const PPoint& p)
     {
+        mbox += p;
         mpoints.emplace_back(std::move(p));
         return mpoints.size() - 1;
     }
@@ -836,6 +837,7 @@ namespace topomesh {
                 mpoints[neighbor[j]].z = minz;
             }
         }
+        mbox.min.z = minz;
     }
 
     CMesh::PPoint CMesh::FindBottomDirection(std::vector<int>* bottomfaces, float threshold)
@@ -866,6 +868,7 @@ namespace topomesh {
         if (bKeepPoints) {
             mfaces = std::move(otherFaces);
             GenerateFaceNormals();
+            mbox.valid = false;
             return;
         }
         //定义点的哈希函数
@@ -911,6 +914,7 @@ namespace topomesh {
         mpoints.swap(newPoints);
         mfaces.swap(newFaces);
         GenerateFaceNormals();
+        mbox.valid = false;
         return;
     }
 
