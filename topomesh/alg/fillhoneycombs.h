@@ -9,6 +9,7 @@ namespace topomesh {
 	
     struct HoneyCombParam
     {
+        int mode = 0; ///< 0 is shell, 1 is backfill.
         double resolution = 1E-4; ///<多边形相交允许误差
         TriPolygon* polyline = nullptr; ///<自由编辑区域生成内蜂窝（默认底面全部填充）
         trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///<蜂窝多边形平面朝向（默认z轴正方向）
@@ -67,7 +68,7 @@ namespace topomesh {
     };
     TriPolygons GetOpenMeshBoundarys(const trimesh::TriMesh& triMesh, HoneyCombDebugger* debugger = nullptr);
     void getMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials);
-    void GenerateBottomHexagons(const CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
+    void GenerateBottomHexagons(CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
     void GenerateTriPolygonsHexagons(const TriPolygons& polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
     HexaPolygons GenerateHexagonsGridArray(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
     struct ColumnarHoleParam {

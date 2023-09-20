@@ -248,7 +248,7 @@ namespace topomesh {
         return;
     }
 
-    void GenerateBottomHexagons(const CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger)
+    void GenerateBottomHexagons(CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger)
     {
         //拷贝一份数据
         CMesh cutMesh;
@@ -276,6 +276,7 @@ namespace topomesh {
         }
         //第6步，在底面边界轮廓多边形内生成蜂窝六边形
         GenerateTriPolygonsHexagons(polys, honeyparams, letterOpts, debugger);
+        honeyMesh.mbox = cutMesh.mbox;
         return;
     }
 

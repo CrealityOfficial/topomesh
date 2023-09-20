@@ -14,6 +14,8 @@ namespace topomesh
 		float holeHeight = 1.0f;
 		float holeDiameter = 2.5f;
 		float holeGap = 1.0f;
+
+        int mode = 0; ///< 0 is shell, 1 is backfill.
 	};
 
 	TOPOMESH_API std::shared_ptr<trimesh::TriMesh> honeyCombGenerate(trimesh::TriMesh* trimesh, const CombParam& honeyparams = CombParam(),

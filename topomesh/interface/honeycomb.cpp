@@ -13,6 +13,7 @@ namespace topomesh
         params.delta = honeyparams.holeGap;
         params.ratio = honeyparams.holeDiameter / (honeyparams.diameter / 2.0f);
         params.holeConnect = honeyparams.holeConnect;
+        params.mode = honeyparams.mode;
         std::shared_ptr<trimesh::TriMesh> mesh = GenerateHoneyCombs(trimesh, params, tracer);
 		return mesh;
 	}
