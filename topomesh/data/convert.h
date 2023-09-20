@@ -55,7 +55,7 @@ namespace topomesh
         std::vector<int> pointIndexs;
         std::vector<int> corners;
         float lowHeight = 0.f;
-        float topHeight = 0.f;
+        float topHeight = 10.f;
     };
     struct Hexagon {
         trimesh::vec3 centroid;
