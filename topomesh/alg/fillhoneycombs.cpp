@@ -440,18 +440,7 @@ namespace topomesh {
                         trimesh->vertices[trimesh->faces[i][2]]));
                 topomesh::SolidTriangle upST(&Upfaces, row, col, trimesh->bbox.max.x, trimesh->bbox.min.x, trimesh->bbox.max.y, trimesh->bbox.min.y);
                 upST.work();    
-             
-                //-------print------
-               /* trimesh::TriMesh* pointmesh1 = new trimesh::TriMesh();
-                for(int r=0;r<row;r++)
-                    for (int c = 0; c < col; c++)
-                    {
-                        float z = upST.getDataMinZCoord(c, r);
-                        if(z!=std::numeric_limits<float>::max())
-                            pointmesh1->vertices.push_back(trimesh::point(c,r,z));
-                    }
-                pointmesh1->write("pointmesh1.ply");*/
-
+            
                 HexaPolygons hexpolys;
                 hexpolys.side = letterOpts.side;
                 trimesh::point max_xy = trimesh->bbox.max;
@@ -461,24 +450,15 @@ namespace topomesh {
                
                 for (auto& hg : letterOpts.hexgons)
                 {
-                    std::vector<float> height;
-                    std::vector<trimesh::ivec2> coord;
-                    int max_xi = std::numeric_limits<int>::min();
-                    int min_xi = std::numeric_limits<int>::max();
-                    int max_yi = std::numeric_limits<int>::min();
-                    int min_yi = std::numeric_limits<int>::max();
+                    std::vector<float> height;                                   
                     for (int i = 0; i < hg.poly.size(); i++)
                     {
                         trimesh::point p = hg.poly[i] - min_xy;
                         int xi = p.x / lengthx;
                         int yi = p.y / lengthy;
                         xi = xi == col ? --xi : xi;
-                        yi = yi == row ? --yi : yi;
-                        if (xi > max_xi) max_xi = xi;
-                        if (xi < min_xi) min_xi = xi;
-                        if (yi > max_yi) max_yi = yi;
-                        if (yi < min_yi) min_yi = yi;
-                        float min_z = upST.getDataMinZCoord(xi, yi);
+                        yi = yi == row ? --yi : yi;                      
+                        float min_z = upST.getDataMinZInterpolation(xi, yi);
                         if (min_z != std::numeric_limits<float>::max())
                         {
                             min_z -= honeyparams.shellThickness;
@@ -490,9 +470,9 @@ namespace topomesh {
                             height.push_back(0.f);
                            // pointmesh->vertices.push_back(trimesh::point(p.x, p.y, 0.f));
                         }
-                        coord.push_back(trimesh::ivec2(xi, yi));
+                       
                     }
-#if 0
+#if false
                     for (int i = 0; i < height.size(); i++)
                     {
                         if (height[i] == 0.f) continue;
@@ -555,20 +535,19 @@ namespace topomesh {
                             }
                         }
                     }
-#else
+#elif false
                     float last_z = std::numeric_limits<float>::max();
                     for (int i = min_yi; i <= max_yi; i++)
                     {
                         for (int j = min_xi; j <= max_xi; j++)
                         {
                             float min_z = upST.getDataMinZCoord(j, i);
+                           // if (min_z == std::numeric_limits<float>::max()) min_z = 0.0f;
                             if (min_z < last_z)
-                                last_z = min_z;
-                           // if(last_z<=0.001f)
-
+                                last_z = min_z;                           
                         }
                     }
-                   // if(last_z>= (honeyparams.shellThickness+1.2f))
+                    if(last_z>= (honeyparams.shellThickness+1.2f))
                        
 
                     last_z -= (honeyparams.shellThickness+1.2f);
@@ -576,10 +555,9 @@ namespace topomesh {
 #endif
                     hg.edges.resize(hg.poly.size());
                     for (int i = 0; i < hg.edges.size(); i++)
-                    {
-                        //hg.edges[i].lowHeight = ldist(engine);
-                       // hg.edges[i].topHeight = height[i];
-                        hg.edges[i].topHeight = last_z;
+                    {                       
+                         hg.edges[i].topHeight = height[i];
+                       // hg.edges[i].topHeight = last_z;
                     }
                     hexpolys.polys.push_back(hg);                   
                 }
@@ -1028,7 +1006,7 @@ namespace topomesh {
         trimesh::remove_unused_vertices(mesh);
 
         std::vector<std::vector<trimesh::point>> sequentials = GetOpenMeshBoundarys(*newmesh);
-        std::vector<std::vector<std::vector<trimesh::vec2>>> polygon(1, std::vector<std::vector<trimesh::vec2>>(1, std::vector<trimesh::vec2>()));
+        std::vector<std::vector<std::vector<trimesh::vec2>>> polygon(1, std::vector<std::vector<trimesh::vec2>>(sequentials.size(), std::vector<trimesh::vec2>()));
         for (int i = 0; i < sequentials.size(); i++)
         {
             for(int j=0;j<sequentials[i].size();j++)
@@ -1071,6 +1049,16 @@ namespace topomesh {
         dumplicateMesh(newmesh);
 
         newmesh->need_across_edge();
+        newmesh->clear_neighbors();
+        newmesh->need_neighbors();
+        newmesh->clear_adjacentfaces();
+        newmesh->need_adjacentfaces();
+        std::vector<int> boundary_v(newmesh->vertices.size(),0);
+        for (int vi = 0; vi < newmesh->vertices.size(); vi++)
+        {          
+            boundary_v[vi] = newmesh->neighbors[vi].size() - newmesh->adjacentfaces[vi].size();
+        }
+        std::vector<trimesh::ivec3> newfaces;
         std::vector<bool> deleteface1(newmesh->faces.size(), false);
         for (int fi = 0; fi < facesize; fi++)
         {
@@ -1085,14 +1073,43 @@ namespace topomesh {
             }
             if (is_boundary)
             {
-                deleteface1[fi] = true;
+                deleteface1[fi] = true;               
+                int fvi = 0;
+                for (; fvi < 3; fvi++)
+                {
+                    if (boundary_v[newmesh->faces[fi][fvi]] <2)
+                        break;
+                }
+                trimesh::point v1 = newmesh->vertices[newmesh->faces[fi][fvi]] - newmesh->vertices[newmesh->faces[fi][(fvi + 1) % 3]];
+                trimesh::point v2 = newmesh->vertices[newmesh->faces[fi][fvi]] - newmesh->vertices[newmesh->faces[fi][(fvi + 2) % 3]];
+                trimesh::point n = -v1 % -v2;
+                int vi = 0;
+                for (; vi < newmesh->neighbors[newmesh->faces[fi][(fvi + 1) % 3]].size(); vi++)
+                {
+                    trimesh::point t1 = newmesh->vertices[newmesh->neighbors[newmesh->faces[fi][(fvi + 1) % 3]][vi]] - newmesh->vertices[newmesh->faces[fi][(fvi + 1) % 3]];
+                    trimesh::point tn = t1 % v1;
+                    if ((tn.x * n.x) > 0 && (tn.y * n.y) > 0 && (tn.z * n.z) > 0)
+                    {
+                        break;
+                    }
+                }
+                //newfaces.push_back(trimesh::ivec3(newmesh->faces[fi][fvi], newmesh->faces[fi][(fvi + 1) % 3], newmesh->neighbors[newmesh->faces[fi][(fvi + 1) % 3]][vi]));
+                /*if (fvi == 3)
+                    break;*/
+               // newmesh->faces.push_back(trimesh::ivec3(newmesh->faces[fi][fvi], newmesh->faces[fi][(fvi + 1) % 3], newmesh->faces[fi][(fvi + 2) % 3]));
             }
         }
+       /* int beginsize = deleteface1.size();
+        for (int fi = beginsize; fi < newmesh->faces.size(); fi++)
+            deleteface1.push_back(false);
+
         trimesh::remove_faces(newmesh, deleteface1);
-        trimesh::remove_unused_vertices(newmesh);
+        trimesh::remove_unused_vertices(newmesh);*/
         
-        std::vector<std::vector<int>> sequentialsindex;
-        getMeshBoundarys(*newmesh,sequentialsindex);
+       
+
+       /* std::vector<std::vector<int>> sequentialsindex;
+        getTriMeshBoundarys(*newmesh,sequentialsindex);
         for (int i = 0; i < sequentialsindex.size(); i++)
         {
             std::vector<std::pair<trimesh::point, int>> lines;
@@ -1104,14 +1121,14 @@ namespace topomesh {
             {         
                 newmesh->faces.push_back(result[fi]);
             }
-        }
+        }*/
 
         newmesh->write("newmesh.ply");
 #endif
     }
 
 
-    void getMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials)
+    void getTriMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials)
     {
         CMesh mesh(&trimesh);
         std::vector<int> edges;

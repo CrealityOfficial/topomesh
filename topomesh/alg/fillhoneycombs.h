@@ -10,23 +10,23 @@ namespace topomesh {
     struct HoneyCombParam
     {
         int mode = 0; ///< 0 is shell, 1 is backfill.
-        double resolution = 1E-4; ///<¶à±ßÐÎÏà½»ÔÊÐíÎó²î
-        TriPolygon* polyline = nullptr; ///<×ÔÓÉ±à¼­ÇøÓòÉú³ÉÄÚ·äÎÑ£¨Ä¬ÈÏµ×ÃæÈ«²¿Ìî³ä£©
-        trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///<·äÎÑ¶à±ßÐÎÆ½Ãæ³¯Ïò£¨Ä¬ÈÏzÖáÕý·½Ïò£©
+        double resolution = 1E-4; ///<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½à½»ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        TriPolygon* polyline = nullptr; ///<ï¿½ï¿½ï¿½É±à¼­ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú·ï¿½ï¿½Ñ£ï¿½Ä¬ï¿½Ïµï¿½ï¿½ï¿½È«ï¿½ï¿½ï¿½ï¿½ä£©
+        trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///<ï¿½ï¿½ï¿½Ñ¶ï¿½ï¿½ï¿½ï¿½Æ½ï¿½æ³¯ï¿½ï¿½Ä¬ï¿½ï¿½zï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
         //trimesh::vec3* axisDir = nullptr;
-        trimesh::vec2 arrayDir = trimesh::vec2(1, 0); ///<·äÎÑ¶à±ßÐÎÆ½Ãæ²¼¾Ö£¨Ä¬ÈÏ±ß³¯ÉÏ½á¹¹£©
-        double honeyCombRadius = 2.0; ///< Éú³ÉµÄ·äÎÑÁù±ßÐÎ±ß³¤
-        double nestWidth = 1.0; ///<·äÎÑÁù±ßÐÎ±Úºñ£¨ÏòÄÚÊÕËõµÄ¾àÀëµÄ2±¶£©
-        double shellThickness = 0.6; ///<³é¿Çºñ¶È
-        double keepHexagonRate = 0.1; ///ÔÊÐí±£ÁôÍø¸ñµÄ×îÐ¡Ãæ»ý±ÈÀý
-        double keepHexagonArea = 2.0; ///ÔÊÐí±£ÁôÍø¸ñµÄ×îÐ¡Ãæ»ý¾ø¶ÔÖµ²Î¿¼Á¿
-        bool isdelect = false; //ÊÇ·ñÉ¾³ý±ê¼ÇÇøÓò
-        std::vector<int> faces; //ËùÑ¡ÔñµÄÇøÓòÃæ£¬Èç¹ûÎªÄ¬ÈÏ-1ÔòÎª×Ô¶¨Òå·½Ïò
+        trimesh::vec2 arrayDir = trimesh::vec2(1, 0); ///<ï¿½ï¿½ï¿½Ñ¶ï¿½ï¿½ï¿½ï¿½Æ½ï¿½æ²¼ï¿½Ö£ï¿½Ä¬ï¿½Ï±ß³ï¿½ï¿½Ï½á¹¹ï¿½ï¿½
+        double honeyCombRadius = 2.0; ///< ï¿½ï¿½ï¿½ÉµÄ·ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î±ß³ï¿½
+        double nestWidth = 1.0; ///<ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Î±Úºï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¾ï¿½ï¿½ï¿½ï¿½2ï¿½ï¿½ï¿½ï¿½
+        double shellThickness = 0.6; ///<ï¿½ï¿½Çºï¿½ï¿½
+        double keepHexagonRate = 0.1; ///ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        double keepHexagonArea = 2.0; ///ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Öµï¿½Î¿ï¿½ï¿½ï¿½
+        bool isdelect = false; //ï¿½Ç·ï¿½É¾ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+        std::vector<int> faces; //ï¿½ï¿½Ñ¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½æ£¬ï¿½ï¿½ï¿½ÎªÄ¬ï¿½ï¿½-1ï¿½ï¿½Îªï¿½Ô¶ï¿½ï¿½å·½ï¿½ï¿½
         bool holeConnect = true;
-        float cheight = 5.0f; ///<Ô²¿×Ô²ÐÄ¸ß¶È
-        float ratio = 0.5f; ///<Ô²¿×Ö±¾¶Ïà¶ÔÍø¸ñ±ß³¤±ÈÀý
-        float delta = 0.5f; //Ô²¿×¼ä¸ô
-        int nslices = 17;   //ÄâºÏ¶à±ßÐÎ±ßÊý
+        float cheight = 5.0f; ///<Ô²ï¿½ï¿½Ô²ï¿½Ä¸ß¶ï¿½
+        float ratio = 0.5f; ///<Ô²ï¿½ï¿½Ö±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½ï¿½ï¿½ï¿½
+        float delta = 0.5f; //Ô²ï¿½×¼ï¿½ï¿½
+        int nslices = 17;   //ï¿½ï¿½Ï¶ï¿½ï¿½ï¿½Î±ï¿½ï¿½ï¿½
         bool bKeepHexagon = false;
         //debug
         int step_return = 9999; // debug quick return
@@ -67,8 +67,8 @@ namespace topomesh {
         std::vector<HexaPolygon>hexgons;
     };
     TriPolygons GetOpenMeshBoundarys(const trimesh::TriMesh& triMesh, HoneyCombDebugger* debugger = nullptr);
-    void getMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials);
-    void GenerateBottomHexagons(CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
+    void getTriMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials);
+    void GenerateBottomHexagons(const CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
     void GenerateTriPolygonsHexagons(const TriPolygons& polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
     HexaPolygons GenerateHexagonsGridArray(const HexagonArrayParam& hexagonparams = HexagonArrayParam());
     struct ColumnarHoleParam {

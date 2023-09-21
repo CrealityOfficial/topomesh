@@ -8,7 +8,7 @@ namespace topomesh
 									/*out*/ std::vector<int>& faceIndexs);
 
 	TOPOMESH_API void findBoundary(trimesh::TriMesh* trimesh);
-	TOPOMESH_API void triangulate();
+	TOPOMESH_API void triangulate(trimesh::TriMesh* trimesh,std::vector<int>& sequentials);
 }
 
 #endif // TOPOMESH_UTILS_1695108550958_H

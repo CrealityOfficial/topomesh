@@ -1,4 +1,5 @@
 #include "utils.h"
+#include "topomesh/alg/earclipping.h"
 #include <queue>
 
 namespace topomesh
@@ -46,8 +47,18 @@ namespace topomesh
 
 	}
 
-	void triangulate()
+	void triangulate(trimesh::TriMesh* trimesh, std::vector<int>& sequentials)
 	{
-
+		std::vector<std::pair<trimesh::point, int>> lines;
+		for (int i = 0; i < sequentials.size(); i++)
+		{
+			lines.push_back(std::make_pair(trimesh->vertices[sequentials[i]], sequentials[i]));
+		}
+		topomesh::EarClipping earclip(lines);
+		std::vector<trimesh::ivec3> result = earclip.getResult();
+		for (int fi = 0; fi < result.size(); fi++)
+		{
+			trimesh->faces.push_back(result[fi]);
+		}
 	}
 }
