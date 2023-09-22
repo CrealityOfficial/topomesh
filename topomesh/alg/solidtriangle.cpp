@@ -103,7 +103,10 @@ namespace topomesh {
 		float det = v1.x * v2.y - v2.x * v1.y;
 		float n = (v2.y * (x - a.x) - v2.x * (y - a.y)) * 1.f / det * 1.f;
 		float m = (-v1.y * (x - a.x) + v1.x * (y - a.y)) * 1.f / det * 1.f;
-		return a.z + n * v1.z + m * v2.z;
+		float r= a.z + n * v1.z + m * v2.z;
+		if (r < min_z)
+			return min_z;
+		return r;
 	}
 
 	float SolidTriangle::getDataMaxZInterpolation(float x, float y)
