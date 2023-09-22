@@ -6,6 +6,8 @@
 #include <mutex>
 #include <atomic>
 #include <condition_variable>
+#include <unordered_set>
+#include <map>
 
 #ifndef EPS
 #define EPS 1E-8F
@@ -937,10 +939,10 @@ namespace topomesh {
                 const auto& v1 = mfaces[f][1];
                 const auto& v2 = mfaces[f][2];
                 const auto& n = trimesh::normalized((mpoints[v2] - mpoints[v1]).cross(mpoints[v0] - mpoints[v1]));
-                const auto & a = medges[e].a;
-                const auto & b = medges[e].b;
-                const auto & c = EdgeOppositePoint(e, f);
-                const auto & d = trimesh::normalized((mpoints[b] - mpoints[a]).cross(mpoints[c] - mpoints[a]));
+                const auto& a = medges[e].a;
+                const auto& b = medges[e].b;
+                const auto& c = EdgeOppositePoint(e, f);
+                const auto& d = trimesh::normalized((mpoints[c] - mpoints[a]).cross(mpoints[b] - mpoints[a]));
                 if ((n DOT d) < 0) {
                     medges[e].a = medges[e].a + medges[e].b;
                     medges[e].b = medges[e].a - medges[e].b;
@@ -954,7 +956,7 @@ namespace topomesh {
     {
         const size_t nums = edgeIndexs.size();
         std::vector<bool> masks(medges.size(), false);
-        // 所有边顶点按照逆时针排序
+        // all sequential edges are counterclockwise.
         if (true) {
             for (auto& e : edgeIndexs) {
                 const auto& neighbor = medgeFaces[e];
@@ -966,7 +968,7 @@ namespace topomesh {
                 const auto& a = medges[e].a;
                 const auto& b = medges[e].b;
                 const auto& c = EdgeOppositePoint(e, f);
-                const auto& d = trimesh::normalized((mpoints[b] - mpoints[a]).cross(mpoints[c] - mpoints[a]));
+                const auto& d = trimesh::normalized((mpoints[c] - mpoints[a]).cross(mpoints[b] - mpoints[a]));
                 if ((n DOT d) < 0) {
                     medges[e].a = medges[e].a + medges[e].b;
                     medges[e].b = medges[e].a - medges[e].b;
@@ -976,11 +978,164 @@ namespace topomesh {
             }
         }
         std::queue<int> Queues;
+        std::vector<bool> flags(medges.size(), false);
+        std::vector<int> pointStarts;
+        std::multimap<int, int> pEdgeStartMap;
+        std::multimap<int, int> pEdgeEndMap;
+        pointStarts.reserve(nums);
         for (int i = 0; i < nums; ++i) {
-            Queues.push(edgeIndexs[i]);
+            const auto& einx = edgeIndexs[i];
+            pointStarts.emplace_back(medges[einx].a);
+            pEdgeStartMap.emplace(medges[einx].a, einx);
+            pEdgeEndMap.emplace(medges[einx].b, einx);
+            Queues.emplace(einx);
         }
-        //边的若干有序序列
+        //first. mark all possible cross knot point at next edge index.
+        std::unordered_set<int> uniqueSets;
+        std::unordered_set<int> crossKnots;
+        for (const auto& v : pointStarts) {
+            if (uniqueSets.count(v) == 0) {
+                uniqueSets.insert(v);
+            } else {
+                crossKnots.insert(v);
+            }
+        }
+        std::vector<int> crossPoints;
+        crossPoints.reserve(crossKnots.size());
+        //several sequentials about edges.
         std::vector<std::vector<int>> edgeRings;
+        //second. begin to deal with crossKnots on sequential edges.
+        if (!crossKnots.empty()) {
+            std::vector<std::vector<int>> starts, ends;
+            starts.reserve(crossKnots.size());
+            ends.reserve(crossKnots.size());
+            for (const auto& v : uniqueSets) {
+                if (crossKnots.count(v)) {
+                    crossPoints.emplace_back(v);
+                    std::vector<int> start, end;
+                    auto range1 = pEdgeStartMap.equal_range(v);
+                    for (auto itr = range1.first; itr != range1.second; ++itr) {
+                        start.emplace_back(itr->second);
+                    }
+                    auto range2 = pEdgeEndMap.equal_range(v);
+                    for (auto itr = range2.first; itr != range2.second; ++itr) {
+                        end.emplace_back(itr->second);
+                    }
+                    starts.emplace_back(start);
+                    ends.emplace_back(end);
+                }
+            }
+            int lastKnot = -1;
+            while (!Queues.empty()) {
+                if (crossPoints.empty()) break;
+                while (!Queues.empty()) {
+                    if (!ends.front().empty()) {
+                        bool changeKnot = false;
+                        int currentKnot = crossPoints.front();
+                        std::vector<int> lasts = ends.front();
+                        if (currentKnot == lastKnot) {
+                            currentKnot = crossPoints.back();
+                            lasts = ends.back();
+                            changeKnot = true;
+                        }
+                        int circles = 0;
+                        int numSize = Queues.size();
+                        while (circles < numSize) {
+                            const auto& ef = Queues.front();
+                            if (medges[ef].b == currentKnot) {
+                                Queues.pop();
+                                break;
+                            }
+                            Queues.emplace(ef);
+                            Queues.pop();
+                        }
+                        while (circles < numSize) {
+                            const auto& ef = Queues.front();
+                            if (medges[ef].a == currentKnot) {
+                                break;
+                            }
+                            Queues.emplace(ef);
+                            Queues.pop();
+                        }
+                        lastKnot = currentKnot;
+                        const int fe = Queues.front();
+                        Queues.pop();
+                        const auto& a = mpoints[medges[fe].a];
+                        const auto& b = mpoints[medges[fe].b];
+                        const auto& dir1 = trimesh::normalized(b - a);
+
+                        float maxProject = -1.0f;
+                        int pos = -1, last = -1;
+                        for (int i = 0; i < lasts.size(); ++i) {
+                            const auto& e = lasts[i];
+                            const auto& c = mpoints[medges[e].a];
+                            const auto& dir2 = trimesh::normalized(c - a);
+                            if ((dir1 TRICROSS dir2).z > maxProject) {
+                                maxProject = (dir1 TRICROSS dir2).z;
+                                last = e;
+                                pos = i;
+                            }
+                        }
+                        if (flags[last]) {
+                            if (changeKnot) {
+                                ends.back().erase(ends.back().begin() + pos);
+                                starts.back().erase(starts.back().begin() + pos);
+                            } else {
+                                ends.front().erase(ends.front().begin() + pos);
+                                starts.front().erase(starts.front().begin() + pos);
+                            }
+                            continue;
+                        }
+                        std::vector<int> current;
+                        current.emplace_back(last);
+                        current.emplace_back(fe);
+                        int times = 0;
+                        int count = Queues.size();
+                        while (!Queues.empty()) {
+                            const int front = current.front();
+                            const int back = current.back();
+                            const int ef = Queues.front();
+                            if (medges[ef].b == medges[front].a) {
+                                current.insert(current.begin(), ef);
+                                Queues.pop();
+                                times = 0;
+                            } else if (medges[ef].a == medges[back].b) {
+                                current.emplace_back(ef);
+                                Queues.pop();
+                                times = 0;
+                            } else {
+                                Queues.pop();
+                                Queues.emplace(ef);
+                                ++times;
+                            }
+                            if (medges[front].a == medges[back].b) {
+                                break;
+                            }
+                            if (times > count) {
+                                break;
+                            }
+                        }
+                        for (int i = 0; i < current.size(); ++i) {
+                            flags[current[i]] = true;
+                        }
+                        edgeRings.emplace_back(current);
+                        if (changeKnot) {
+                            ends.back().erase(ends.back().begin() + pos);
+                            starts.back().erase(starts.back().begin() + pos);
+                        } else {
+                            ends.front().erase(ends.front().begin() + pos);
+                            starts.front().erase(starts.front().begin() + pos);
+                        }
+                    } else {
+                        starts.erase(starts.begin());
+                        ends.erase(ends.begin());
+                        break;
+                    }
+                }
+                crossPoints.erase(crossPoints.begin());
+            }
+        }
+        // other. there are no crossKnots on sequential edges.
         while (!Queues.empty()) {
             std::vector<int> current;
             current.reserve(nums);
@@ -1016,7 +1171,7 @@ namespace topomesh {
             edgeRings.emplace_back(current);
         }
         sequentials.reserve(edgeRings.size());
-        //修改的边的顶点顺序需要还原
+        //restore some edges amended before.
         for (auto& es : edgeRings) {
             std::vector<int> pointList;
             pointList.reserve(es.size());
