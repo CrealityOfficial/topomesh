@@ -50,7 +50,7 @@ namespace topomesh
             int h = per * i;
             if (h > 0)
             {
-                z.push_back(per * i);
+                z.push_back(MM2INT(per * i));
             }
         }
 
