@@ -1,5 +1,6 @@
 #include "slicehelper.h"
 #include "polygonLib.h"
+#include "point3.h"
 #include "coord_t.h"
 
 namespace topomesh
@@ -19,6 +20,7 @@ namespace topomesh
 	{
 		meshSrc = _meshSrc;
 		getMeshFace();
+		buildMeshFaceHeightsRange(_meshSrc, faceRanges);
 	}
 
 	void getConnectFaceData(const std::vector<trimesh::TriMesh::Face>& allFaces, std::vector<std::vector<uint32_t>>& vertexConnectFaceData)
@@ -431,6 +433,44 @@ namespace topomesh
 		for (const ClipperLib::IntPoint& v : polys_point)
 		{
 			concave.push_back(trimesh::vec3(v.X / SCALE * scale.x, v.Y / SCALE * scale.y, 0.0f));
+		}
+	}
+
+	void SliceHelper::buildMeshFaceHeightsRange(const trimesh::TriMesh* _meshSrc, std::vector<Point2>& heightRanges)
+	{
+		int faceSize = (int)_meshSrc->faces.size();
+		if (faceSize > 0) heightRanges.resize(faceSize);
+		for (int i = 0; i < faceSize; ++i)
+		{
+			const trimesh::TriMesh::Face& face = _meshSrc->faces[i];
+
+			// get all vertices represented as 3D point
+			Point3 p0 = Point3(MM2INT(_meshSrc->vertices[face[0]].x), MM2INT(_meshSrc->vertices[face[0]].y), MM2INT(_meshSrc->vertices[face[0]].z));
+			Point3 p1 = Point3(MM2INT(_meshSrc->vertices[face[1]].x), MM2INT(_meshSrc->vertices[face[1]].y), MM2INT(_meshSrc->vertices[face[1]].z));
+			Point3 p2 = Point3(MM2INT(_meshSrc->vertices[face[2]].x), MM2INT(_meshSrc->vertices[face[2]].y), MM2INT(_meshSrc->vertices[face[2]].z));
+
+			// find the minimum and maximum z point		
+			int32_t minZ = p0.z;
+			if (p1.z < minZ)
+			{
+				minZ = p1.z;
+			}
+			if (p2.z < minZ)
+			{
+				minZ = p2.z;
+			}
+
+			int32_t maxZ = p0.z;
+			if (p1.z > maxZ)
+			{
+				maxZ = p1.z;
+			}
+			if (p2.z > maxZ)
+			{
+				maxZ = p2.z;
+			}
+
+			heightRanges.at(i) = Point2(minZ, maxZ);
 		}
 	}
 }
