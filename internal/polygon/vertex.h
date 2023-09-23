@@ -1,7 +1,7 @@
 #ifndef CXUTIL_VERTEX_1607076481387_H
 #define CXUTIL_VERTEX_1607076481387_H
-#include "Point3.h"
-#include "AABB3D.h"
+#include "point3.h"
+#include "aabb3d.h"
 
 namespace topomesh
 {
