@@ -1,6 +1,6 @@
 #ifndef GLOBALPARAM_1600139246992_H
 #define GLOBALPARAM_1600139246992_H
-#include "Coord_t.h"
+#include "coord_t.h"
 
 namespace topomesh
 {
