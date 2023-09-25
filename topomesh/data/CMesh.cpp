@@ -1265,6 +1265,7 @@ namespace topomesh {
             if (trimesh::len(x) < EPS) {
                 x = PPoint(1, 0, 0);
             }
+            trimesh::normalize(x);
             const auto& y = n.cross(x);
             for (int j = 0; j < nslices; ++j) {
                 const auto& theta = delta * j;

@@ -57,6 +57,7 @@ namespace topomesh
             if (trimesh::len(x) < EPS) {
                 x = trimesh::vec3(1, 0, 0);
             }
+            trimesh::normalize(x);
             const auto& y = n.cross(x);
             for (int j = 0; j < nslices; ++j) {
                 const auto& theta = delta * j;
@@ -104,10 +105,11 @@ namespace topomesh
                 const auto& a = poly[i];
                 const auto& b = poly[(i + 1) % polysize];
                 const auto& n = trimesh::normalized(b - a);
-                auto && x = std::move(z.cross(n));
+                auto&& x = std::move(z.cross(n));
                 if (trimesh::len(x) < EPS) {
                     x = trimesh::vec3(1, 0, 0);
                 }
+                trimesh::normalize(x);
                 const auto& y = n.cross(x);
                 for (int j = 0; j < nslices; ++j) {
                     const auto& theta = delta * j;
