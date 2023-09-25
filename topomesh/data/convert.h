@@ -98,4 +98,6 @@ namespace topomesh
     HexaPolygons convertFromTriPolygons(const TriPolygons& polys, const trimesh::ivec3& coords);
     trimesh::TriMesh SaveTriPolygonToMesh(const TriPolygon& poly, double r = 0.01, size_t nslices = 20);
     trimesh::TriMesh SaveTriPolygonsToMesh(const TriPolygons& polys, double r = 0.01, size_t nslices = 20);
+    trimesh::TriMesh SaveTriPolygonPointsToMesh(const TriPolygon& poly, double radius = 0.01, size_t nrows = 20, size_t ncolumns = 20);
+    trimesh::TriMesh SaveTriPolygonsPointsToMesh(const TriPolygons& polys, double radius = 0.01, size_t nrows = 20, size_t ncolumns = 20);
 }

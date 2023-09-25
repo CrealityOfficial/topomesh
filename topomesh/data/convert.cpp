@@ -136,4 +136,75 @@ namespace topomesh
         edgeMesh.vertices.swap(points);
         return edgeMesh;
     }
+    trimesh::TriMesh SaveTriPolygonPointsToMesh(const TriPolygon& poly, double radius, size_t nrows, size_t ncolumns)
+    {
+        trimesh::TriMesh pointMesh;
+        const size_t spherenums = poly.size();
+        const size_t nums = nrows * ncolumns + 2;
+        const size_t pointnums = nums * spherenums;
+        const size_t facenums = 2 * (nums - 2) * spherenums;
+        std::vector<trimesh::vec3> points;
+        points.reserve(pointnums);
+        std::vector<trimesh::ivec3> faces;
+        faces.reserve(facenums);
+        for (int k = 0; k < spherenums; ++k) {
+            const auto& p = poly[k];
+            points.emplace_back(p.x, p.y, p.z + radius);
+            for (int i = 0; i < nrows; ++i) {
+                const auto& phi = M_PI * (i + 1.0) / double(nrows + 1.0);
+                const auto& z = radius * std::cos(phi);
+                const auto& r = radius * std::sin(phi);
+                for (int j = 0; j < ncolumns; ++j) {
+                    const auto& theta = 2.0 * M_PI * j / ncolumns;
+                    const auto& x = r * std::cos(theta);
+                    const auto& y = r * std::sin(theta);
+                    points.emplace_back(p.x + x, p.y + y, p.z + z);
+                }
+            }
+            points.emplace_back(p.x, p.y, p.z - radius);
+            const auto& maxInx = points.size() - 1;
+            const auto& v0 = k * nums;
+            //上下底部两部分
+            for (size_t i = 0; i < ncolumns; ++i) {
+                const auto& i0 = i + 1 + v0;
+                const auto& i1 = (i + 1) % ncolumns + 1 + v0;
+                faces.emplace_back(trimesh::ivec3(v0, i0, i1));
+                const auto& j0 = i0 + (nrows - 1) * ncolumns;
+                const auto& j1 = i1 + (nrows - 1) * ncolumns;
+                faces.emplace_back(trimesh::ivec3(j1, j0, maxInx));
+            }
+            //中间部分
+            for (size_t i = 0; i < nrows - 1; ++i) {
+                const auto& j0 = i * ncolumns + 1 + v0;
+                const auto& j1 = (i + 1) * ncolumns + 1 + v0;
+                for (size_t j = 0; j < ncolumns; ++j) {
+                    const auto& i0 = j0 + j;
+                    const auto& i1 = j0 + (j + 1) % ncolumns;
+                    const auto& i2 = j1 + j;
+                    const auto& i3 = j1 + (j + 1) % ncolumns;
+                    faces.emplace_back(trimesh::ivec3(i2, i1, i0));
+                    faces.emplace_back(trimesh::ivec3(i2, i3, i1));
+                }
+            }
+        }
+        pointMesh.vertices.swap(points);
+        pointMesh.faces.swap(faces);
+        return pointMesh;
+    }
+    trimesh::TriMesh SaveTriPolygonsPointsToMesh(const TriPolygons& polys, double radius, size_t nrows, size_t ncolumns)
+    {
+        trimesh::TriMesh pointMesh;
+        TriPolygon poly;
+        size_t spherenums = 0;
+        for (const auto& pys : polys) {
+            spherenums += pys.size();
+        }
+        poly.reserve(spherenums);
+        for (const auto& pys : polys) {
+            for (const auto& p : pys) {
+                poly.emplace_back(p);
+            }
+        }
+        return SaveTriPolygonPointsToMesh(poly, radius, nrows, ncolumns);
+    }
 }
