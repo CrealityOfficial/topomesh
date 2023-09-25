@@ -978,7 +978,6 @@ namespace topomesh {
             }
         }
         std::queue<int> Queues;
-        std::vector<bool> flags(medges.size(), false);
         std::vector<int> pointStarts;
         std::multimap<int, int> pEdgeStartMap;
         std::multimap<int, int> pEdgeEndMap;
@@ -1000,55 +999,40 @@ namespace topomesh {
                 crossKnots.insert(v);
             }
         }
-        std::vector<int> crossPoints;
-        crossPoints.reserve(crossKnots.size());
+        int knotnums = crossKnots.size();
+        std::queue<int> crossPoints;
         //several sequentials about edges.
         std::vector<std::vector<int>> edgeRings;
         //second. begin to deal with crossKnots on sequential edges.
         if (!crossKnots.empty()) {
-            std::vector<std::vector<int>> starts, ends;
-            starts.reserve(crossKnots.size());
-            ends.reserve(crossKnots.size());
+            std::vector<bool> knotMarks(mpoints.size(), false);
+            std::queue<std::queue<int>> starts, ends;
             for (const auto& v : uniqueSets) {
                 if (crossKnots.count(v)) {
-                    crossPoints.emplace_back(v);
-                    std::vector<int> start, end;
+                    crossPoints.emplace(v);
+                    knotMarks[v] = true;
+                    std::queue<int> start, end;
                     auto range1 = pEdgeStartMap.equal_range(v);
                     for (auto itr = range1.first; itr != range1.second; ++itr) {
-                        start.emplace_back(itr->second);
+                        start.emplace(itr->second);
                     }
                     auto range2 = pEdgeEndMap.equal_range(v);
                     for (auto itr = range2.first; itr != range2.second; ++itr) {
-                        end.emplace_back(itr->second);
+                        end.emplace(itr->second);
                     }
-                    starts.emplace_back(start);
-                    ends.emplace_back(end);
+                    starts.emplace(start);
+                    ends.emplace(end);
                 }
             }
-            int lastKnot = -1;
+            //thrid. truncate sequential edges according to crossKnots.
+            std::queue<std::vector<int>> ringQueues;
             while (!Queues.empty()) {
                 if (crossPoints.empty()) break;
+                int currentKnot = crossPoints.front();
                 while (!Queues.empty()) {
                     if (!ends.front().empty()) {
-                        bool changeKnot = false;
-                        int currentKnot = crossPoints.front();
-                        std::vector<int> lasts = ends.front();
-                        if (currentKnot == lastKnot) {
-                            currentKnot = crossPoints.back();
-                            lasts = ends.back();
-                            changeKnot = true;
-                        }
                         int circles = 0;
                         int numSize = Queues.size();
-                        while (circles < numSize) {
-                            const auto& ef = Queues.front();
-                            if (medges[ef].b == currentKnot) {
-                                Queues.pop();
-                                break;
-                            }
-                            Queues.emplace(ef);
-                            Queues.pop();
-                        }
                         while (circles < numSize) {
                             const auto& ef = Queues.front();
                             if (medges[ef].a == currentKnot) {
@@ -1056,50 +1040,18 @@ namespace topomesh {
                             }
                             Queues.emplace(ef);
                             Queues.pop();
+                            ++circles;
                         }
-                        lastKnot = currentKnot;
                         const int fe = Queues.front();
-                        Queues.pop();
-                        const auto& a = mpoints[medges[fe].a];
-                        const auto& b = mpoints[medges[fe].b];
-                        const auto& dir1 = trimesh::normalized(b - a);
-
-                        float maxProject = -1.0f;
-                        int pos = -1, last = -1;
-                        for (int i = 0; i < lasts.size(); ++i) {
-                            const auto& e = lasts[i];
-                            const auto& c = mpoints[medges[e].a];
-                            const auto& dir2 = trimesh::normalized(c - a);
-                            if ((dir1 TRICROSS dir2).z > maxProject) {
-                                maxProject = (dir1 TRICROSS dir2).z;
-                                last = e;
-                                pos = i;
-                            }
-                        }
-                        if (flags[last]) {
-                            if (changeKnot) {
-                                ends.back().erase(ends.back().begin() + pos);
-                                starts.back().erase(starts.back().begin() + pos);
-                            } else {
-                                ends.front().erase(ends.front().begin() + pos);
-                                starts.front().erase(starts.front().begin() + pos);
-                            }
-                            continue;
-                        }
                         std::vector<int> current;
-                        current.emplace_back(last);
                         current.emplace_back(fe);
+                        Queues.pop();
                         int times = 0;
                         int count = Queues.size();
                         while (!Queues.empty()) {
-                            const int front = current.front();
                             const int back = current.back();
                             const int ef = Queues.front();
-                            if (medges[ef].b == medges[front].a) {
-                                current.insert(current.begin(), ef);
-                                Queues.pop();
-                                times = 0;
-                            } else if (medges[ef].a == medges[back].b) {
+                            if (medges[ef].a == medges[back].b) {
                                 current.emplace_back(ef);
                                 Queues.pop();
                                 times = 0;
@@ -1108,32 +1060,86 @@ namespace topomesh {
                                 Queues.emplace(ef);
                                 ++times;
                             }
-                            if (medges[front].a == medges[back].b) {
+                            if (knotMarks[medges[back].b]) {
                                 break;
                             }
                             if (times > count) {
                                 break;
                             }
                         }
-                        for (int i = 0; i < current.size(); ++i) {
-                            flags[current[i]] = true;
-                        }
-                        edgeRings.emplace_back(current);
-                        if (changeKnot) {
-                            ends.back().erase(ends.back().begin() + pos);
-                            starts.back().erase(starts.back().begin() + pos);
-                        } else {
-                            ends.front().erase(ends.front().begin() + pos);
-                            starts.front().erase(starts.front().begin() + pos);
-                        }
+                        ringQueues.emplace(current);
+                        ends.front().pop();
+                        starts.front().pop();
                     } else {
-                        starts.erase(starts.begin());
-                        ends.erase(ends.begin());
+                        ends.pop();
+                        starts.pop();
                         break;
                     }
                 }
-                crossPoints.erase(crossPoints.begin());
+                crossPoints.pop();
             }
+            int circles = 0;
+            int ringSize = ringQueues.size();
+            //forth. priority deal with closed edge sequences.
+            while (circles < ringSize) {
+                const auto& ring = ringQueues.front();
+                if (medges[ring.front()].a == medges[ring.back()].b) {
+                    edgeRings.emplace_back(ring);
+                    ringQueues.pop();
+                } else {
+                    ringQueues.emplace(ring);
+                    ringQueues.pop();
+                }
+                ++circles;
+            }
+            //fifth. connect with each other for unenclosed series by sequence.
+            ringSize = ringQueues.size();
+            while (!ringQueues.empty()) {
+                std::vector<std::vector<int>> current;
+                const auto& ring = ringQueues.front();
+                current.reserve(ringSize);
+                current.emplace_back(ring);
+                ringQueues.pop();
+                int times = 0;
+                int count = ringQueues.size();
+                while (!ringQueues.empty()) {
+                    const auto front = current.front().front();
+                    const auto back = current.back().back();
+                    const auto ef = ringQueues.front();
+                    const auto ef_front = ef.front();
+                    const auto ef_back = ef.back();
+                    if (medges[ef_back].b == medges[front].a) {
+                        current.insert(current.begin(), ef);
+                        ringQueues.pop();
+                        times = 0;
+                    } else if (medges[ef_front].a == medges[back].b) {
+                        current.emplace_back(ef);
+                        ringQueues.pop();
+                        times = 0;
+                    } else {
+                        ringQueues.pop();
+                        ringQueues.push(ef);
+                        ++times;
+                    }
+                    if (medges[front].a == medges[back].b) {
+                        break;
+                    }
+                    if (times > count) {
+                        break;
+                    }
+                }
+                int totalSize = 0;
+                std::vector<int> sequence;
+                for (const auto&  ring: current) {
+                    totalSize += ring.size();
+                }
+                sequence.reserve(totalSize);
+                for (const auto& ring : current) {
+                    sequence.insert(sequence.end(), ring.begin(), ring.end());
+                }
+                edgeRings.emplace_back(sequence);
+            }
+            
         }
         // other. there are no crossKnots on sequential edges.
         while (!Queues.empty()) {
