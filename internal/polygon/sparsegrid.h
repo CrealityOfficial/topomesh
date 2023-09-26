@@ -213,7 +213,7 @@ namespace topomesh
     SGI_TEMPLATE
         typename Point SGI_THIS::toLowerCorner(const GridPoint& location)  const
     {
-        return cxutil::Point(toLowerCoord(location.X), toLowerCoord(location.Y));
+        return topomesh::Point(toLowerCoord(location.X), toLowerCoord(location.Y));
     }
 
     SGI_TEMPLATE
