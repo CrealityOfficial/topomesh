@@ -211,13 +211,13 @@ namespace topomesh
     }
 
     SGI_TEMPLATE
-        typename Point SGI_THIS::toLowerCorner(const GridPoint& location)  const
+        Point SGI_THIS::toLowerCorner(const GridPoint& location)  const
     {
         return topomesh::Point(toLowerCoord(location.X), toLowerCoord(location.Y));
     }
 
     SGI_TEMPLATE
-        typename coord_t SGI_THIS::toLowerCoord(const grid_coord_t& grid_coord)  const
+        coord_t SGI_THIS::toLowerCoord(const grid_coord_t& grid_coord)  const
     {
         // This mapping via truncation results in the cells with
         // GridPoint.x==0 being twice as large and similarly for
