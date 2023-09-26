@@ -16,6 +16,7 @@
 
 #include "internal/polygon/intpoint.h"
 #include "internal/polygon/angledegrees.h"
+#include "ccglobal/tracer.h"
 
 #define CHECK_POLY_ACCESS
 #ifdef CHECK_POLY_ACCESS
@@ -1263,6 +1264,48 @@ namespace topomesh
          */
         PolygonsPart assemblePart(unsigned int part_idx) const;
     };
+
+    struct DLPLayer
+    {
+        ClipperLib::cInt printZ;     //!< The height at which this layer needs to be printed. Can differ from sliceZ due to the raft.
+        Polygons polygons;
+    };
+
+    class DLPDataImpl
+    {
+    public:
+        DLPDataImpl();
+        ~DLPDataImpl();
+
+        std::vector<DLPLayer> layersData;
+    };
+
+    struct LightOffCircle
+    {
+        ClipperLib::IntPoint point;
+        ClipperLib::cInt radius = 0;
+    };
+
+    class LightOffDebugger
+    {
+    public:
+        virtual void onIteration(const LightOffCircle& circle) = 0;
+    };
+
+    /*
+    calculate the pole of the polygons,and return pole radius and pole's coordinate.
+    @param polygons, the input Polygons.
+    @param result, the output circle centroid.
+    @param type, the algorithm selected to calculate the pole of the polygons.
+    for type=0, select QUARDTER_COVER;
+    for type=1, select REGIONAL_SAMPLE;
+    for type=2, select POISSON_SAMPLE;
+    for type=3, select INSCRIBED_CIRCLE;
+    */
+    ClipperLib::cInt lightOffDistance(const Polygons& polygons, Point& result, const int type = 1);
+
+    ClipperLib::cInt lightOffDistance(const Polygons& polygons, LightOffCircle& result,
+        LightOffDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 }//namespace cxutil
 
 #endif//CX_UTILS_POLYGON_H

@@ -5,6 +5,7 @@
 
 #include "linearalg2d.h" // pointLiesOnTheRightOfLine
 #include "listpolyit.h"
+#include "polygonpole.h"
 
 #include <fstream>
 #include <sstream>
@@ -1342,4 +1343,68 @@ namespace topomesh
 		ifs.close();
 		return true;
 	}
+
+    DLPDataImpl::DLPDataImpl()
+    {
+
+    }
+
+    DLPDataImpl::~DLPDataImpl()
+    {
+
+    }
+
+    ClipperLib::cInt lightOffDistance(const Polygons& polygons, Point& result, const int type)
+    {
+        if (polygons.empty()) return 0;
+        polygonPole::Cell<double> optimalCell;
+        const double precision = 1.0;
+        polygonPole::poleAlgo algo_type = polygonPole::poleAlgo(type);
+        std::vector<PolygonsPart> parts = polygons.splitIntoParts();
+        for (auto& part : parts) {
+            polygonPole::Polygon<double> polys;
+            for (auto& path : part.paths) {
+                polygonPole::Ring<double> poly;
+                for (auto& pt : path) {
+                    polygonPole::Point2D<double> p(pt.X, pt.Y);
+                    poly.points.push_back(p);
+                }
+                polys.rings.push_back(poly);
+            }
+            auto cell = polygonPole::sdPolygonPole(polys, precision, algo_type);
+            if (cell.d > optimalCell.d) {
+                optimalCell = cell;
+                result.X = cell.c.x;
+                result.Y = cell.c.y;
+            }
+        }
+        return optimalCell.d;
+    }
+
+    ClipperLib::cInt lightOffDistance(const Polygons& polygons, LightOffCircle& result,
+        LightOffDebugger* debugger, ccglobal::Tracer* tracer)
+    {
+        if (polygons.empty()) return 0;
+        polygonPole::Cell<double> optimalCell;
+        std::vector<PolygonsPart> parts = polygons.splitIntoParts();
+        for (auto& part : parts) {
+            LightOffCircle circle;
+            polygonPole::Polygon<double>polys;
+            for (auto& path : part.paths) {
+                polygonPole::Ring<double> poly;
+                for (auto& pt : path) {
+                    polygonPole::Point2D<double> p(pt.X, pt.Y);
+                    poly.points.push_back(p);
+                }
+                polys.rings.push_back(poly);
+            }
+            auto cell = polygonPole::GetIterationCircles(polys, circle, debugger, tracer);
+            if (cell.d > optimalCell.d) {
+                optimalCell = cell;
+                result = circle;
+            }
+        }
+        return optimalCell.d;
+    }
+
 }//namespace cxutil
