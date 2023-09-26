@@ -2,6 +2,7 @@
 #define CX_D_DLPSLICER_1602646711722_H
 #include "topomesh/interface/dlpdata.h"
 #include "trimesh2/TriMesh.h"
+#include <memory>
 #include "ccglobal/tracer.h"
 
 namespace topomesh
