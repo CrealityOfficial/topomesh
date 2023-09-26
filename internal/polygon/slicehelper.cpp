@@ -1,5 +1,5 @@
 #include "slicehelper.h"
-#include "polygonlib.h"
+#include "polygonLib.h"
 #include "point3.h"
 #include "coord_t.h"
 #include "linearalg2d.h"
