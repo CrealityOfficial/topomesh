@@ -6,7 +6,7 @@
 
 namespace topomesh
 {
-    bool dumplicateMesh(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer = nullptr, const float& ratio = 0.3f);
+    bool dumplicateMesh(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer = nullptr, const float& ratio = 1.0f);
 }
 
 #endif // MMESH_MNODE_DUMPLICATE_1622032440408_H

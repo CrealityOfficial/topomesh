@@ -736,8 +736,7 @@ namespace topomesh {
                         newmesh->faces.push_back(trimesh::TriMesh::Face(pointmesh1->faces[fi][0] + vertexsize, pointmesh1->faces[fi][1] + vertexsize, pointmesh1->faces[fi][2] + vertexsize));
 
                 }
-#endif
-                             
+#endif               
                 JointBotMesh(trimesh,newmesh.get(), bottomFaces);
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
@@ -1011,7 +1010,8 @@ namespace topomesh {
         }
         trimesh::remove_faces(mesh, deletefaces);
         trimesh::remove_unused_vertices(mesh);
-
+             
+       
         std::vector<std::vector<trimesh::point>> sequentials = GetOpenMeshBoundarys(*newmesh);
         std::vector<std::vector<std::vector<trimesh::vec2>>> polygon(1, std::vector<std::vector<trimesh::vec2>>(sequentials.size(), std::vector<trimesh::vec2>()));
         for (int i = 0; i < sequentials.size(); i++)
@@ -1046,6 +1046,7 @@ namespace topomesh {
             newmesh->vertices.push_back(resultmesh->vertices[vi]);
         for (int fi = 0; fi < resultmesh->faces.size(); fi++)
             newmesh->faces.push_back(trimesh::TriMesh::Face(resultmesh->faces[fi][0] + vertexsize, resultmesh->faces[fi][1] + vertexsize, resultmesh->faces[fi][2] + vertexsize));
+        int resulrfacesize = newmesh->faces.size();
 
         vertexsize = newmesh->vertices.size();
         for (int vi = 0; vi < mesh->vertices.size(); vi++)
@@ -1055,11 +1056,23 @@ namespace topomesh {
       
         dumplicateMesh(newmesh);
 
-        newmesh->need_across_edge();       
+        //newmesh->write("step1.stl");
+      
+        newmesh->need_across_edge();
+        newmesh->clear_neighbors();
+        newmesh->need_neighbors();
         newmesh->clear_adjacentfaces();
         newmesh->need_adjacentfaces();
-       
-        std::vector<trimesh::ivec3> newfaces;
+
+        std::vector<bool> is_boundarys(newmesh->vertices.size(),false);      
+        for (int vi = 0; vi < newmesh->vertices.size(); vi++)
+        {
+            if (newmesh->adjacentfaces[vi].size() == newmesh->neighbors[vi].size()-1)
+                is_boundarys[vi] = true;          
+        }
+
+        std::vector<bool> is_vis(newmesh->vertices.size(), false);      
+
         std::vector<bool> deleteface1(newmesh->faces.size(), false);
         for (int fi = 0; fi < facesize; fi++)
         {
@@ -1076,16 +1089,85 @@ namespace topomesh {
             if (is_boundary)
             {
                 deleteface1[fi] = true;                              
-                int oppovertex = (fii + 1) % 3;
+                int oppovertex = fii;
+                trimesh::point fn = (newmesh->vertices[newmesh->faces[fi][1]] - newmesh->vertices[newmesh->faces[fi][0]]) %
+                    (newmesh->vertices[newmesh->faces[fi][2]] - newmesh->vertices[newmesh->faces[fi][0]]);
+                trimesh::normalize(fn);
+                int beginindex = newmesh->faces[fi][(oppovertex+1)%3];
+                /*if (fi == 231)
+                    std::cout << "\n";*/
+                std::vector<int> vertexlines;
+                int vsize = vertexlines.size();
+                for (int vi = 0; vi < newmesh->neighbors[beginindex].size(); vi++)
+                {
+                    int index = newmesh->neighbors[beginindex][vi];
+                    if (index == newmesh->faces[fi][(oppovertex + 2) % 3]) continue;
+                    if (is_boundarys[index] && !is_vis[index])
+                    {
+                        trimesh::point tn = (newmesh->vertices[index] - newmesh->vertices[beginindex]) %
+                            (newmesh->vertices[newmesh->faces[fi][oppovertex]]-newmesh->vertices[beginindex]);
+                        trimesh::normalize(tn);
+                        if (std::fabs(tn.x - fn.x) <= 1e-4f && std::fabs(tn.y - fn.y) <= 1e-4f && std::fabs(tn.z - fn.z) <= 1e-4f)
+                        {
+                            /*if(newmesh->neighbors[beginindex][vi]==9618)
+                                std::cout << "\n";*/
+                            vertexlines.push_back(newmesh->neighbors[beginindex][vi]); 
+                            is_vis[newmesh->neighbors[beginindex][vi]] = true;
+                            break;
+                        }
+                    }
+                }
+                while (vsize != vertexlines.size())
+                {
+                    vsize = vertexlines.size();
+                    int index = vertexlines.back();
+                    bool is_break = false;
+                    if (index == newmesh->faces[fi][(oppovertex + 2) % 3]) break;
+                    for (int vi = 0; vi < newmesh->neighbors[index].size(); vi++)
+                    {
+                        if (newmesh->neighbors[index][vi] == newmesh->faces[fi][(oppovertex + 2) % 3])
+                        {
+                            is_break = true;
+                            break;
+                        }
+                    }
+                    if (is_break)
+                        break;
+                    for (int vi = 0; vi < newmesh->neighbors[index].size(); vi++)
+                    {                      
+                        if (is_boundarys[newmesh->neighbors[index][vi]] && !is_vis[newmesh->neighbors[index][vi]])
+                        {
+                           /* if (newmesh->neighbors[index][vi] == 9618)
+                                std::cout << "\n";*/
+                            trimesh::point tn = (newmesh->vertices[newmesh->neighbors[index][vi]] - newmesh->vertices[beginindex]) %
+                                (newmesh->vertices[newmesh->faces[fi][oppovertex]] - newmesh->vertices[beginindex]);
+                            trimesh::normalize(tn);
+                            if (std::fabs(tn.x - fn.x) <= 1e-4f && std::fabs(tn.y - fn.y) <= 1e-4f && std::fabs(tn.z - fn.z) <= 1e-4f)
+                            {
+                                vertexlines.push_back(newmesh->neighbors[index][vi]);
+                                is_vis[newmesh->neighbors[index][vi]] = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+                if (vertexlines.empty()) 
+                    continue;
 
+                newmesh->faces.push_back(trimesh::ivec3(newmesh->faces[fi][oppovertex], newmesh->faces[fi][(oppovertex+1)%3], vertexlines[0]));
+                for (int ii = 0; ii < vertexlines.size() - 1; ii++)
+                {
+                    newmesh->faces.push_back(trimesh::ivec3(newmesh->faces[fi][oppovertex], vertexlines[ii], vertexlines[ii+1]));
+                }
+                newmesh->faces.push_back(trimesh::ivec3(newmesh->faces[fi][oppovertex], vertexlines.back(),newmesh->faces[fi][(oppovertex + 2) % 3]));
             }
         }
-       /* int beginsize = deleteface1.size();
+        int beginsize = deleteface1.size();
         for (int fi = beginsize; fi < newmesh->faces.size(); fi++)
             deleteface1.push_back(false);
 
         trimesh::remove_faces(newmesh, deleteface1);
-        trimesh::remove_unused_vertices(newmesh);*/
+        trimesh::remove_unused_vertices(newmesh);
         
        
 
@@ -1102,9 +1184,9 @@ namespace topomesh {
             {         
                 newmesh->faces.push_back(result[fi]);
             }
-        }*/     
+        }*/           
 #endif
-        newmesh->write("newmesh.ply");
+       // newmesh->write("newmesh.stl");
     }
 
 

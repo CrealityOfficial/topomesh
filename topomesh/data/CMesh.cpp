@@ -69,7 +69,7 @@ namespace topomesh {
         }
         fid.close();
         size_t facenums = 0;
-        if (format == "ascii")//ÅÐ¶Ï¸ñÊ½
+        if (format == "ascii")//ï¿½Ð¶Ï¸ï¿½Ê½
         {
             // ReadASCII
             fid.open(filename, std::ios::in);
@@ -132,13 +132,13 @@ namespace topomesh {
             for (size_t i = 0; i < facenums; ++i) {
                 float pdata[12];
                 fid.read(reinterpret_cast<char*>(&pdata), sizeof(float) * 12);
-                //¶ÁÈ¡·¨ÏòÁ¿ÐÅÏ¢
+                //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
                 float* pbuffer = pdata;
                 for (size_t j = 0; j < 3; ++j) {
                     mnorms[i][j] = *pbuffer;
                     ++pbuffer;
                 }
-                //¶ÁÈ¡Èý¸ö¶¥µã×ø±ê
+                //ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
                 for (size_t j = 0; j < 3; ++j) {
                     for (size_t k = 0; k < 3; ++k) {
                         mpoints[3 * i + j][k] = *pbuffer;
@@ -166,14 +166,14 @@ namespace topomesh {
         originPts.swap(mpoints);
         originFs.swap(mfaces);
         Clear();
-        //¶¨ÒåµãµÄ¹þÏ£º¯Êý
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Ä¹ï¿½Ï£ï¿½ï¿½ï¿½ï¿½
         struct PointHash {
             int operator()(const PPoint& p) const
             {
                 return (int(p.x * 99971)) ^ (int(p.y * 99989) << 2) ^ (int(p.z * 99991) << 3);
             }
         };
-        //ÅÐ¶¨Á½¸öµãÊÇ·ñÏàÍ¬
+        //ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Í¬
         struct PointEqual {
             bool operator()(const PPoint& p1, const PPoint& p2) const
             {
@@ -225,25 +225,25 @@ namespace topomesh {
         }
         //https://blog.csdn.net/kxh123456/article/details/105814498/
         if (bBinary) {
-            //¶þ½øÖÆÐ´ÈëÎÄ¼þ
+            //ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð´ï¿½ï¿½ï¿½Ä¼ï¿½
             std::ofstream fs(std::string(filename) + "_bin.stl", std::ios::binary | std::ios::trunc);
             if (!fs) { fs.close(); return false; }
             int intSize = sizeof(int);
             int floatSize = sizeof(float);
-            // ÎÄ¼þÍ·
+            // ï¿½Ä¼ï¿½Í·
             char fileHead[3];
             for (int i = 0; i < 3; ++i) {
                 fileHead[i] = ' ';
             }
             fs.write(fileHead, sizeof(char) * 3);
-            // ¸½¼ÓÐÅÏ¢
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï¢
             char fileInfo[77];
             for (int i = 0; i < 77; ++i)
                 fileInfo[i] = ' ';
             fs.write(fileInfo, sizeof(char) * 77);
-            // ÃæµÄ¸öÊý
+            // ï¿½ï¿½Ä¸ï¿½ï¿½ï¿½
             fs.write((char*)(&face_num), intSize);
-            // µãÁÐ±í£¬ÃæÁÐ±í
+            // ï¿½ï¿½ï¿½Ð±ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð±ï¿½
             char a[2];
             int a_size = sizeof(char) * 2;
             for (int i = 0; i < face_num; ++i) {
@@ -253,11 +253,11 @@ namespace topomesh {
                 float nx = mnorms[i].x;
                 float ny = mnorms[i].y;
                 float nz = mnorms[i].z;
-                //±£´æ·¨ÏòÁ¿
+                //ï¿½ï¿½ï¿½æ·¨ï¿½ï¿½ï¿½ï¿½
                 fs.write((char*)(&nx), floatSize);
                 fs.write((char*)(&ny), floatSize);
                 fs.write((char*)(&nz), floatSize);
-                // ±£´æ¶¥µã
+                // ï¿½ï¿½ï¿½æ¶¥ï¿½ï¿½
                 float p0x = mpoints[pIndex0].x;
                 float p0y = mpoints[pIndex0].y;
                 float p0z = mpoints[pIndex0].z;
@@ -283,9 +283,9 @@ namespace topomesh {
             fs.close();
             return true;
         } else {
-            //mpoints:Ä£ÐÍ¶¥µã
-            //faces_:Èý½ÇÃæÆ¬
-            //mnorms:·¨Ïß
+            //mpoints:Ä£ï¿½Í¶ï¿½ï¿½ï¿½
+            //faces_:ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Æ¬
+            //mnorms:ï¿½ï¿½ï¿½ï¿½
             if (face_num <= 1e6) {
                 std::ofstream fs(std::string(filename) + "_ast.stl");
                 if (!fs) { fs.close(); return false; }
@@ -308,15 +308,15 @@ namespace topomesh {
                 fs.close();
                 return true;
             }
-            //Õë¶Ô´óÄ£ÐÍ·Ö¿é¶ÁÈ¡£¬¶àÏß³Ì¼ÓËÙ¶ÁÈ¡
-            const int block_size = 10000; // Ã¿¸ö¿é°üº¬µÄÈý½ÇÐÎÊýÁ¿
-            const int num_threads = 8;     // Ê¹ÓÃµÄÏß³ÌÊý
+            //ï¿½ï¿½Ô´ï¿½Ä£ï¿½Í·Ö¿ï¿½ï¿½È¡ï¿½ï¿½ï¿½ï¿½ï¿½ß³Ì¼ï¿½ï¿½Ù¶ï¿½È¡
+            const int block_size = 10000; // Ã¿ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
+            const int num_threads = 8;     // Ê¹ï¿½Ãµï¿½ï¿½ß³ï¿½ï¿½ï¿½
             const int num_blocks = (face_num + block_size - 1) / block_size;
-            // ´´½¨Êä³öÎÄ¼þ
+            // ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ä¼ï¿½
             std::ofstream of(std::string(filename) + "_ast.stl", std::ios::trunc);
             of << "solid ASCII_STL\n";
             of.close();
-            // ·Ö¿éÐ´ÈëÊý¾Ý
+            // ï¿½Ö¿ï¿½Ð´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             std::vector<std::thread> threads(num_threads);
             std::mutex mutex;
             std::condition_variable cv;
@@ -359,11 +359,11 @@ namespace topomesh {
                     }
                 });
             }
-            // µÈ´ýËùÓÐÏß³ÌÍê³É
+            // ï¿½È´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ß³ï¿½ï¿½ï¿½ï¿½
             for (auto& thread : threads) {
                 thread.join();
             }
-            // Ð´ÈëÎÄ¼þÎ²
+            // Ð´ï¿½ï¿½ï¿½Ä¼ï¿½Î²
             out << "endsolid ASCII_STL\n";
             out.close();
             return true;
@@ -559,7 +559,7 @@ namespace topomesh {
             const auto& n = (p2 - p1).cross(p0 - p1);
             mnorms.emplace_back(std::move(n));
         }
-        //std::transformÕë¶Ô´óÁ¿Êý¾ÝÓÐ¼ÓËÙÐ§Ó¦
+        //std::transformï¿½ï¿½Ô´ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ð¼ï¿½ï¿½ï¿½Ð§Ó¦
         if (calculateArea) {
             mareas.reserve(facenums);
             for (const trimesh::vec3& n : mnorms) {
@@ -693,17 +693,17 @@ namespace topomesh {
 
     void CMesh::GenerateFaceEdgeAdjacency2(bool bGenerateEdgeFaceAdjacency, bool bGenerateEgdeLength)
     {
-        //±ÜÃâindexs±»¸Ä±ä
+        //ï¿½ï¿½ï¿½ï¿½indexsï¿½ï¿½ï¿½Ä±ï¿½
         std::vector<FFace> indexs(mfaces.begin(), mfaces.end());
         const size_t facenums = indexs.size();
-        //¶¨Òå±ßµÄ¹þÏ£º¯Êý
+        //ï¿½ï¿½ï¿½ï¿½ßµÄ¹ï¿½Ï£ï¿½ï¿½ï¿½ï¿½
         struct EEdgeHash {
             size_t operator()(const EEdge& e) const
             {
                 return int((e.a * 99989)) ^ (int(e.b * 99991) << 2);
             }
         };
-        //ÅÐ¶¨Á½Ìõ±ßÊÇ·ñÏàÍ¬
+        //ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Í¬
         struct EEdgeEqual {
             bool operator()(const EEdge& e1, const EEdge& e2) const
             {
@@ -719,7 +719,7 @@ namespace topomesh {
             elist.reserve(3);
             auto& vertexs = indexs[i];
             std::sort(vertexs.begin(), vertexs.end());
-            // µÚ1 2Ìõ±ß
+            // ï¿½ï¿½1 2ï¿½ï¿½ï¿½ï¿½
             for (size_t j = 0; j < 2; ++j) {
                 EEdge e(vertexs[j], vertexs[j + 1]);
                 const auto & itr = edgeIndexMap.find(e);
@@ -733,7 +733,7 @@ namespace topomesh {
                     elist.emplace_back(edgeIndex);
                 }
             }
-            // µÚ3Ìõ±ß
+            // ï¿½ï¿½3ï¿½ï¿½ï¿½ï¿½
             EEdge e(vertexs[0], vertexs[2]);
             const auto& itr = edgeIndexMap.find(e);
             if (itr != edgeIndexMap.end()) {
@@ -813,7 +813,7 @@ namespace topomesh {
             }
         }
 
-        // ÕÒµ½×î´óµÄÆ½Ãæ
+        // ï¿½Òµï¿½ï¿½ï¿½ï¿½ï¿½Æ½ï¿½ï¿½
         double maxArea = 0.0f;
         std::vector<int> resultFaces;
         for (auto& fs : selectFaces) {
@@ -871,14 +871,14 @@ namespace topomesh {
             GenerateFaceNormals();
             return;
         }
-        //¶¨ÒåµãµÄ¹þÏ£º¯Êý
+        //ï¿½ï¿½ï¿½ï¿½ï¿½Ä¹ï¿½Ï£ï¿½ï¿½ï¿½ï¿½
         struct PPointHash {
             size_t operator()(const PPoint& p) const
             {
                 return (int(p.x * 99971)) ^ (int(p.y * 99989) << 2) ^ (int(p.z * 99991) << 3);
             }
         };
-        //ÅÐ¶¨Á½¸öµãÊÇ·ñÏàÍ¬
+        //ï¿½Ð¶ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ç·ï¿½ï¿½ï¿½Í¬
         struct PPointEqual {
             bool operator()(const PPoint& p1, const PPoint& p2) const
             {
@@ -1067,14 +1067,23 @@ namespace topomesh {
                                 break;
                             }
                         }
-                        ringQueues.emplace(current);
-                        ends.front().pop();
-                        starts.front().pop();
+                        for (int i = 0; i < current.size(); ++i) {
+                            flags[current[i]] = true;
+                        }
+                        edgeRings.emplace_back(current);
+                        if (changeKnot) {
+                            ends.back().erase(ends.back().begin() + pos);
+                            starts.back().erase(starts.back().begin() + pos);
+                        } else {
+                            ends.front().erase(ends.front().begin() + pos);
+                            starts.front().erase(starts.front().begin() + pos);
+                        }
+                        
                     } else {
                         ends.pop();
                         starts.pop();
                         break;
-                    }
+                    }                   
                 }
                 crossPoints.pop();
             }
@@ -1224,7 +1233,7 @@ namespace topomesh {
             points.emplace_back(p.x, p.y, p.z - radius);
             const auto & maxInx = points.size() - 1;
             const auto & v0 = k * nums;
-            //ÉÏÏÂµ×²¿Á½²¿·Ö
+            //ï¿½ï¿½ï¿½Âµ×²ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½
             for (size_t i = 0; i < ncolumns; ++i) {
                 const auto& i0 = i + 1 + v0;
                 const auto& i1 = (i + 1) % ncolumns + 1 + v0;
@@ -1233,7 +1242,7 @@ namespace topomesh {
                 const auto & j1 = i1 + (nrows - 1) * ncolumns;
                 pointMesh.AddFace(j1, j0, maxInx);
             }
-            //ÖÐ¼ä²¿·Ö
+            //ï¿½Ð¼ä²¿ï¿½ï¿½
             for (size_t i = 0; i < nrows - 1; ++i) {
                 const auto& j0 = i * ncolumns + 1 + v0;
                 const auto& j1 = (i + 1) * ncolumns + 1 + v0;

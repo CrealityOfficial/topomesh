@@ -49,7 +49,7 @@ namespace topomesh
     };
 
     template<class T>
-    bool hashMesh(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer, float ratio = 0.30f)
+    bool hashMesh(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer, float ratio = 1.0f)
     {
         if (!mesh)
             return false;
@@ -65,10 +65,15 @@ namespace topomesh
         struct equal_vec3 {
             bool operator()(const trimesh::vec3& v1, const trimesh::vec3& v2) const
             {
-                return v1.x == v2.x && v1.y == v2.y && v1.z == v2.z;
+                auto f = [&](float a, float b){
+                    return std::fabs(a - b) < 2e-4f;
+                };
+                return f(v1.x, v2.x) && f(v1.y, v2.y) &&f( v1.z , v2.z);
             }
         };
-        typedef std::unordered_map<trimesh::vec3, int, T, equal_vec3> unique_point;
+       
+
+        typedef std::unordered_map<trimesh::vec3, size_t, T, equal_vec3> unique_point;
         typedef typename unique_point::value_type unique_value;
         unique_point points((int)(vertexNum * ratio) + 1);
 
@@ -92,7 +97,9 @@ namespace topomesh
             pVertex = vertexNum;
 
         for (size_t i = 0; i < vertexNum; ++i) {
-            trimesh::point p = mesh->vertices.at(i);
+            if (i == 10429)
+                std::cout << "\n";
+            trimesh::vec3 p = mesh->vertices.at(i);
             auto it = points.find(p);
             if (it != points.end()) {
                 int index = (*it).second;
