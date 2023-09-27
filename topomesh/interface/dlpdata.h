@@ -2,6 +2,7 @@
 #define TOPOMESH_CXSW_DLPDATA_1593762618888_H
 #include "topomesh/interface.h"
 #include "trimesh2/Vec.h"
+#include "ccglobal/serial.h"
 #include <vector>
 
 namespace topomesh
@@ -25,7 +26,7 @@ namespace topomesh
 	};
 
 	class DLPDataImpl;
-	class TOPOMESH_API DLPData
+	class TOPOMESH_API DLPData : public ccglobal::Serializeable
 	{
 		friend class DLPSlicer;
 	public:
@@ -39,8 +40,10 @@ namespace topomesh
 		std::vector<std::vector<trimesh::vec2>> traitPolys(int layer) const;
 
 		void calculateVolumeAreas(SliceInfo& info) const;
-		//ClipperLib::PolyTree* layerData(int layer) const;
 
+		int version() override;
+		bool save(std::fstream& out, ccglobal::Tracer* tracer) override;
+		bool load(std::fstream& in, int ver, ccglobal::Tracer* tracer) override;
 	protected:
 		DLPDataImpl* impl;
 	};

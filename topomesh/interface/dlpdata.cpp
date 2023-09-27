@@ -194,4 +194,46 @@ namespace topomesh
 
 		info.volume = volume;
 	}
+
+	int DLPData::version()
+	{
+		return 0;
+	}
+
+	bool DLPData::save(std::fstream& out, ccglobal::Tracer* tracer)
+	{
+		int count = (int)impl->layersData.size();
+		ccglobal::cxndSaveT(out, count);
+
+		for (int i = 0; i < count; ++i)
+		{
+			const DLPLayer& l = impl->layersData.at(i);
+			ccglobal::cxndSaveT(out, l.printZ);
+			ccglobal::cxndSaveVectorT(out, l.polygons.paths);
+		}
+		return true;
+	}
+
+	bool DLPData::load(std::fstream& in, int ver, ccglobal::Tracer* tracer)
+	{
+		if (ver == 0)
+		{
+			int count = 0;
+			ccglobal::cxndLoadT(in, count);
+
+			if (count > 0)
+			{
+				impl->layersData.resize(count);
+				for (int i = 0; i < count; ++i)
+				{
+					DLPLayer& l = impl->layersData.at(i);
+					ccglobal::cxndLoadT(in, l.printZ);
+					ccglobal::cxndLoadVectorT(in, l.polygons.paths);
+				}
+			}
+			return true;
+		}
+
+		return false;
+	}
 }
