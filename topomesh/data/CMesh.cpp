@@ -1067,17 +1067,9 @@ namespace topomesh {
                                 break;
                             }
                         }
-                        for (int i = 0; i < current.size(); ++i) {
-                            flags[current[i]] = true;
-                        }
-                        edgeRings.emplace_back(current);
-                        if (changeKnot) {
-                            ends.back().erase(ends.back().begin() + pos);
-                            starts.back().erase(starts.back().begin() + pos);
-                        } else {
-                            ends.front().erase(ends.front().begin() + pos);
-                            starts.front().erase(starts.front().begin() + pos);
-                        }
+                        ringQueues.emplace(current);
+                        ends.front().pop();
+                        starts.front().pop();
                         
                     } else {
                         ends.pop();

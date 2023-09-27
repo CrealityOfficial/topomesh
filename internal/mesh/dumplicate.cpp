@@ -49,7 +49,7 @@ namespace topomesh
     };
 
     template<class T>
-    bool hashMesh(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer, float ratio = 1.0f)
+    bool hashMesh(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer, float ratio = 0.3f)
     {
         if (!mesh)
             return false;
