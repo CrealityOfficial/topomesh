@@ -7,6 +7,7 @@
 #include <vector>
 #include <assert.h>
 #include <float.h>
+#include <fstream>
 
 #include <algorithm>    // std::reverse, fill_n array
 #include <limits> // int64_t.min
@@ -599,6 +600,9 @@ namespace topomesh
     public:
         ClipperLib::Paths paths;
     public:
+        void save(std::fstream& out) const;
+        void load(std::fstream& in);
+
         unsigned int size() const
         {
             return paths.size();

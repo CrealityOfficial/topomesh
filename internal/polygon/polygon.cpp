@@ -10,6 +10,7 @@
 #include <fstream>
 #include <sstream>
 #include <iomanip>
+#include "ccglobal/serial.h"
 
 namespace topomesh
 {
@@ -77,6 +78,26 @@ namespace topomesh
         clipper.AddPath(*other.path, ClipperLib::ptClip, true);
         clipper.Execute(ClipperLib::ctIntersection, ret.paths);
         return ret;
+    }
+
+    void Polygons::save(std::fstream& out) const
+    {
+        int size = (int)paths.size();
+        ccglobal::cxndSaveT(out, size);
+        for(int i = 0; i < size; ++i)
+            ccglobal::cxndSaveVectorT(out, paths.at(i));
+    }
+
+    void Polygons::load(std::fstream& in)
+    {
+        int size = (int)paths.size();
+        ccglobal::cxndLoadT(in, size);
+        if (size > 0)
+        {
+            paths.resize(size);
+            for (int i = 0; i < size; ++i)
+                ccglobal::cxndLoadVectorT(in, paths.at(i));
+        }
     }
 
     bool Polygons::empty() const

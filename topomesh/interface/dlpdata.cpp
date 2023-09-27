@@ -209,7 +209,7 @@ namespace topomesh
 		{
 			const DLPLayer& l = impl->layersData.at(i);
 			ccglobal::cxndSaveT(out, l.printZ);
-			ccglobal::cxndSaveVectorT(out, l.polygons.paths);
+			l.polygons.save(out);
 		}
 		return true;
 	}
@@ -228,7 +228,7 @@ namespace topomesh
 				{
 					DLPLayer& l = impl->layersData.at(i);
 					ccglobal::cxndLoadT(in, l.printZ);
-					ccglobal::cxndLoadVectorT(in, l.polygons.paths);
+					l.polygons.load(in);
 				}
 			}
 			return true;
