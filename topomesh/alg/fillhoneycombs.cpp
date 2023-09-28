@@ -1055,9 +1055,10 @@ namespace topomesh {
             newmesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][0] + vertexsize, mesh->faces[fi][1] + vertexsize, mesh->faces[fi][2] + vertexsize));
         //newmesh->write("step1.stl");
         //newmesh->vertices[9421] = trimesh::vec3(newmesh->vertices[9421].x, newmesh->vertices[9421].y+0.000001, newmesh->vertices[9421].z);
-        dumplicateMesh(newmesh);
+        dumplicateMesh2(newmesh,nullptr,0.3f,2e-3f);
+        //dumplicateMesh(newmesh, nullptr, 0.3f, 1e-4f);
 #endif
-        //newmesh->write("step2.stl");
+        newmesh->write("step2.stl");
       
         newmesh->need_across_edge();
         newmesh->clear_neighbors();
@@ -1095,8 +1096,8 @@ namespace topomesh {
                     (newmesh->vertices[newmesh->faces[fi][2]] - newmesh->vertices[newmesh->faces[fi][0]]);
                 trimesh::normalize(fn);
                 int beginindex = newmesh->faces[fi][(oppovertex+1)%3];
-                /*if (fi == 231)
-                    std::cout << "\n";*/
+                if (fi == 370)
+                    std::cout << "\n";
                 std::vector<int> vertexlines;
                 int vsize = vertexlines.size();
                 for (int vi = 0; vi < newmesh->neighbors[beginindex].size(); vi++)
@@ -1170,16 +1171,7 @@ namespace topomesh {
         trimesh::remove_faces(newmesh, deleteface1);
         trimesh::remove_unused_vertices(newmesh);
         
-        std::vector<std::vector<trimesh::point>> sequentials3 = GetOpenMeshBoundarys(*newmesh);
-        trimesh::TriMesh* ppmesh = new trimesh::TriMesh();
-        for (int i = 0; i < sequentials3.size(); i++)
-        {
-            for (int j = 0; j < sequentials3[i].size(); j++)
-            {
-                ppmesh->vertices.push_back(sequentials3[i][j]);
-            }
-        }
-        ppmesh->write("ppmesh.ply");
+       
        /* std::vector<std::vector<int>> sequentialsindex;
         getTriMeshBoundarys(*newmesh,sequentialsindex);
         for (int i = 0; i < sequentialsindex.size(); i++)

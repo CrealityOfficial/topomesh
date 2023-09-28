@@ -96,9 +96,12 @@ namespace topomesh
 
         for (size_t i = 0; i < vertexNum; ++i) {
             trimesh::vec3 p = mesh->vertices.at(i);
+            if (p.x<24.09f&&p.x>24.08f&&p.y<21.671f&&p.y>21.66f)
+                std::cout << "\n";
             auto it = points.find(p);
             if (it != points.end()) {
-                int index = (*it).second;
+
+                int index = (*it).second;               
                 vertexMapper.at(i) = index;
             }
             else {
@@ -270,5 +273,10 @@ namespace topomesh
 
         delete omesh;
         return true;
+    }
+
+    bool dumplicateMesh2(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer, float ratio, float eps)
+    {
+        return hashMesh(mesh, hash_func4(), tracer, ratio, eps);
     }
 }
