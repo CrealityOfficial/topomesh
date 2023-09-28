@@ -45,7 +45,7 @@ namespace topomesh
     struct hash_func2 {
         size_t operator()(const trimesh::vec3& v)const
         {          
-            size_t r = (int(v.x * 99971)) ^ (int(v.y * 99989) << 1) ^ (int(v.z * 99991) << 2);
+            size_t r = (int(v.x * 99971)) ^ (int(v.y * 99989) << 2) ^ (int(v.z * 99991) << 3);
             return r;
         }
     };
@@ -96,8 +96,6 @@ namespace topomesh
 
         for (size_t i = 0; i < vertexNum; ++i) {
             trimesh::vec3 p = mesh->vertices.at(i);
-            if (p.x<24.09f&&p.x>24.08f&&p.y<21.671f&&p.y>21.66f)
-                std::cout << "\n";
             auto it = points.find(p);
             if (it != points.end()) {
 
