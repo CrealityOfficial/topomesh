@@ -1,5 +1,6 @@
 #include "dumplicate.h"
 #include "trimesh2/TriMesh_algo.h"
+#include <unordered_set>
 #include <map>
 
 namespace topomesh
@@ -248,17 +249,25 @@ namespace topomesh
         }
 
         omesh->faces = mesh->faces;
+        std::vector<bool> toremove(faceNum, false);
         for (size_t i = 0; i < faceNum; ++i) {
+            std::unordered_set<int> face;
             trimesh::TriMesh::Face& of = omesh->faces.at(i);
             for (int j = 0; j < 3; ++j) {
                 int index = of[j];
                 of[j] = vertexMapper[index];
+                face.insert(of[j]);
+            }
+            if (face.size() < 3) {
+                toremove[i] = true;
             }
         }
 
         mesh->vertices.swap(omesh->vertices);
         mesh->faces.swap(omesh->faces);
         mesh->flags.clear();
+        trimesh::remove_faces(mesh, toremove);
+        trimesh::remove_unused_vertices(mesh);
 
         if (needScale)
             trimesh::apply_xform(mesh, trimesh::xform::scale(1.0f / sValue));
