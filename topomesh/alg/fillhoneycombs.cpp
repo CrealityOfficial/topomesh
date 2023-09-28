@@ -912,7 +912,7 @@ namespace topomesh {
         }
         trimesh::remove_faces(mesh, deletefaces);
         trimesh::remove_unused_vertices(mesh);
-
+        int facesize = newmesh->faces.size();
         int vertexsize = newmesh->vertices.size();
         for (int vi = 0; vi < mesh->vertices.size(); vi++)
             newmesh->vertices.push_back(mesh->vertices[vi]);
@@ -1053,10 +1053,11 @@ namespace topomesh {
             newmesh->vertices.push_back(mesh->vertices[vi]);
         for (int fi = 0; fi < mesh->faces.size(); fi++)
             newmesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][0] + vertexsize, mesh->faces[fi][1] + vertexsize, mesh->faces[fi][2] + vertexsize));
-      
-        dumplicateMesh(newmesh);
-
         //newmesh->write("step1.stl");
+        //newmesh->vertices[9421] = trimesh::vec3(newmesh->vertices[9421].x, newmesh->vertices[9421].y+0.000001, newmesh->vertices[9421].z);
+        dumplicateMesh(newmesh);
+#endif
+        //newmesh->write("step2.stl");
       
         newmesh->need_across_edge();
         newmesh->clear_neighbors();
@@ -1169,8 +1170,16 @@ namespace topomesh {
         trimesh::remove_faces(newmesh, deleteface1);
         trimesh::remove_unused_vertices(newmesh);
         
-       
-
+        std::vector<std::vector<trimesh::point>> sequentials3 = GetOpenMeshBoundarys(*newmesh);
+        trimesh::TriMesh* ppmesh = new trimesh::TriMesh();
+        for (int i = 0; i < sequentials3.size(); i++)
+        {
+            for (int j = 0; j < sequentials3[i].size(); j++)
+            {
+                ppmesh->vertices.push_back(sequentials3[i][j]);
+            }
+        }
+        ppmesh->write("ppmesh.ply");
        /* std::vector<std::vector<int>> sequentialsindex;
         getTriMeshBoundarys(*newmesh,sequentialsindex);
         for (int i = 0; i < sequentialsindex.size(); i++)
@@ -1185,8 +1194,8 @@ namespace topomesh {
                 newmesh->faces.push_back(result[fi]);
             }
         }*/           
-#endif
-       // newmesh->write("newmesh.stl");
+
+        newmesh->write("newmesh.stl");
     }
 
 

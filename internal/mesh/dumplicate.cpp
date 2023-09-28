@@ -45,8 +45,9 @@ namespace topomesh
 
     struct hash_func2 {
         size_t operator()(const trimesh::vec3& v)const
-        {
-            return (int(v.x * 99971)) ^ (int(v.y * 99989) << 2) ^ (int(v.z * 99991) << 3);
+        {          
+            size_t r = (int(v.x * 99971)) ^ (int(v.y * 99989) << 1) ^ (int(v.z * 99991) << 2);
+            return r;
         }
     };
 
