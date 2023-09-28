@@ -10,26 +10,32 @@ namespace topomesh {
     struct HoneyCombParam
     {
         int mode = 0; ///< 0 is shell, 1 is backfill.
-        double resolution = 1E-4; ///<������ཻ�������
-        TriPolygon* polyline = nullptr; ///<���ɱ༭���������ڷ��ѣ�Ĭ�ϵ���ȫ����䣩
-        trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///<���Ѷ����ƽ�泯��Ĭ��z��������
+        TriPolygon* polyline = nullptr; ///< input polygons boundary.
+        trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///< default cylindrical orientation.
         //trimesh::vec3* axisDir = nullptr;
-        trimesh::vec2 arrayDir = trimesh::vec2(1, 0); ///<���Ѷ����ƽ�沼�֣�Ĭ�ϱ߳��Ͻṹ��
-        double honeyCombRadius = 2.0; ///< ���ɵķ��������α߳�
-        double nestWidth = 1.0; ///<���������αں����������ľ����2����
-        double shellThickness = 0.6; ///<��Ǻ��
-        double keepHexagonRate = 0.1; ///���������������С�������
-        double keepHexagonArea = 2.0; ///���������������С�������ֵ�ο���
-        bool isdelect = false; //�Ƿ�ɾ���������
-        std::vector<int> faces; //��ѡ��������棬���ΪĬ��-1��Ϊ�Զ��巽��
-        bool holeConnect = true;
-        float cheight = 5.0f; ///<Բ��Բ�ĸ߶�
-        float ratio = 0.5f; ///<Բ��ֱ���������߳�����
-        float delta = 0.5f; //Բ�׼��
-        int nslices = 17;   //��϶���α���
-        bool bKeepHexagon = false;
+        bool isdelect = false; ///< 
+        std::vector<int> faces; ///< faces ids of the input flat region.
+        // for honeycomb
+        double honeyCombRadius = 2.0; ///<to generate honeycomb radius.
+        double nestWidth = 1.0; ///<to generate honeycomb nest width.
+        double shellThickness = 0.6; ///<exshell thickness of honeycomb model.
+        
+        // for bottom boundary clip
+        double resolution = 1E-4; ///< clipper polygon resolution.
+        double keepHexagonRate = 0.1; ///<minimum area ratio of the hexagonal grid to retain.
+        double keepHexagonArea = 2.0; ///<minimum area of the hexagonal grid to retain.
+        trimesh::vec2 arrayDir = trimesh::vec2(1, 0); ///<default the hexagonal grids array orientation.
+
+        // for circular holes
+        bool holeConnect = true; ///< is holes connected.
+        float cheight = 5.0f; ///< the lowest point height of the first layer holes. 
+        float ratio = 0.5f; ///< the portion of holes diameter to the edge length of the hexagonal grids.
+        float delta = 0.5f; ///< the distance between the two separated circular holes.
+        int nslices = 17;   ///< number of edges of the positive polygon fitting the circular hole.
+        
         //debug
-        int step_return = 9999; // debug quick return
+        bool bKeepHexagon = false; ///< Hexagons is to keep or not.
+        int step_return = 9999; ///< debug quick return
     };
 
 	class HoneyCombDebugger

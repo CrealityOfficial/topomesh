@@ -69,7 +69,7 @@ namespace topomesh {
         }
         fid.close();
         size_t facenums = 0;
-        if (format == "ascii")//�жϸ�ʽ
+        if (format == "ascii")
         {
             // ReadASCII
             fid.open(filename, std::ios::in);
@@ -128,25 +128,26 @@ namespace topomesh {
             fid.read(reinterpret_cast<char*>(&facenums), sizeof(int));
             mpoints.resize(3 * facenums);
             mnorms.resize(facenums);
-            //mfaces.resize(facenums);
+            mfaces.resize(facenums);
             for (size_t i = 0; i < facenums; ++i) {
                 float pdata[12];
                 fid.read(reinterpret_cast<char*>(&pdata), sizeof(float) * 12);
-                //��ȡ��������Ϣ
+                //
                 float* pbuffer = pdata;
                 for (size_t j = 0; j < 3; ++j) {
                     mnorms[i][j] = *pbuffer;
                     ++pbuffer;
                 }
-                //��ȡ������������
+                //
+                const int& i0 = 3 * i;
                 for (size_t j = 0; j < 3; ++j) {
                     for (size_t k = 0; k < 3; ++k) {
                         mpoints[3 * i + j][k] = *pbuffer;
                         ++pbuffer;
                     }
+                    mfaces[i][j] = i0 + j;
                 }
-                //const int& i0 = 3 * i;
-                //mfaces[i] = std::move(std::vector<int>({ i0,i0 + 1,i0 + 2 }));
+
                 char tailbuffer[2];
                 fid.read(reinterpret_cast<char*>(&tailbuffer), sizeof(tailbuffer));
             }
@@ -166,14 +167,12 @@ namespace topomesh {
         originPts.swap(mpoints);
         originFs.swap(mfaces);
         Clear();
-        //�����Ĺ�ϣ����
         struct PointHash {
             int operator()(const PPoint& p) const
             {
                 return (int(p.x * 99971)) ^ (int(p.y * 99989) << 2) ^ (int(p.z * 99991) << 3);
             }
         };
-        //�ж��������Ƿ���ͬ
         struct PointEqual {
             bool operator()(const PPoint& p1, const PPoint& p2) const
             {
@@ -225,25 +224,24 @@ namespace topomesh {
         }
         //https://blog.csdn.net/kxh123456/article/details/105814498/
         if (bBinary) {
-            //������д���ļ�
             std::ofstream fs(std::string(filename) + "_bin.stl", std::ios::binary | std::ios::trunc);
             if (!fs) { fs.close(); return false; }
             int intSize = sizeof(int);
             int floatSize = sizeof(float);
-            // �ļ�ͷ
+            //
             char fileHead[3];
             for (int i = 0; i < 3; ++i) {
                 fileHead[i] = ' ';
             }
             fs.write(fileHead, sizeof(char) * 3);
-            // ������Ϣ
+            //
             char fileInfo[77];
             for (int i = 0; i < 77; ++i)
                 fileInfo[i] = ' ';
             fs.write(fileInfo, sizeof(char) * 77);
-            // ��ĸ���
+            // 
             fs.write((char*)(&face_num), intSize);
-            // ���б������б�
+            // 
             char a[2];
             int a_size = sizeof(char) * 2;
             for (int i = 0; i < face_num; ++i) {
@@ -253,11 +251,11 @@ namespace topomesh {
                 float nx = mnorms[i].x;
                 float ny = mnorms[i].y;
                 float nz = mnorms[i].z;
-                //���淨����
+                //
                 fs.write((char*)(&nx), floatSize);
                 fs.write((char*)(&ny), floatSize);
                 fs.write((char*)(&nz), floatSize);
-                // ���涥��
+                // 
                 float p0x = mpoints[pIndex0].x;
                 float p0y = mpoints[pIndex0].y;
                 float p0z = mpoints[pIndex0].z;
@@ -283,9 +281,9 @@ namespace topomesh {
             fs.close();
             return true;
         } else {
-            //mpoints:ģ�Ͷ���
-            //faces_:������Ƭ
-            //mnorms:����
+            //mpoints:
+            //mfaces:
+            //mnorms:
             if (face_num <= 1e6) {
                 std::ofstream fs(std::string(filename) + "_ast.stl");
                 if (!fs) { fs.close(); return false; }
@@ -308,15 +306,15 @@ namespace topomesh {
                 fs.close();
                 return true;
             }
-            //��Դ�ģ�ͷֿ��ȡ�����̼߳��ٶ�ȡ
-            const int block_size = 10000; // ÿ�������������������
-            const int num_threads = 8;     // ʹ�õ��߳���
+            //
+            const int block_size = 10000; // 
+            const int num_threads = 8;     // 
             const int num_blocks = (face_num + block_size - 1) / block_size;
-            // ��������ļ�
+            // 
             std::ofstream of(std::string(filename) + "_ast.stl", std::ios::trunc);
             of << "solid ASCII_STL\n";
             of.close();
-            // �ֿ�д������
+            // 
             std::vector<std::thread> threads(num_threads);
             std::mutex mutex;
             std::condition_variable cv;
@@ -359,11 +357,11 @@ namespace topomesh {
                     }
                 });
             }
-            // �ȴ������߳����
+            // 
             for (auto& thread : threads) {
                 thread.join();
             }
-            // д���ļ�β
+            // 
             out << "endsolid ASCII_STL\n";
             out.close();
             return true;
@@ -559,7 +557,7 @@ namespace topomesh {
             const auto& n = (p2 - p1).cross(p0 - p1);
             mnorms.emplace_back(std::move(n));
         }
-        //std::transform��Դ��������м���ЧӦ
+        //std::transform
         if (calculateArea) {
             mareas.reserve(facenums);
             for (const trimesh::vec3& n : mnorms) {
@@ -693,17 +691,15 @@ namespace topomesh {
 
     void CMesh::GenerateFaceEdgeAdjacency2(bool bGenerateEdgeFaceAdjacency, bool bGenerateEgdeLength)
     {
-        //����indexs���ı�
+        //
         std::vector<FFace> indexs(mfaces.begin(), mfaces.end());
         const size_t facenums = indexs.size();
-        //����ߵĹ�ϣ����
         struct EEdgeHash {
             size_t operator()(const EEdge& e) const
             {
                 return int((e.a * 99989)) ^ (int(e.b * 99991) << 2);
             }
         };
-        //�ж��������Ƿ���ͬ
         struct EEdgeEqual {
             bool operator()(const EEdge& e1, const EEdge& e2) const
             {
@@ -719,7 +715,6 @@ namespace topomesh {
             elist.reserve(3);
             auto& vertexs = indexs[i];
             std::sort(vertexs.begin(), vertexs.end());
-            // ��1 2����
             for (size_t j = 0; j < 2; ++j) {
                 EEdge e(vertexs[j], vertexs[j + 1]);
                 const auto & itr = edgeIndexMap.find(e);
@@ -733,7 +728,7 @@ namespace topomesh {
                     elist.emplace_back(edgeIndex);
                 }
             }
-            // ��3����
+            // 
             EEdge e(vertexs[0], vertexs[2]);
             const auto& itr = edgeIndexMap.find(e);
             if (itr != edgeIndexMap.end()) {
@@ -813,7 +808,7 @@ namespace topomesh {
             }
         }
 
-        // �ҵ�����ƽ��
+        //
         double maxArea = 0.0f;
         std::vector<int> resultFaces;
         for (auto& fs : selectFaces) {
@@ -871,14 +866,12 @@ namespace topomesh {
             GenerateFaceNormals();
             return;
         }
-        //�����Ĺ�ϣ����
         struct PPointHash {
             size_t operator()(const PPoint& p) const
             {
                 return (int(p.x * 99971)) ^ (int(p.y * 99989) << 2) ^ (int(p.z * 99991) << 3);
             }
         };
-        //�ж��������Ƿ���ͬ
         struct PPointEqual {
             bool operator()(const PPoint& p1, const PPoint& p2) const
             {
@@ -1225,7 +1218,7 @@ namespace topomesh {
             points.emplace_back(p.x, p.y, p.z - radius);
             const auto & maxInx = points.size() - 1;
             const auto & v0 = k * nums;
-            //���µײ�������
+            //
             for (size_t i = 0; i < ncolumns; ++i) {
                 const auto& i0 = i + 1 + v0;
                 const auto& i1 = (i + 1) % ncolumns + 1 + v0;
@@ -1234,7 +1227,7 @@ namespace topomesh {
                 const auto & j1 = i1 + (nrows - 1) * ncolumns;
                 pointMesh.AddFace(j1, j0, maxInx);
             }
-            //�м䲿��
+            //
             for (size_t i = 0; i < nrows - 1; ++i) {
                 const auto& j0 = i * ncolumns + 1 + v0;
                 const auto& j1 = (i + 1) * ncolumns + 1 + v0;
