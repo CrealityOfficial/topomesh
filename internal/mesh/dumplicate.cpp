@@ -275,8 +275,5 @@ namespace topomesh
         return true;
     }
 
-    bool dumplicateMesh2(trimesh::TriMesh* mesh, ccglobal::Tracer* tracer, float ratio, float eps)
-    {
-        return hashMesh(mesh, hash_func4(), tracer, ratio, eps);
-    }
+   
 }

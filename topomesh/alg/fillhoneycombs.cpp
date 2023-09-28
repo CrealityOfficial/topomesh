@@ -1054,11 +1054,19 @@ namespace topomesh {
         for (int fi = 0; fi < mesh->faces.size(); fi++)
             newmesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][0] + vertexsize, mesh->faces[fi][1] + vertexsize, mesh->faces[fi][2] + vertexsize));
         //newmesh->write("step1.stl");
-        //newmesh->vertices[9421] = trimesh::vec3(newmesh->vertices[9421].x, newmesh->vertices[9421].y+0.000001, newmesh->vertices[9421].z);
-        dumplicateMesh2(newmesh,nullptr,0.3f,2e-3f);
-        //dumplicateMesh(newmesh, nullptr, 0.3f, 1e-4f);
+        dumplicateMesh(newmesh);
+        mergeNearPoints(newmesh, nullptr, 4e-3f);
+        /*std::vector<bool> df(newmesh->faces.size(), false);
+        for (int fi = 0; fi < newmesh->faces.size(); fi++)
+        {
+            if (newmesh->faces[fi][0] == newmesh->faces[fi][1] || newmesh->faces[fi][0] == newmesh->faces[fi][2] || newmesh->faces[fi][1] == newmesh->faces[fi][2])
+                df[fi] = true;
+        }
+        trimesh::remove_faces(newmesh, df);
+        trimesh::remove_unused_vertices(newmesh);*/
+
 #endif
-        newmesh->write("step2.stl");
+       // newmesh->write("step2.ply");
       
         newmesh->need_across_edge();
         newmesh->clear_neighbors();
@@ -1096,8 +1104,8 @@ namespace topomesh {
                     (newmesh->vertices[newmesh->faces[fi][2]] - newmesh->vertices[newmesh->faces[fi][0]]);
                 trimesh::normalize(fn);
                 int beginindex = newmesh->faces[fi][(oppovertex+1)%3];
-                if (fi == 370)
-                    std::cout << "\n";
+               /* if (fi == 297)
+                    std::cout << "\n";*/
                 std::vector<int> vertexlines;
                 int vsize = vertexlines.size();
                 for (int vi = 0; vi < newmesh->neighbors[beginindex].size(); vi++)
@@ -1109,7 +1117,7 @@ namespace topomesh {
                         trimesh::point tn = (newmesh->vertices[index] - newmesh->vertices[beginindex]) %
                             (newmesh->vertices[newmesh->faces[fi][oppovertex]]-newmesh->vertices[beginindex]);
                         trimesh::normalize(tn);
-                        if (std::fabs(tn.x - fn.x) <= 1e-4f && std::fabs(tn.y - fn.y) <= 1e-4f && std::fabs(tn.z - fn.z) <= 1e-4f)
+                        if (std::fabs(tn.x - fn.x) <= 5e-3f && std::fabs(tn.y - fn.y) <= 5e-3f && std::fabs(tn.z - fn.z) <= 5e-3f)
                         {
                             /*if(newmesh->neighbors[beginindex][vi]==9618)
                                 std::cout << "\n";*/
@@ -1139,12 +1147,10 @@ namespace topomesh {
                     {                      
                         if (is_boundarys[newmesh->neighbors[index][vi]] && !is_vis[newmesh->neighbors[index][vi]])
                         {
-                           /* if (newmesh->neighbors[index][vi] == 9618)
-                                std::cout << "\n";*/
                             trimesh::point tn = (newmesh->vertices[newmesh->neighbors[index][vi]] - newmesh->vertices[beginindex]) %
                                 (newmesh->vertices[newmesh->faces[fi][oppovertex]] - newmesh->vertices[beginindex]);
                             trimesh::normalize(tn);
-                            if (std::fabs(tn.x - fn.x) <= 1e-4f && std::fabs(tn.y - fn.y) <= 1e-4f && std::fabs(tn.z - fn.z) <= 1e-4f)
+                            if (std::fabs(tn.x - fn.x) <= 5e-3f && std::fabs(tn.y - fn.y) <= 5e-3f && std::fabs(tn.z - fn.z) <= 5e-3f)
                             {
                                 vertexlines.push_back(newmesh->neighbors[index][vi]);
                                 is_vis[newmesh->neighbors[index][vi]] = true;
@@ -1153,8 +1159,11 @@ namespace topomesh {
                         }
                     }
                 }
-                if (vertexlines.empty()) 
+                if (vertexlines.empty())
+                {
+                    deleteface1[fi] = false;
                     continue;
+                }
 
                 newmesh->faces.push_back(trimesh::ivec3(newmesh->faces[fi][oppovertex], newmesh->faces[fi][(oppovertex+1)%3], vertexlines[0]));
                 for (int ii = 0; ii < vertexlines.size() - 1; ii++)
@@ -1164,30 +1173,18 @@ namespace topomesh {
                 newmesh->faces.push_back(trimesh::ivec3(newmesh->faces[fi][oppovertex], vertexlines.back(),newmesh->faces[fi][(oppovertex + 2) % 3]));
             }
         }
+       
+
+
         int beginsize = deleteface1.size();
         for (int fi = beginsize; fi < newmesh->faces.size(); fi++)
             deleteface1.push_back(false);
 
         trimesh::remove_faces(newmesh, deleteface1);
         trimesh::remove_unused_vertices(newmesh);
-        
-       
-       /* std::vector<std::vector<int>> sequentialsindex;
-        getTriMeshBoundarys(*newmesh,sequentialsindex);
-        for (int i = 0; i < sequentialsindex.size(); i++)
-        {
-            std::vector<std::pair<trimesh::point, int>> lines;
-            for (int j = 0; j < sequentialsindex[i].size(); j++)
-                lines.push_back(std::make_pair(newmesh->vertices[sequentialsindex[i][j]], sequentialsindex[i][j]));
-            topomesh::EarClipping earclip(lines);
-            std::vector<trimesh::ivec3> result = earclip.getResult();
-            for (int fi = 0; fi < result.size(); fi++)
-            {         
-                newmesh->faces.push_back(result[fi]);
-            }
-        }*/           
+            
 
-        newmesh->write("newmesh.stl");
+        //newmesh->write("newmesh.stl");
     }
 
 
