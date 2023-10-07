@@ -101,5 +101,6 @@ namespace topomesh {
 
     trimesh::TriMesh* findOutlineOfDir(trimesh::TriMesh* mesh,std::vector<int>& botfaces);   
     void JointBotMesh(trimesh::TriMesh* mesh, trimesh::TriMesh* newmesh, std::vector<int>& botfaces);
-   
+    void SelectInnerFaces(trimesh::TriMesh* mesh,int indicate,std::vector<int>& out);
+    void SelectBorderFaces(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out);
 }

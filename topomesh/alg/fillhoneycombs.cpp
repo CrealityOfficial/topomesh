@@ -3,7 +3,7 @@
 #include "topomesh/alg/letter.h"
 #include "topomesh/alg/earclipping.h"
 #include "topomesh/alg/subdivision.h"
-#include "topomesh/alg/utils.h"
+#include "topomesh/interface/utils.h"
 #include "trimesh2/TriMesh_algo.h"
 #include "topomesh/alg/solidtriangle.h"
 #include "internal/polygon/comb.h"
@@ -1187,6 +1187,34 @@ namespace topomesh {
         //newmesh->write("newmesh.stl");
     }
 
+    void SelectInnerFaces(trimesh::TriMesh* mesh,const std::vector<int>& in,int indicate, std::vector<int>& out)
+    {
+        std::vector<bool> mark(mesh->faces.size(),false);
+        for (int i = 0; i < in.size(); i++)
+            mark[in[i]] = true;
+        std::queue<int> facequeue;
+        facequeue.push(indicate);
+        out.push_back(indicate);
+        while (!facequeue.empty())
+        {
+            mark[facequeue.front()] = true;
+            for (int i = 0; i < mesh->across_edge[facequeue.front()].size(); i++)
+            {
+                int face = mesh->across_edge[facequeue.front()][i];
+                if (mark[face]) continue;
+                mark[face] = true;
+                out.push_back(face);
+                facequeue.push(face);
+            }
+            facequeue.pop();
+        }
+
+    }
+
+    void SelectBorderFaces(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out)
+    {
+        findNeignborFacesOfSameAsNormal(mesh,indicate,2.f,out);
+    }
 
     void getTriMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials)
     {
