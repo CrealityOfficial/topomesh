@@ -1152,7 +1152,7 @@ namespace topomesh {
                     const auto& b = mpoints[medges[ba].b];
                     trimesh::vec3 dir1 = trimesh::normalized(a - b);
                     constexpr float minArea = std::numeric_limits<float>::max();
-                    for (auto& itr = connects.begin(); itr != connects.end(); ++itr) {
+                    for (auto itr = connects.begin(); itr != connects.end(); ++itr) {
                         const auto& tmp = itr->second;
                         const int fr = tmp.front();
                         const int f2 = medgeFaces[fr].front();
