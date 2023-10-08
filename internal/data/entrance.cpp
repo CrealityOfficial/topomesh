@@ -1,7 +1,7 @@
 #include "entrance.h"
-#include "topomesh/alg/subdivision.h"
-#include "topomesh/alg/segmentation.h"
-#include "topomesh/alg/remesh.h"
+#include "internal/alg/subdivision.h"
+#include "internal/alg/segmentation.h"
+#include "internal/alg/remesh.h"
 #include "unordered_map"
 
 
