@@ -8,6 +8,7 @@
 #include <condition_variable>
 #include <unordered_set>
 #include <map>
+#include <math.h>
 
 #ifndef EPS
 #define EPS 1E-8F
@@ -1160,7 +1161,7 @@ namespace topomesh {
                         const auto& c = mpoints[medges[fr].a];
                         const auto& d = mpoints[medges[fr].b];
                         const auto& dir2 = trimesh::normalized(d - c);
-                        float alpha = std::acosf(dir2 DOT dir1);
+                        float alpha = std::acos(dir2 DOT dir1);
                         const auto& normal = dir2 TRICROSS dir1;
                         float area2 = trimesh::len(norm2);
                         trimesh::normalize(norm2);

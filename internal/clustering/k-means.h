@@ -1,6 +1,8 @@
 #pragma once
 #include <stdlib.h>
 #include <numeric>
+#include <iostream>
+
 #include "Eigen/Dense"
 #include "Eigen/Sparse"
 
