@@ -1024,49 +1024,38 @@ namespace topomesh {
                 int currentKnot = crossPoints.front();
                 while (!Queues.empty()) {
                     if (!ends.front().empty()) {
-                        int circles = 0;
-                        int numSize = Queues.size();
-                        while (circles < numSize) {
-                            const auto& ef = Queues.front();
+                        while (true) {
+                            const int ef = Queues.front();
                             if (medges[ef].a == currentKnot) {
                                 break;
                             }
                             Queues.emplace(ef);
                             Queues.pop();
-                            ++circles;
                         }
                         const int fe = Queues.front();
                         std::vector<int> current;
                         current.emplace_back(fe);
                         Queues.pop();
-                        int times = 0;
-                        int count = Queues.size();
                         while (!Queues.empty()) {
                             const int back = current.back();
+                            if (knotMarks[medges[back].b]) {
+                                break;
+                            }
                             const int ef = Queues.front();
                             if (medges[ef].a == medges[back].b) {
                                 current.emplace_back(ef);
                                 Queues.pop();
-                                times = 0;
                             } else {
-                                Queues.pop();
                                 Queues.emplace(ef);
-                                ++times;
-                            }
-                            if (knotMarks[medges[back].b]) {
-                                break;
-                            }
-                            if (times > count) {
-                                break;
+                                Queues.pop();
                             }
                         }
                         ringQueues.emplace(current);
-                        ends.front().pop();
                         starts.front().pop();
-                        
+                        ends.front().pop();
                     } else {
-                        ends.pop();
                         starts.pop();
+                        ends.pop();
                         break;
                     }                   
                 }
@@ -1087,16 +1076,117 @@ namespace topomesh {
                 ++circles;
             }
             //fifth. connect with each other for unenclosed series by sequence.
-            ringSize = ringQueues.size();
+            /*auto calculateArea = [&](const std::vector<std::vector<int>> & edgeSequences) {
+                int vertexNum = 0;
+                std::vector<int> vertexSequence;
+                for (const auto& seq : edgeSequences) {
+                    vertexNum += seq.size();
+                }
+                vertexSequence.reserve(vertexNum);
+                for (const auto& seq : edgeSequences) {
+                    for (const auto& einx : seq) {
+                        vertexSequence.emplace_back(medges[einx].a);
+                    }
+                }
+                if (vertexSequence.size() < 3) return 0.0f;
+                const auto& p1 = mpoints[vertexSequence[0]];
+                const auto& p2 = mpoints[vertexSequence[1]];
+                const auto& p3 = mpoints[vertexSequence[2]];
+                const auto& pt = mpoints[vertexSequence.back()];
+                float p1x = p1.x, p1y = p1.y, p1z = p1.z;
+                float p2x = p2.x, p2y = p2.y, p2z = p2.z;
+                float p3x = p3.x, p3y = p3.y, p3z = p3.z;
+                float ptx = pt.x, pty = pt.y, ptz = pt.z;
+                float t1 = (p2y - p1y) * (p3z - p1z);
+                float t2 = (p3y - p1y) * (p2z - p1z);
+                float t3 = (p3x - p1x) * (p2z - p1z);
+                float t4 = (p2x - p1x) * (p3z - p1z);
+                float t5 = (p2x - p1x) * (p3y - p1y);
+                float t6 = (p3x - p1x) * (p2y - p1y);
+                float a = std::pow((t1 - t2), 2) + std::pow((t3 - t4), 2) + std::pow((t5 - t6), 2);
+                float cosnx = (t1 - t2) / (pow(a, 0.5f));
+                float cosny = (t3 - t4) / (pow(a, 0.5f));
+                float cosnz = (t5 - t6) / (pow(a, 0.5f));
+                float sumarea = cosnz * (ptx * p1y - p1x * pty) + cosnx * (pty * p1z - p1y * ptz) + cosny * (ptz * p1x - p1z * ptx);
+                for (size_t i = 0; i < vertexSequence.size() - 1; ++i) {
+                    const auto& pm = mpoints[vertexSequence[i]];
+                    const auto& pn = mpoints[vertexSequence[i + 1]];
+                    float ss = cosnz * (pm[0] * pn[1] - pn[0] * pm[1]) + cosnx * (pm[1] * pn[2] - pn[1] * pm[2]) + cosny * (pm[2] * pn[0] - pn[2] * pm[0]);
+                    sumarea += ss;
+                }
+                return sumarea / 2.0f;
+            };*/
             while (!ringQueues.empty()) {
                 std::vector<std::vector<int>> current;
                 const auto& ring = ringQueues.front();
+                ringSize = ringQueues.size();
                 current.reserve(ringSize);
                 current.emplace_back(ring);
                 ringQueues.pop();
-                int times = 0;
-                int count = ringQueues.size();
                 while (!ringQueues.empty()) {
+                    int times = 0;
+                    int count = ringQueues.size();
+                    std::map<int, std::vector<int>> connects;
+                    const int fr = current.front().front();
+                    const int ba = current.back().back();
+                    if (medges[fr].a == medges[ba].b) break;
+                    while (times < ringQueues.size()) {
+                        const auto& fr = ringQueues.front();
+                        const int ef = fr.front();
+                        if (medges[ef].a == medges[ba].b) {
+                            connects.emplace(times, fr);
+                        }
+                        ringQueues.emplace(fr);
+                        ringQueues.pop();
+                        ++times;
+                    }
+                    int lowest = -1;
+                    float minAlpha = 2.0 * M_PI;
+                    const int f1 = medgeFaces[ba].front();
+                    const FFace fn1 = mfaces[f1];
+                    trimesh::vec3 norm1 = trimesh::trinorm(mpoints[fn1[0]], mpoints[fn1[1]], mpoints[fn1[2]]);
+                    float area1 = trimesh::len(norm1);
+                    trimesh::normalize(norm1);
+                    const auto& a = mpoints[medges[ba].a];
+                    const auto& b = mpoints[medges[ba].b];
+                    trimesh::vec3 dir1 = trimesh::normalized(a - b);
+                    constexpr float minArea = std::numeric_limits<float>::max();
+                    for (auto& itr = connects.begin(); itr != connects.end(); ++itr) {
+                        const auto& tmp = itr->second;
+                        const int fr = tmp.front();
+                        const int f2 = medgeFaces[fr].front();
+                        const FFace fn2 = mfaces[f2];
+                        trimesh::vec3 norm2 = trimesh::trinorm(mpoints[fn2[0]], mpoints[fn2[1]], mpoints[fn2[2]]);
+                        const auto& c = mpoints[medges[fr].a];
+                        const auto& d = mpoints[medges[fr].b];
+                        const auto& dir2 = trimesh::normalized(d - c);
+                        float alpha = std::acosf(dir2 DOT dir1);
+                        const auto& normal = dir2 TRICROSS dir1;
+                        float area2 = trimesh::len(norm2);
+                        trimesh::normalize(norm2);
+                        float sumArea = area1 + area2;
+                        trimesh::vec3 referDir = (area1 * norm1 + area2 * norm2) / sumArea;
+                        float zvalue = normal DOT referDir;
+                        if (zvalue < 0) {
+                            alpha = 2 * M_PI - alpha;
+                        }
+                        if (alpha <= minAlpha) {
+                            minAlpha = alpha;
+                            lowest = itr->first;
+                        }
+                    }
+                    times = 0;
+                    while (times < lowest) {
+                        const auto& fr = ringQueues.front();
+                        ringQueues.emplace(fr);
+                        ringQueues.pop();
+                        ++times;
+                    }
+                    const auto ef = ringQueues.front();
+                    current.emplace_back(ef);
+                    ringQueues.pop();
+                }
+                /*while (!ringQueues.empty()) {
                     const auto front = current.front().front();
                     const auto back = current.back().back();
                     const auto ef = ringQueues.front();
@@ -1121,7 +1211,7 @@ namespace topomesh {
                     if (times > count) {
                         break;
                     }
-                }
+                }*/
                 int totalSize = 0;
                 std::vector<int> sequence;
                 for (const auto&  ring: current) {
@@ -1133,7 +1223,6 @@ namespace topomesh {
                 }
                 edgeRings.emplace_back(sequence);
             }
-            
         }
         // other. there are no crossKnots on sequential edges.
         while (!Queues.empty()) {
