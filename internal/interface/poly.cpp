@@ -1,4 +1,4 @@
-#include "poly.h"
+#include "topomesh/interface/poly.h"
 #include "internal/polygon/conv1.h"
 
 namespace topomesh
