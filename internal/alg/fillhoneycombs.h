@@ -83,7 +83,8 @@ namespace topomesh {
 	void innerHex(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& poly, std::vector<int>& inFace, std::vector<int>& outFace,float len);
 
     trimesh::TriMesh* findOutlineOfDir(trimesh::TriMesh* mesh,std::vector<int>& botfaces);   
-    void JointBotMesh(trimesh::TriMesh* mesh, trimesh::TriMesh* newmesh, std::vector<int>& botfaces);
-    void SelectInnerFaces(trimesh::TriMesh* mesh,int indicate,std::vector<int>& out);
+    void JointBotMesh(trimesh::TriMesh* mesh, trimesh::TriMesh* newmesh, std::vector<int>& botfaces,int mode=0);
+    void SelectInnerFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, int indicate, std::vector<int>& out);
     void SelectBorderFaces(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out);
+    void SetHoneyCombHeight(trimesh::TriMesh* mesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts);
 }
