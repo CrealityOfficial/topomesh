@@ -29,6 +29,8 @@ namespace topomesh
     /// 4: holeDiameter is not qualified.
     /// 5: holeGap is not qualified.
     /// 6: holeHeight is not qualified.
+    /// 7: mode is not qualified.
+    /// 8: faces of backfill is not qualified.
 	/// </summary>
 	/// <param name="param"></param>
 	/// <returns></returns>

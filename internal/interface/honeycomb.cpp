@@ -35,6 +35,17 @@ namespace topomesh
         } else if (param.holeHeight < 1.0f || param.holeHeight > 3.0f) {
             return 6;
         }
+        if (param.mode == 0 || param.mode == 1) {
+            if (param.mode) {
+                if (param.faces.size() != 2) {
+                    return 8;
+                } else if (param.faces[0].empty() || param.faces[1].empty()) {
+                    return 8;
+                }
+            }
+        } else {
+            return 7;
+        }
         return 0;
     }
 }
