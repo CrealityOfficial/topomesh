@@ -15,8 +15,8 @@ namespace topomesh {
         TriPolygon* polyline = nullptr; ///< input polygons boundary.
         trimesh::vec3 axisDir = trimesh::vec3(0, 0, 0); ///< default cylindrical orientation.
         //trimesh::vec3* axisDir = nullptr;
-        bool isdelect = false; ///< 
-        std::vector<int> faces; ///< faces ids of the input flat region.
+       
+        std::vector<std::vector<int>> faces; ///< faces ids of the input flat region.
         // for honeycomb
         double honeyCombRadius = 2.0; ///<to generate honeycomb radius.
         double nestWidth = 1.0; ///<to generate honeycomb nest width.
@@ -86,5 +86,6 @@ namespace topomesh {
     void JointBotMesh(trimesh::TriMesh* mesh, trimesh::TriMesh* newmesh, std::vector<int>& botfaces,int mode=0);
     void SelectInnerFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, int indicate, std::vector<int>& out);
     void SelectBorderFaces(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out);
-    void SetHoneyCombHeight(trimesh::TriMesh* mesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts);
+    void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out);
+    std::shared_ptr<trimesh::TriMesh> SetHoneyCombHeight(trimesh::TriMesh* mesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts);
 }
