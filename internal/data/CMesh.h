@@ -69,6 +69,7 @@ namespace topomesh {
         int AddPoint(const PPoint& p);
         int AddFace(int i0, int i1, int i2);
         int EdgeOppositePoint(int e, int f)const;
+        float GetVolume()const;
         void GenerateFaceAreas(bool calculateAgain = false);
         void GenerateFaceNormals(bool Normalized = true, bool calculateArea = false);
         std::vector<std::vector<int>> GenerateFaceNeighborFaces();

@@ -532,6 +532,18 @@ namespace topomesh {
         return -1;
     }
 
+    float CMesh::GetVolume()const
+    {
+        float volume = 0.0f;
+        for (const auto& f : mfaces) {
+            const auto& a = mpoints[f[0]];
+            const auto& b = mpoints[f[1]];
+            const auto& c = mpoints[f[2]];
+            volume += ((a TRICROSS b) DOT c);
+        }
+        return volume / 6.0f;
+    }
+
     void CMesh::GenerateFaceAreas(bool calculateAgain)
     {
         if (mareas.empty() || calculateAgain) {
@@ -631,44 +643,22 @@ namespace topomesh {
         std::vector<std::vector<int>>fedges(facenums, std::vector<int>(3, -1));
         int num_edges = 0;
         for (size_t i = 0; i < edgesmap.size(); ++i) {
-            EdgeToFace& efi = edgesmap[i];
-            const auto& fi = efi.at_face;
-            if (fi == -1)
+            EdgeToFace& edge_i = edgesmap[i];
+            if (edge_i.at_face == -1)
                 continue;
-            size_t j;
-            bool found = false;
-            for (j = i + 1; j < edgesmap.size() && efi == edgesmap[j]; ++j)
-                if (efi.which_edge * edgesmap[j].which_edge < 0 && edgesmap[j].at_face != -1) {
-                    found = true;
-                    break;
-                }
-            if (!found) {
-                for (j = i + 1; j < edgesmap.size() && efi == edgesmap[j]; ++j)
-                    if (edgesmap[j].at_face != -1) {
-                        found = true;
-                        break;
-                    }
+            for (size_t j = i + 1; j < edgesmap.size() && edge_i == edgesmap[j]; ++j) {
+                EdgeToFace& edge_j = edgesmap[j];
+                fedges[edge_j.at_face][std::fabs(edge_j.which_edge) - 1] = num_edges;
+                // Mark the edge as connected.
+                edge_j.at_face = -1;
             }
-            const auto& ei = efi.which_edge;
-            fedges[fi][std::fabs(ei) - 1] = num_edges;
-            medges.emplace_back(std::move(EEdge(efi.vertex_low, efi.vertex_high)));
-            if (found) {
-                EdgeToFace& efj = edgesmap[j];
-                const auto& fj = efj.at_face;
-                const auto& ej = efj.which_edge;
-                fedges[fj][std::fabs(ej) - 1] = num_edges;
-                medges.emplace_back(std::move(EEdge(efj.vertex_low, efj.vertex_high)));
-                efj.at_face = -1;
-            }
+            fedges[edge_i.at_face][std::fabs(edge_i.which_edge) - 1] = num_edges;
+            medges.emplace_back(EEdge(edge_i.vertex_low, edge_i.vertex_high));
             ++num_edges;
         }
-        auto itr = std::unique(medges.begin(), medges.end());
-        medges.erase(itr, medges.end());
         if (bGenerateEdgeFaceAdjacency) {
-            const size_t edgenums = medges.size();
-            std::vector<std::vector<int>> efaces;
-            efaces.resize(edgenums);
-            for (int i = 0; i < edgenums; ++i) {
+            std::vector<std::vector<int>> efaces(num_edges);
+            for (int i = 0; i < num_edges; ++i) {
                 efaces[i].reserve(2);
             }
             for (size_t i = 0; i < facenums; ++i) {
@@ -681,8 +671,7 @@ namespace topomesh {
         }
         mfaceEdges.swap(fedges);
         if (bGenerateEgdeLength) {
-            const size_t edgenums = medges.size();
-            medgeLengths.reserve(edgenums);
+            medgeLengths.reserve(num_edges);
             for (const auto& e : medges) {
                 const auto& d = trimesh::len(mpoints[e.a] - mpoints[e.b]);
                 medgeLengths.emplace_back(d);
@@ -741,7 +730,7 @@ namespace topomesh {
                 medges.emplace_back(std::move(e));
                 elist.emplace_back(edgeIndex);
             }
-            mfaceEdges[i] = std::move(elist);
+            mfaceEdges[i].swap(elist);
         }
         if (bGenerateEdgeFaceAdjacency) {
             const size_t edgenums = medges.size();
