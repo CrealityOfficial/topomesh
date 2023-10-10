@@ -14,7 +14,7 @@ namespace topomesh
 		float holeHeight = 1.0f;
 		float holeDiameter = 2.5f;
 		float holeGap = 1.0f;
-
+		std::vector<std::vector<int>> faces;
         int mode = 0; ///< 0 is shell, 1 is backfill.
 	};
 
@@ -33,6 +33,9 @@ namespace topomesh
 	/// <param name="param"></param>
 	/// <returns></returns>
 	TOPOMESH_API int checkParam(const CombParam& param);
+
+	TOPOMESH_API  void SelectBorderFaces(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out);
+	TOPOMESH_API  void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out);
 }
 
 #endif // TOPOMESH_HONEYCOMB_1692753685514_H

@@ -257,12 +257,12 @@ namespace topomesh {
         if (!honeyparams.faces.empty())
         {
             trimesh::vec3 ave_normal(0, 0, 0);
-            for (int fi : honeyparams.faces)
+          /*  for (int fi : honeyparams.faces)
             {
                 trimesh::vec3 v1 = trimesh->vertices[trimesh->faces[fi][1]] - trimesh->vertices[trimesh->faces[fi][0]];
                 trimesh::vec3 v2 = trimesh->vertices[trimesh->faces[fi][2]] - trimesh->vertices[trimesh->faces[fi][0]];
                 ave_normal += trimesh::normalized(v1 % v2);
-            }
+            }*/
             ave_normal /= (ave_normal / (honeyparams.faces.size() * 1.f));
             trimesh::normalize(ave_normal);
            /* trimesh::vec3* dir = const_cast<trimesh::vec3*>(&honeyparams.axisDir);
@@ -401,313 +401,8 @@ namespace topomesh {
                 GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
                 trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
                 trimesh = &mesh; 
-                trimesh->bbox.valid = false;
-                trimesh->need_bbox();             
-                int row = 400;
-                int col = 400;
-                std::vector<std::tuple<trimesh::point, trimesh::point, trimesh::point>> Upfaces;
-                for (int i : letterOpts.others)
-                    Upfaces.push_back(std::make_tuple(trimesh->vertices[trimesh->faces[i][0]], trimesh->vertices[trimesh->faces[i][1]],
-                        trimesh->vertices[trimesh->faces[i][2]]));
-                topomesh::SolidTriangle upST(&Upfaces, row, col, trimesh->bbox.max.x, trimesh->bbox.min.x, trimesh->bbox.max.y, trimesh->bbox.min.y);
-                upST.work();    
-            
-                HexaPolygons hexpolys;
-                hexpolys.side = letterOpts.side;
-                trimesh::point max_xy = trimesh->bbox.max;
-                trimesh::point min_xy = trimesh->bbox.min;
-                float lengthx = (trimesh->bbox.max.x - trimesh->bbox.min.x)/ (col*1.f);
-                float lengthy = (trimesh->bbox.max.y - trimesh->bbox.min.y)/ (row*1.f);
-               
-                for (auto& hg : letterOpts.hexgons)
-                {
-                    std::vector<float> height;                                   
-                    for (int i = 0; i < hg.poly.size(); i++)
-                    {
-                        trimesh::point p = hg.poly[i] - min_xy;
-                        int xi = p.x / lengthx;
-                        int yi = p.y / lengthy;
-                        xi = xi == col ? --xi : xi;
-                        yi = yi == row ? --yi : yi;                      
-                        float min_z = upST.getDataMinZInterpolation(xi, yi);
-                        if (min_z != std::numeric_limits<float>::max())
-                        {
-                            min_z -= honeyparams.shellThickness;
-                            height.push_back(min_z);                                                  
-                        }
-                        else
-                        {
-                            height.push_back(0.f);                          
-                        }
-                       
-                    }
-#if false
-                    for (int i = 0; i < height.size(); i++)
-                    {
-                        if (height[i] == 0.f) continue;
-                        int next = (i + 1) % height.size();
-                        trimesh::point c = hg.poly[next] - hg.poly[i];
-                        float ch = height[next] - height[i];
-                        int cx = coord[next].x - coord[i].x;
-                        int cy = coord[next].y - coord[i].y;
-                        if (cx == 0 && cy == 0) continue;
-                        cx = std::abs(cx);
-                        cy = std::abs(cy);
-                        if (cx > cy)
-                        {
-                            cx += 1;
-                            trimesh::point t = c / (cx*1.f);
-                            float th = ch / (cx * 1.f);
-                            float max_c = std::numeric_limits<float>::max();
-                            for (int j = 1; j < cx;j++)
-                            {
-                                trimesh::point tt = hg.poly[i] + j*1.f * t;
-                                float min_z = upST.getDataMinZ(tt.x,tt.y)- honeyparams.shellThickness;
-                                float temp_z = height[i] + j * 1.f * th;
-                                if (temp_z > min_z)
-                                {
-                                    if (max_c > (temp_z - min_z))
-                                        max_c = (temp_z - min_z);
-                                }
-                            }
-                            if (max_c != std::numeric_limits<float>::max())
-                            {
-                                if(height[next]> max_c)
-                                    height[next] -= max_c;
-                                if(height[i]>max_c)
-                                    height[i] -= max_c;
-                            }
-                        }
-                        else
-                        {
-                            cy += 1;
-                            trimesh::point t = c / (cy * 1.f);
-                            float th = ch / (cy * 1.f);
-                            float max_c = std::numeric_limits<float>::max();
-                            for (int j = 1; j < cy; j++)
-                            {
-                                trimesh::point tt = hg.poly[i] + j * 1.f * t;
-                                float min_z = upST.getDataMinZ(tt.x, tt.y) - honeyparams.shellThickness;
-                                float temp_z = height[i] + j * 1.f * th;
-                                if (temp_z > min_z)
-                                {
-                                    if (max_c > (temp_z - min_z))
-                                        max_c = (temp_z - min_z);
-                                }
-                            }
-                            if (max_c != std::numeric_limits<float>::max())
-                            {
-                                if (height[next] > max_c)
-                                    height[next] -= max_c;
-                                if (height[i] > max_c)
-                                    height[i] -= max_c;
-                            }
-                        }
-                    }
-#elif false
-                    float last_z = std::numeric_limits<float>::max();
-                    for (int i = min_yi; i <= max_yi; i++)
-                    {
-                        for (int j = min_xi; j <= max_xi; j++)
-                        {
-                            float min_z = upST.getDataMinZCoord(j, i);
-                           // if (min_z == std::numeric_limits<float>::max()) min_z = 0.0f;
-                            if (min_z < last_z)
-                                last_z = min_z;                           
-                        }
-                    }
-                    if(last_z>= (honeyparams.shellThickness+1.2f))
-                       
-
-                    last_z -= (honeyparams.shellThickness+1.2f);
-                    last_z = last_z < 0.f ? 0.2f : last_z;
-#endif
-                    hg.edges.resize(hg.poly.size());
-                    for (int i = 0; i < hg.edges.size(); i++)
-                    {                       
-                         hg.edges[i].topHeight = height[i];
-                       // hg.edges[i].topHeight = last_z;
-                    }
-                    hexpolys.polys.push_back(hg);                   
-                }
-               
-
-                topomesh::ColumnarHoleParam columnParam;
-                columnParam.nslices = honeyparams.nslices;
-                columnParam.ratio = honeyparams.ratio;
-                columnParam.height = honeyparams.cheight;
-                columnParam.delta = honeyparams.delta;
-                columnParam.holeConnect = honeyparams.holeConnect;
-                std::shared_ptr<trimesh::TriMesh> newmesh(topomesh::generateHolesColumnar(hexpolys, columnParam));
-               
-
-                std::vector<int> topfaces;
-                topfaces.swap(hexpolys.topfaces);
-                /*for (int fi = 0; fi < topfaces.size(); fi++)
-                {
-                    trimesh::point v0 = newmesh->vertices[newmesh->faces[topfaces[fi]][0]];
-                    trimesh::point v1 = newmesh->vertices[newmesh->faces[topfaces[fi]][1]];
-                    trimesh::point v2 = newmesh->vertices[newmesh->faces[topfaces[fi]][2]];
-                    trimesh::vec3 a = v0 - v1;
-                    trimesh::vec3 b = v1 - v2;
-                    float are= sqrt(pow((a.y * b.z - a.z * b.y), 2) + pow((a.z * b.x - a.x * b.z), 2)
-                        + pow((a.x * b.y - a.y * b.x), 2)) / 2.0f;
-                    if (are < 0.1f)
-                    {
-                        topfaces.erase(topfaces.begin() + fi);
-                        fi--;
-                    }
-                }
-                */
-                                        
-                std::vector<int> outfaces;
-               // topomesh::SimpleMidSubdivision(newmesh.get(), topfaces);
-                for (int l = 0; l < 2; l++)
-                {
-                    topomesh::loopSubdivision(newmesh.get(), topfaces, outfaces);
-                    outfaces.swap(topfaces);
-                    outfaces.clear();
-                }                         
-                for (int fi : topfaces)
-                {
-                    for (int vi = 0; vi < 3; vi++)
-                    {
-                        float min_x = newmesh->vertices[newmesh->faces[fi][vi]].x - honeyparams.shellThickness * 3.f /5.f;
-                        float min_y = newmesh->vertices[newmesh->faces[fi][vi]].y - honeyparams.shellThickness * 3.f /5.f;
-                        float max_x = newmesh->vertices[newmesh->faces[fi][vi]].x + honeyparams.shellThickness * 3.f /5.f;
-                        float max_y = newmesh->vertices[newmesh->faces[fi][vi]].y + honeyparams.shellThickness * 3.f /5.f;
-                        int min_xi = (min_x - min_xy.x) / lengthx;
-                        int min_yi = (min_y - min_xy.y) / lengthy;
-                        int max_xi = (max_x - min_xy.x) / lengthx;
-                        int max_yi = (max_y - min_xy.y) / lengthy;
-                        float min_z = std::numeric_limits<float>::max();
-                        for(int xii=min_xi;xii<=max_xi;xii++)
-                            for (int yii = min_yi; yii <= max_yi; yii++)
-                            {
-                                float zz = upST.getDataMinZInterpolation(xii,yii);                              
-                                if (zz < min_z)
-                                    min_z = zz;
-                            }
-                       // float min_z = upST.getDataMinZ(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y)/*- honeyparams.shellThickness*/;
-                       // float min_z = upST.getDataMinZInterpolation(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y) - 1.2*honeyparams.shellThickness;
-                        if (min_z > 1.2*honeyparams.shellThickness)
-                            min_z -= 1.2*honeyparams.shellThickness;
-                        newmesh->vertices[newmesh->faces[fi][vi]] = trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z);
-                       // pointmesh->vertices.push_back(trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z));
-                                             
-                    }
-                }
-               
-                
-#if 0
-                std::vector<std::vector<int>> sequentials;
-                getMeshBoundarys(*trimesh, sequentials);
-                std::vector<std::vector<int>> sequentials2;
-                getMeshBoundarys(*newmesh, sequentials2);
-
-                if (sequentials.size() != sequentials2.size())
-                    return nullptr;
-
-                for (int m = 0; m < sequentials.size(); m++)
-                {
-                    trimesh::TriMesh* pointmesh1 = new trimesh::TriMesh();
-                    for (int vii = 0; vii < sequentials[m].size(); vii++)
-                    {
-                        pointmesh1->vertices.push_back(trimesh->vertices[sequentials[m][vii]]);
-                    }
-                    int linesize = pointmesh1->vertices.size();
-                    for (int vii = 0; vii < sequentials2[m].size(); vii++)
-                    {
-                        pointmesh1->vertices.push_back(newmesh->vertices[sequentials2[m][vii]]);
-                    }
-                    const int lineNum = 8;
-                    std::vector<float> min_dist(lineNum, std::numeric_limits<float>::max());
-                    std::vector<int> f_index;
-                    for (int nn = 0; nn < lineNum; nn++)
-                    {
-                        int ln = (int)(linesize * nn / lineNum);
-                        f_index.push_back(ln);
-                    }
-                    std::vector<int> near_index(lineNum, 0);
-                    for (int vi = linesize; vi < pointmesh1->vertices.size(); vi++)
-                    {
-                        for (int nn = 0; nn < lineNum; nn++)
-                        {
-                            float dist = trimesh::distance(pointmesh1->vertices[f_index[nn]], pointmesh1->vertices[vi]);
-                            if (dist < min_dist[nn])
-                            {
-                                near_index[nn] = vi;
-                                min_dist[nn] = dist;
-                            }
-                        }
-                    }
-                    std::vector<std::vector<int>> sequent(lineNum, std::vector<int>());
-                    //std::cout << "linesize : " << linesize << "\n";
-                    for (int nn = 0; nn < lineNum; nn++)
-                    {
-                        //std::cout << "f_index : " << f_index[nn]<<" near_index : "<< near_index[nn]<< "\n";
-                        if (nn != lineNum - 1)
-                        {
-                            for (int vi = f_index[nn]; vi <= f_index[nn + 1]; vi++)
-                                sequent[nn].push_back(vi);
-                            if (near_index[nn + 1] < near_index[nn])
-                                for (int vi = near_index[nn + 1]; vi <= near_index[nn]; vi++)
-                                    sequent[nn].push_back(vi);
-                            else
-                            {
-                                for (int vi = near_index[nn + 1]; vi < pointmesh1->vertices.size(); vi++)
-                                    sequent[nn].push_back(vi);
-                                for (int vi = linesize; vi <= near_index[nn]; vi++)
-                                    sequent[nn].push_back(vi);
-                            }
-                        }
-                        else
-                        {
-                            for (int vi = f_index[nn]; vi < linesize; vi++)
-                                sequent[nn].push_back(vi);
-                            sequent[nn].push_back(f_index[0]);
-                            if (near_index[0] < near_index[nn])
-                                for (int vi = near_index[0]; vi <= near_index[nn]; vi++)
-                                    sequent[nn].push_back(vi);
-                            else
-                            {
-                                for (int vi = near_index[0]; vi < pointmesh1->vertices.size(); vi++)
-                                    sequent[nn].push_back(vi);
-                                for (int vi = linesize; vi <= near_index[nn]; vi++)
-                                    sequent[nn].push_back(vi);
-                            }
-                        }
-                    }
-                    for (int nn = 0; nn < lineNum; nn++)
-                    {
-                        /* for (int ni = 0; ni < sequent[nn].size(); ni++)
-                             std::cout << " " << sequent[nn][ni] << " ";
-                         std::cout << "\n";*/
-                        std::vector<std::pair<trimesh::point, int>> lines;
-                        for (int vi = 0; vi < sequent[nn].size(); vi++)
-                        {
-                            lines.push_back(std::make_pair(pointmesh1->vertices[sequent[nn][vi]], sequent[nn][vi]));
-                        }
-                        topomesh::EarClipping earclip(lines);
-                        std::vector<trimesh::ivec3> result = earclip.getResult();
-                        for (int fi = 0; fi < result.size(); fi++)
-                        {
-                            result[fi] = trimesh::ivec3(result[fi].x, result[fi].z, result[fi].y);
-                            pointmesh1->faces.push_back(result[fi]);
-                        }
-                    }
-
-                   // std::string name = "pointmesh" + std::to_string(m) + ".ply";
-                   // pointmesh1->write(name);
-
-                    int vertexsize = newmesh->vertices.size();
-                    for (int vi = 0; vi < pointmesh1->vertices.size(); vi++)
-                        newmesh->vertices.push_back(pointmesh1->vertices[vi]);
-                    for (int fi = 0; fi < pointmesh1->faces.size(); fi++)
-                        newmesh->faces.push_back(trimesh::TriMesh::Face(pointmesh1->faces[fi][0] + vertexsize, pointmesh1->faces[fi][1] + vertexsize, pointmesh1->faces[fi][2] + vertexsize));
-
-                }
-#endif               
+                std::shared_ptr<trimesh::TriMesh> newmesh= SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
+                                
                 JointBotMesh(trimesh,newmesh.get(), bottomFaces, honeyparams.mode);
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
@@ -718,17 +413,89 @@ namespace topomesh {
         } 
         else if(honeyparams.mode == 1){
             //user indication faceindex
-            trimesh::vec3 dir = honeyparams.axisDir;
-            trimesh::apply_xform(trimesh, trimesh::xform::rot_into(dir, trimesh::vec3(0, 0, 1)));
-
-
+            honeyLetterOpt letterOpts;
+            trimesh::point normal(0,0,0);
+            for (int fi = 0; fi < honeyparams.faces[0].size(); fi++)
+            {
+                trimesh::point v1 = trimesh->vertices[trimesh->faces[fi][1]] - trimesh->vertices[trimesh->faces[fi][0]];
+                trimesh::point v2 = trimesh->vertices[trimesh->faces[fi][2]] - trimesh->vertices[trimesh->faces[fi][0]];
+                trimesh::point nor = v1 % v2;
+                normal += nor;
+            }
+            normal /= (honeyparams.faces[0].size()*1.f);
+            trimesh::normalize(normal);
+            cmesh.Rotate(normal, trimesh::vec3(0, 0, -1));
+            cmesh.GenerateBoundBox();
+            const auto minPt = cmesh.mbox.min;
+            cmesh.Translate(-minPt);
+            for (int hf = 0; hf < honeyparams.faces.size(); hf++)
+            {
+                for (int fi = 0; fi < honeyparams.faces[hf].size(); fi++)
+                {
+                    letterOpts.bottom.push_back(honeyparams.faces[hf][fi]);
+                }
+            }
+            std::sort(letterOpts.bottom.begin(), letterOpts.bottom.end());
+            std::vector<int> otherFaces(trimesh->faces.size() - letterOpts.bottom.size());
+            std::set_difference(trimesh->faces.begin(), trimesh->faces.end(), letterOpts.bottom.begin(), letterOpts.bottom.end(), otherFaces.begin());
+            letterOpts.others = std::move(otherFaces);
+            GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
+            trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
+            trimesh = &mesh;
+            std::shared_ptr<trimesh::TriMesh> newmesh = SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
+            JointBotMesh(trimesh, newmesh.get(), letterOpts.bottom, honeyparams.mode);
+            trimesh::trans(newmesh.get(), minPt);
+            trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), normal));
             
+            return newmesh;
         }
         else     
             return nullptr;
     }
 
-    void SetHoneyCombHeight(trimesh::TriMesh* mesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts)
+    void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out)
+    {
+        std::vector<bool> mark(mesh->faces.size(), false);
+        for (int i : in)
+            mark[i] = true;
+        bool pass = true;
+        int ii = 0;
+        for (;ii<mesh->faces.size();ii++)
+        {
+            if (mark[ii] = false)
+                break;
+        }
+        while (pass)
+        {
+            std::queue<int> facequeue;
+            facequeue.push(ii);
+            std::vector<int> result;
+            while (!facequeue.empty())
+            {
+                mark[facequeue.front()] = true;
+                for (int i = 0; i < mesh->across_edge[facequeue.front()].size(); i++)
+                {
+                    int face = mesh->across_edge[facequeue.front()][i];
+                    if (mark[face]) continue;
+                    mark[face] = true;
+                    result.push_back(face);
+                    facequeue.push(face);
+                }
+                facequeue.pop();
+            }
+            out.push_back(result);
+            ii = 0;
+            for (; ii < mesh->faces.size(); ii++)
+            {
+                if (mark[ii] = false)
+                    break;
+            }
+            if (ii == mesh->faces.size())
+                pass = false;
+        }
+    }
+
+    std::shared_ptr<trimesh::TriMesh> SetHoneyCombHeight(trimesh::TriMesh* mesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts)
     {
         mesh->bbox.valid = false;
         mesh->need_bbox();
@@ -812,16 +579,13 @@ namespace topomesh {
                         float zz = upST.getDataMinZInterpolation(xii, yii);
                         if (zz < min_z)
                             min_z = zz;
-                    }
-                // float min_z = upST.getDataMinZ(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y)/*- honeyparams.shellThickness*/;
-                // float min_z = upST.getDataMinZInterpolation(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y) - 1.2*honeyparams.shellThickness;
+                    }               
                 if (min_z > 1.2 * honeyparams.shellThickness)
                     min_z -= 1.2 * honeyparams.shellThickness;
-                newmesh->vertices[newmesh->faces[fi][vi]] = trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z);
-                // pointmesh->vertices.push_back(trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z));
-
+                newmesh->vertices[newmesh->faces[fi][vi]] = trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z);              
             }
         }
+        return newmesh;
     }
 
     trimesh::TriMesh* generateHoneyCombs(trimesh::TriMesh* trimesh, const HoneyCombParam& honeyparams,
