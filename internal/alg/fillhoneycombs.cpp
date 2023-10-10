@@ -422,7 +422,7 @@ namespace topomesh {
                 trimesh::point nor = v1 % v2;
                 normal += nor;
             }
-            normal /= (honeyparams.faces[0].size()*1.f);
+            //normal /= (honeyparams.faces[0].size()*1.f);
             trimesh::normalize(normal);
             cmesh.Rotate(normal, trimesh::vec3(0, 0, -1));
             cmesh.GenerateBoundBox();
@@ -435,9 +435,15 @@ namespace topomesh {
                     letterOpts.bottom.push_back(honeyparams.faces[hf][fi]);
                 }
             }
-            std::sort(letterOpts.bottom.begin(), letterOpts.bottom.end());
-            std::vector<int> otherFaces(trimesh->faces.size() - letterOpts.bottom.size());
-            std::set_difference(trimesh->faces.begin(), trimesh->faces.end(), letterOpts.bottom.begin(), letterOpts.bottom.end(), otherFaces.begin());
+            std::vector<int>bottomFaces = letterOpts.bottom;
+            std::vector<int> honeyFaces;
+            honeyFaces.reserve(cmesh.mfaces.size());
+            for (int i = 0; i < cmesh.mfaces.size(); ++i) {
+                honeyFaces.emplace_back(i);
+            }
+            std::sort(bottomFaces.begin(), bottomFaces.end());
+            std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
+            std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
             letterOpts.others = std::move(otherFaces);
             GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
             trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
