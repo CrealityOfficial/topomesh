@@ -468,7 +468,7 @@ namespace topomesh {
         int ii = 0;
         for (;ii<mesh->faces.size();ii++)
         {
-            if (mark[ii] = false)
+            if (mark[ii] == false)
                 break;
         }
         while (pass)
@@ -493,7 +493,7 @@ namespace topomesh {
             ii = 0;
             for (; ii < mesh->faces.size(); ii++)
             {
-                if (mark[ii] = false)
+                if (mark[ii] == false)
                     break;
             }
             if (ii == mesh->faces.size())
@@ -525,21 +525,47 @@ namespace topomesh {
             std::vector<float> height;
             for (int i = 0; i < hg.poly.size(); i++)
             {
-                trimesh::point p = hg.poly[i] - min_xy;
-                int xi = p.x / lengthx;
-                int yi = p.y / lengthy;
-                xi = xi == col ? --xi : xi;
-                yi = yi == row ? --yi : yi;
-                float min_z = upST.getDataMinZInterpolation(xi, yi);
+                float min_x = hg.poly[i].x - honeyparams.shellThickness * 3.f / 5.f;
+                float min_y = hg.poly[i].y - honeyparams.shellThickness * 3.f / 5.f;
+                float max_x = hg.poly[i].x + honeyparams.shellThickness * 3.f / 5.f;
+                float max_y = hg.poly[i].y + honeyparams.shellThickness * 3.f / 5.f;
+                int min_xi = (min_x - min_xy.x) / lengthx;
+                int min_yi = (min_y - min_xy.y) / lengthy;
+                int max_xi = (max_x - min_xy.x) / lengthx;
+                int max_yi = (max_y - min_xy.y) / lengthy;
+                float min_z = std::numeric_limits<float>::max();
+                for (int xii = min_xi; xii <= max_xi; xii++)
+                    for (int yii = min_yi; yii <= max_yi; yii++)
+                    {
+                        float zz = upST.getDataMinZInterpolation(xii, yii);
+                        if (zz < min_z)
+                            min_z = zz;
+                    }
                 if (min_z != std::numeric_limits<float>::max())
                 {
-                    min_z -= honeyparams.shellThickness;
+                    min_z -= 1.2*honeyparams.shellThickness;
                     height.push_back(min_z);
                 }
                 else
                 {
                     height.push_back(0.f);
                 }
+               // trimesh::point p = hg.poly[i] - min_xy;
+               // int xi = p.x / lengthx;
+               // int yi = p.y / lengthy;
+               // xi = xi == col ? --xi : xi;
+               // yi = yi == row ? --yi : yi;
+               //// float min_z = upST.getDataMinZInterpolation(xi, yi);
+               // float min_z = upST.getDataMinZCoord(xi, yi);
+               // if (min_z != std::numeric_limits<float>::max())
+               // {
+               //     min_z -= honeyparams.shellThickness;
+               //     height.push_back(min_z);
+               // }
+               // else
+               // {
+               //     height.push_back(0.f);
+               // }
             }
             hg.edges.resize(hg.poly.size());
             for (int i = 0; i < hg.edges.size(); i++)

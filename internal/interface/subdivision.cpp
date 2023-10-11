@@ -35,6 +35,7 @@ namespace topomesh {
 		{
 			for (int i = 0; i < mesh->across_edge[fi].size(); i++)
 			{
+				if (mesh->across_edge[fi][i] == -1) continue;
 				if (!is_subdiv[mesh->across_edge[fi][i]])
 				{
 					out[mesh->across_edge[fi][i]]++;
