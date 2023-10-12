@@ -13,6 +13,7 @@
 
 #include "trimesh2/TriMesh_algo.h"
 #include "msbase/mesh/dumplicate.h"
+#include "msbase/mesh/get.h"
 #include <random>
 
 
@@ -869,6 +870,7 @@ namespace topomesh {
             for (int fi = 0; fi < jointmesh->faces.size(); fi++)
                 newmesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][2] + vertexsize, jointmesh->faces[fi][1] + vertexsize));
             msbase::dumplicateMesh(newmesh);
+            msbase::mergeNearPoints(newmesh, nullptr, 4e-3f);
         }
         else {
             std::map<int, int> vmap;
@@ -927,7 +929,7 @@ namespace topomesh {
             //newmesh->write("step1.stl");
             msbase::dumplicateMesh(newmesh);
             /////
-            /// mergeNearPoints(newmesh, nullptr, 4e-3f);
+            msbase::mergeNearPoints(newmesh, nullptr, 4e-3f);
             /// 
             /*std::vector<bool> df(newmesh->faces.size(), false);
             for (int fi = 0; fi < newmesh->faces.size(); fi++)
@@ -974,10 +976,11 @@ namespace topomesh {
             {
                 deleteface1[fi] = true;                              
                 int oppovertex = fii;
-                trimesh::point fn = (newmesh->vertices[newmesh->faces[fi][1]] - newmesh->vertices[newmesh->faces[fi][0]]) %
-                    (newmesh->vertices[newmesh->faces[fi][2]] - newmesh->vertices[newmesh->faces[fi][0]]);
-                trimesh::normalize(fn);
+                trimesh::point fn = msbase::getFaceNormal(newmesh, fi);
+                
                 int beginindex = newmesh->faces[fi][(oppovertex+1)%3];
+                int endindex = newmesh->faces[fi][(oppovertex + 2) % 3];
+                trimesh::point fdir = newmesh->vertices[endindex] - newmesh->vertices[beginindex];
                /* if (fi == 297)
                     std::cout << "\n";*/
                 std::vector<int> vertexlines;
@@ -991,7 +994,10 @@ namespace topomesh {
                         trimesh::point tn = (newmesh->vertices[index] - newmesh->vertices[beginindex]) %
                             (newmesh->vertices[newmesh->faces[fi][oppovertex]]-newmesh->vertices[beginindex]);
                         trimesh::normalize(tn);
-                        if (std::fabs(tn.x - fn.x) <= 5e-3f && std::fabs(tn.y - fn.y) <= 5e-3f && std::fabs(tn.z - fn.z) <= 5e-3f)
+                        trimesh::point tdir = newmesh->vertices[index] - newmesh->vertices[beginindex];
+                        trimesh::normalize(tdir);
+                        if (std::fabs(tn.x - fn.x) <= 5e-3f && std::fabs(tn.y - fn.y) <= 5e-3f && std::fabs(tn.z - fn.z) <= 5e-3f &&
+                            std::fabs(tdir.x - fdir.x) <= 5e-3f && std::fabs(tdir.y - fdir.y) <= 5e-3f && std::fabs(tdir.z - fdir.z) <= 5e-3f)
                         {
                             /*if(newmesh->neighbors[beginindex][vi]==9618)
                                 std::cout << "\n";*/
@@ -1024,7 +1030,10 @@ namespace topomesh {
                             trimesh::point tn = (newmesh->vertices[newmesh->neighbors[index][vi]] - newmesh->vertices[beginindex]) %
                                 (newmesh->vertices[newmesh->faces[fi][oppovertex]] - newmesh->vertices[beginindex]);
                             trimesh::normalize(tn);
-                            if (std::fabs(tn.x - fn.x) <= 5e-3f && std::fabs(tn.y - fn.y) <= 5e-3f && std::fabs(tn.z - fn.z) <= 5e-3f)
+                            trimesh::point tdir = newmesh->vertices[newmesh->neighbors[index][vi]] - newmesh->vertices[beginindex];
+                            trimesh::normalize(tdir);
+                            if (std::fabs(tn.x - fn.x) <= 5e-3f && std::fabs(tn.y - fn.y) <= 5e-3f && std::fabs(tn.z - fn.z) <= 5e-3f &&
+                                std::fabs(tdir.x - fdir.x) <= 5e-3f && std::fabs(tdir.y - fdir.y) <= 5e-3f && std::fabs(tdir.z - fdir.z) <= 5e-3f)
                             {
                                 vertexlines.push_back(newmesh->neighbors[index][vi]);
                                 is_vis[newmesh->neighbors[index][vi]] = true;
