@@ -37,7 +37,7 @@ namespace topomesh
         }
         if (param.mode == 0 || param.mode == 1) {
             if (param.mode) {
-                if (param.faces.size() != 2) {
+                if (param.faces.size() < 2) {
                     return 8;
                 } else if (param.faces[0].empty() || param.faces[1].empty()) {
                     return 8;

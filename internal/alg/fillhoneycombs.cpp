@@ -957,19 +957,8 @@ namespace topomesh {
         std::vector<bool> is_vis(newmesh->vertices.size(), false);      
 
         std::vector<bool> deleteface1(newmesh->faces.size(), false);
-        int begin = 0;
-        int end = 0;
-        if (mode)
-        {
-            begin = facesize;
-            end = next_facesize;
-        }
-        else
-        {
-            begin = 0;
-            end = facesize;
-        }
-        for (int fi = begin; fi < end; fi++)
+       
+        for (int fi = 0; fi < facesize; fi++)
         {
             bool is_boundary = false;
             int fii = 0;
