@@ -417,8 +417,9 @@ namespace topomesh {
             trimesh::point normal(0,0,0);
             for (int fi = 0; fi < honeyparams.faces[0].size(); fi++)
             {
-                trimesh::point v1 = trimesh->vertices[trimesh->faces[fi][1]] - trimesh->vertices[trimesh->faces[fi][0]];
-                trimesh::point v2 = trimesh->vertices[trimesh->faces[fi][2]] - trimesh->vertices[trimesh->faces[fi][0]];
+                int f = honeyparams.faces[0][fi];
+                trimesh::point v1 = trimesh->vertices[trimesh->faces[f][1]] - trimesh->vertices[trimesh->faces[f][0]];
+                trimesh::point v2 = trimesh->vertices[trimesh->faces[f][2]] - trimesh->vertices[trimesh->faces[f][0]];
                 trimesh::point nor = v1 % v2;
                 normal += nor;
             }
@@ -478,13 +479,17 @@ namespace topomesh {
             std::vector<int> result;
             while (!facequeue.empty())
             {
+                if (facequeue.front() == -1 || mark[facequeue.front()])
+                {
+                    facequeue.pop();
+                    continue;
+                }
                 mark[facequeue.front()] = true;
+                result.push_back(facequeue.front());
                 for (int i = 0; i < mesh->across_edge[facequeue.front()].size(); i++)
                 {
                     int face = mesh->across_edge[facequeue.front()][i];
-                    if (mark[face]) continue;
-                    mark[face] = true;
-                    result.push_back(face);
+                    if (mark[face]) continue;               
                     facequeue.push(face);
                 }
                 facequeue.pop();
@@ -768,6 +773,7 @@ namespace topomesh {
     void JointBotMesh(trimesh::TriMesh* mesh, trimesh::TriMesh* newmesh,  std::vector<int>& botfaces, int mode)
     {
         int facesize;
+        int next_facesize;
         if (mode)
         {
             std::vector<bool> deletefaces(mesh->faces.size(), false);
@@ -783,9 +789,9 @@ namespace topomesh {
                 newmesh->vertices.push_back(mesh->vertices[vi]);
             for (int fi = 0; fi < mesh->faces.size(); fi++)
                 newmesh->faces.push_back(trimesh::TriMesh::Face(mesh->faces[fi][0] + vertexsize, mesh->faces[fi][1] + vertexsize, mesh->faces[fi][2] + vertexsize));
+            next_facesize = newmesh->faces.size();
 
-
-            topomesh::MMeshT joinmesh(81960, 81960);
+            topomesh::MMeshT joinmesh(162460, 242460);
             std::vector<std::vector<trimesh::point>> sequentials = GetOpenMeshBoundarys(newmesh);
             std::vector<std::pair<float, int>> arc_array;
             std::vector<std::pair<int, int>> begin_and_end;
@@ -951,7 +957,19 @@ namespace topomesh {
         std::vector<bool> is_vis(newmesh->vertices.size(), false);      
 
         std::vector<bool> deleteface1(newmesh->faces.size(), false);
-        for (int fi = 0; fi < facesize; fi++)
+        int begin = 0;
+        int end = 0;
+        if (mode)
+        {
+            begin = facesize;
+            end = next_facesize;
+        }
+        else
+        {
+            begin = 0;
+            end = facesize;
+        }
+        for (int fi = begin; fi < end; fi++)
         {
             bool is_boundary = false;
             int fii = 0;
