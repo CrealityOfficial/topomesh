@@ -490,7 +490,7 @@ namespace topomesh {
                 for (int i = 0; i < mesh->across_edge[facequeue.front()].size(); i++)
                 {
                     int face = mesh->across_edge[facequeue.front()][i];
-                    if (mark[face]) continue;               
+                    if (face==-1||mark[face]) continue;               
                     facequeue.push(face);
                 }
                 facequeue.pop();
