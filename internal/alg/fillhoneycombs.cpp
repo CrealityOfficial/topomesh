@@ -461,7 +461,7 @@ namespace topomesh {
             return nullptr;
     }
 
-    void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out)
+    void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out, int threshold, std::vector<int>& other_shells)
     {
         std::vector<bool> mark(mesh->faces.size(), false);
         for (int i : in)
@@ -495,7 +495,10 @@ namespace topomesh {
                 }
                 facequeue.pop();
             }
-            out.push_back(result);
+            if (result.size() > threshold)
+                out.push_back(result);
+            else
+                other_shells.insert(other_shells.end(), result.begin(), result.end());
             ii = 0;
             for (; ii < mesh->faces.size(); ii++)
             {
@@ -505,6 +508,67 @@ namespace topomesh {
             if (ii == mesh->faces.size())
                 pass = false;
         }
+        std::sort(out.begin(), out.end(), [&](const std::vector<int>& a, const std::vector<int>& b)->bool
+            {
+                return a.size() > b.size();
+            });
+    }
+
+    void FilterShells(trimesh::TriMesh* mesh, int threshold, std::vector<int>& other_shells)
+    {
+        std::vector<bool> mark(mesh->faces.size(), false);
+        std::vector<std::vector<int>> shells_faces;
+        bool pass = true;
+        int ii = 0;
+        for (; ii < mesh->faces.size(); ii++)
+        {
+            if (mark[ii] == false)
+                break;
+        }
+        while (pass)
+        {
+            std::queue<int> facequeue;
+            facequeue.push(ii);
+            std::vector<int> result;
+            while (!facequeue.empty())
+            {
+                if (facequeue.front() == -1 || mark[facequeue.front()])
+                {
+                    facequeue.pop();
+                    continue;
+                }
+                mark[facequeue.front()] = true;
+                result.push_back(facequeue.front());
+                for (int i = 0; i < mesh->across_edge[facequeue.front()].size(); i++)
+                {
+                    int face = mesh->across_edge[facequeue.front()][i];
+                    if (face == -1 || mark[face]) continue;
+                    facequeue.push(face);
+                }
+                facequeue.pop();
+            }
+            shells_faces.push_back(result);
+
+            ii = 0;
+            for (; ii < mesh->faces.size(); ii++)
+            {
+                if (mark[ii] == false)
+                    break;
+            }
+            if (ii == mesh->faces.size())
+                pass = false;
+        }
+        for (int i = 0; i < shells_faces.size(); i++)
+        {
+            if (shells_faces[i].size() <= threshold)
+            {
+                for (int fi = 0; fi < shells_faces[i].size(); fi++)
+                {
+                    other_shells.push_back(shells_faces[i][fi]);
+                }
+            }
+        }
+
     }
 
     std::shared_ptr<trimesh::TriMesh> SetHoneyCombHeight(trimesh::TriMesh* mesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts)

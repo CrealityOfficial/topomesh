@@ -86,6 +86,7 @@ namespace topomesh {
     void JointBotMesh(trimesh::TriMesh* mesh, trimesh::TriMesh* newmesh, std::vector<int>& botfaces,int mode=0);
     void SelectInnerFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, int indicate, std::vector<int>& out);
     void SelectBorderFaces(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out);
-    void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out);
+    void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out, int threshold, std::vector<int>& other_shells);
+    void FilterShells(trimesh::TriMesh* mesh, int threshold, std::vector<int>& other_shells);
     std::shared_ptr<trimesh::TriMesh> SetHoneyCombHeight(trimesh::TriMesh* mesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts);
 }
