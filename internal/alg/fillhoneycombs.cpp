@@ -498,7 +498,11 @@ namespace topomesh {
             if (result.size() > threshold)
                 out.push_back(result);
             else
+            {
                 other_shells.insert(other_shells.end(), result.begin(), result.end());
+                std::set<int> filter(other_shells.begin(), other_shells.end());
+                other_shells.assign(filter.begin(), filter.end());
+            }
             ii = 0;
             for (; ii < mesh->faces.size(); ii++)
             {
