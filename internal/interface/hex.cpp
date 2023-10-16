@@ -513,9 +513,9 @@ namespace topomesh
     HexaPolygons generateEmbedHolesHexa(trimesh::TriMesh* mesh)
     {
         topomesh::HoneyCombParam combParam;
-        /*combParam.honeyCombRadius = 2.5f;
+        combParam.honeyCombRadius = 3.0f;
         combParam.shellThickness = 2.0f;
-        combParam.nestWidth = 2.0f;*/
+        combParam.nestWidth = 2.0f;
         return topomesh::generateEmbedHolesColumnar(mesh, combParam);
     }
 }
