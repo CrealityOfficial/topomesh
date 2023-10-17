@@ -118,7 +118,7 @@ namespace topomesh {
                     ihexagons.emplace_back(std::move(hexa));
                 } else {
                     Polygons&& ipolys = mpolygons.intersection(polygons);
-                    if (!ipolys.empty()) {
+                    if (!ipolys.empty() && ipolys.paths.size() == 1) {
                         if (ipolys.area() < 0) {
                             ClipperLib::Path& path = ipolys.paths.front();
                             ClipperLib::Path tmp;
