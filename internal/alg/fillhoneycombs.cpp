@@ -617,7 +617,8 @@ namespace topomesh {
                     }
                 if (min_z != std::numeric_limits<float>::max())
                 {
-                    min_z -= 1.2*honeyparams.shellThickness;
+                    if (min_z > 1.2 * honeyparams.shellThickness)
+                        min_z -= 1.2 * honeyparams.shellThickness;
                     height.push_back(min_z);
                 }
                 else
@@ -2043,7 +2044,8 @@ namespace topomesh {
                                     min_z = zz;
                             }
                         if (min_z != std::numeric_limits<float>::max()) {
-                            min_z -= 1.2 * honeyparams.shellThickness;
+                            if (min_z > 1.2 * honeyparams.shellThickness)
+                                min_z -= 1.2 * honeyparams.shellThickness;
                             height.push_back(min_z);
                         } else {
                             height.push_back(0.f);
@@ -2143,7 +2145,8 @@ namespace topomesh {
                                 min_z = zz;
                         }
                     if (min_z != std::numeric_limits<float>::max()) {
-                        min_z -= 1.2 * honeyparams.shellThickness;
+                        if (min_z > 1.2 * honeyparams.shellThickness)
+                            min_z -= 1.2 * honeyparams.shellThickness;
                         height.push_back(min_z);
                     } else {
                         height.push_back(0.f);
