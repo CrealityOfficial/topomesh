@@ -3,6 +3,7 @@
 #include "topomesh/interface/utils.h"
 #include "topomesh/interface/subdivision.h"
 #include "topomesh/interface/hex.h"
+#include "volumeMesh.h"
 
 #include "internal/data/mmesht.h"
 #include "internal/alg/letter.h"
@@ -495,7 +496,8 @@ namespace topomesh {
                 }
                 facequeue.pop();
             }
-            if (result.size() > threshold)
+            float vol = topomesh::getMeshVolume(mesh, result);
+            if (vol > threshold)
                 out.push_back(result);
             else
             {

@@ -36,8 +36,8 @@ namespace topomesh
 	/// <returns></returns>
 	TOPOMESH_API int checkParam(const CombParam& param);
 
-	TOPOMESH_API  void SelectBorderFaces(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out);
-	TOPOMESH_API  void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out);
+	TOPOMESH_API  void SelectBorderFacesOfInterface(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out);
+	TOPOMESH_API  void LastFacesOfInterface(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out, int threshold, std::vector<int>& other_shells);
 }
 
 #endif // TOPOMESH_HONEYCOMB_1692753685514_H

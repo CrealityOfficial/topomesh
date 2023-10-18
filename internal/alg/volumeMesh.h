@@ -3,4 +3,5 @@
 
 namespace topomesh {
 	float getMeshVolume(trimesh::TriMesh* mesh,std::vector<int>& faces);
+	float getPointCloudVolume(trimesh::TriMesh* mesh,std::vector<int>& vexter);
 }

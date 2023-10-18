@@ -48,4 +48,15 @@ namespace topomesh
         }
         return 0;
     }
+
+
+    void SelectBorderFacesOfInterface(trimesh::TriMesh* mesh, int indicate, std::vector<int>& out)
+    {
+        topomesh::SelectBorderFaces(mesh,indicate,out);
+    }
+
+    void LastFacesOfInterface(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out, int threshold, std::vector<int>& other_shells)
+    {
+        topomesh::LastFaces(mesh, in, out, threshold, other_shells);
+    }
 }
