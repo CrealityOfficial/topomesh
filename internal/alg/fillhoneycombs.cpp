@@ -497,6 +497,7 @@ namespace topomesh {
                 facequeue.pop();
             }
             float vol = topomesh::getMeshVolume(mesh, result);
+            vol = std::abs(vol);
             if (vol > threshold)
                 out.push_back(result);
             else
