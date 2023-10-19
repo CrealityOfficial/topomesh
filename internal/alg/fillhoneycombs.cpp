@@ -1007,29 +1007,25 @@ namespace topomesh {
        // newmesh->write("step2.ply");
       
         
-        newmesh->clear_neighbors();
-        newmesh->need_neighbors();
-        newmesh->clear_adjacentfaces();
-        newmesh->need_adjacentfaces();
-
-        std::vector<bool> is_boundarys(newmesh->vertices.size(),false);      
-        for (int vi = 0; vi < newmesh->vertices.size(); vi++)
-        {
-            if (newmesh->adjacentfaces[vi].size() == newmesh->neighbors[vi].size()-1)
-                is_boundarys[vi] = true;          
-        }
-
         std::vector<bool> is_vis(newmesh->vertices.size(), false);      
-
         std::vector<bool> deleteface1(newmesh->faces.size(), false);
-       
-       
+             
         auto function = [&](int begin, int end, bool other = false)
         {
             newmesh->clear_across_edge();
             newmesh->need_across_edge();
+            newmesh->clear_neighbors();
+            newmesh->need_neighbors();
+            newmesh->clear_adjacentfaces();
+            newmesh->need_adjacentfaces();
 
-            for (int fi = 0; fi < facesize; fi++)
+            std::vector<bool> is_boundarys(newmesh->vertices.size(), false);
+            for (int vi = 0; vi < newmesh->vertices.size(); vi++)
+            {
+                if (newmesh->adjacentfaces[vi].size() == newmesh->neighbors[vi].size() - 1)
+                    is_boundarys[vi] = true;
+            }
+            for (int fi = begin; fi < end; fi++)
             {
                 if (other)
                     if (std::abs(newmesh->vertices[newmesh->faces[fi][0]].z - 0.f) < 1e-4f && std::abs(newmesh->vertices[newmesh->faces[fi][1]].z - 0.f) < 1e-4f &&
@@ -1053,7 +1049,8 @@ namespace topomesh {
 
                     int beginindex = newmesh->faces[fi][(oppovertex + 1) % 3];
                     int endindex = newmesh->faces[fi][(oppovertex + 2) % 3];
-                    trimesh::point fdir = newmesh->vertices[endindex] - newmesh->vertices[beginindex];                   
+                    trimesh::point fdir = newmesh->vertices[endindex] - newmesh->vertices[beginindex];   
+                    trimesh::normalize(fdir);
                     std::vector<int> vertexlines;
                     int vsize = vertexlines.size();
                     for (int vi = 0; vi < newmesh->neighbors[beginindex].size(); vi++)
