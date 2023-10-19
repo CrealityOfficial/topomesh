@@ -53,4 +53,35 @@ namespace topomesh
 		}
 		return false;
 	}
+
+	PolygonSerial::PolygonSerial()
+	{
+
+	}
+
+	PolygonSerial::~PolygonSerial()
+	{
+
+	}
+
+	int PolygonSerial::version()
+	{
+		return 0;
+	}
+
+	bool PolygonSerial::save(std::fstream& out, ccglobal::Tracer* tracer)
+	{
+		cxndSaveVectorT(out, poly);
+		return true;
+	}
+
+	bool PolygonSerial::load(std::fstream& in, int ver, ccglobal::Tracer* tracer)
+	{
+		if (ver == 0)
+		{
+			cxndLoadVectorT(in, poly);
+			return true;
+		}
+		return false;
+	}
 }
