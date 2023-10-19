@@ -44,6 +44,7 @@ namespace topomesh {
             }
             Polygons cpolygons(bpolygons);
             mpolygons = cpolygons.offset(-std::round(thickness / resolution));
+            mpolygons.simplify();
         }
         if (debugger) {
             //显示底面轮廓抽壳多边形
@@ -1634,7 +1635,20 @@ namespace topomesh {
                 const int& start = hexa.startIndex;
                 int upstart = start + hexagonsize;
                 ///六角网格顶部
-                if (hexa.standard) {
+                std::vector<std::pair<trimesh::point, int>> inputs;
+                for (int i = 0; i < polynums; ++i) {
+                    std::pair<trimesh::point, int> d(poly[i], i + upstart);
+                    inputs.emplace_back(d);
+                }
+                topomesh::EarClipping clip(inputs);
+                const auto& tops = clip.getResult();
+                std::vector<trimesh::ivec3> fs;
+                for (const auto& fa : tops) {
+                    faces.emplace_back(fa[2], fa[1], fa[0]);
+                    topfaces.emplace_back(faces.size() - 1);
+                    //fs.emplace_back(faces.back() - upstart);
+                }
+                /*if (hexa.standard) {
                     for (int j = 1; j < polynums - 1; ++j) {
                         const int& cur = upstart + j;
                         const int& next = upstart + j + 1;
@@ -1681,7 +1695,7 @@ namespace topomesh {
                         faces.emplace_back(trimesh::ivec3(newupstart, next, cur));
                         topfaces.push_back(faces.size() - 1);
                     }
-                }
+                }*/
             }
         }
         hexas.topfaces.swap(topfaces);
