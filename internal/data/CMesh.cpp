@@ -843,8 +843,8 @@ namespace topomesh {
         for (int i = 0; i < mfaces.size(); ++i) {
             sequence[i] = i;
         }
-        std::vector<int> result(sequence.size() - faceIndexs.size());
-        std::set_difference(sequence.begin(), sequence.end(), faceIndexs.begin(), faceIndexs.end(), result.begin());
+        std::vector<int> result;
+        std::set_difference(sequence.begin(), sequence.end(), faceIndexs.begin(), faceIndexs.end(), std::back_inserter(result));
         const size_t facenums = result.size();
         std::vector<FFace> otherFaces;
         otherFaces.resize(facenums);

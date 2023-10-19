@@ -379,8 +379,8 @@ namespace topomesh {
                     honeyFaces.emplace_back(i);
                 }
                 std::sort(bottomFaces.begin(), bottomFaces.end());
-                std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
-                std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
+                std::vector<int> otherFaces;
+                std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), std::back_inserter(otherFaces));
                 letterOpts.others = std::move(otherFaces);
                 //第2步，平移至xoy平面后底面整平
                 cmesh.FlatBottomSurface(&bottomFaces);
@@ -448,8 +448,8 @@ namespace topomesh {
                 honeyFaces.emplace_back(i);
             }
             std::sort(bottomFaces.begin(), bottomFaces.end());
-            std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
-            std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
+            std::vector<int> otherFaces;
+            std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), std::back_inserter(otherFaces));
             letterOpts.others = std::move(otherFaces);
             if (!GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger))
                 return std::make_shared<trimesh::TriMesh>();
@@ -722,8 +722,8 @@ namespace topomesh {
             honeyFaces.emplace_back(i);
         }
         std::sort(bottomFaces.begin(), bottomFaces.end());
-        std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
-        std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
+        std::vector<int> otherFaces;
+        std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), std::back_inserter(otherFaces));
         letterOpts.others = std::move(otherFaces);
         //第2步，平移至xoy平面后底面整平
         inputMesh.FlatBottomSurface(&bottomFaces);
@@ -2003,8 +2003,8 @@ namespace topomesh {
                     honeyFaces.emplace_back(i);
                 }
                 std::sort(bottomFaces.begin(), bottomFaces.end());
-                std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
-                std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
+                std::vector<int> otherFaces;
+                std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), std::back_inserter(otherFaces));
                 letterOpts.others = std::move(otherFaces);
                 //第2步，平移至xoy平面后底面整平
                 cmesh.FlatBottomSurface(&bottomFaces);
@@ -2124,8 +2124,8 @@ namespace topomesh {
                 honeyFaces.emplace_back(i);
             }
             std::sort(bottomFaces.begin(), bottomFaces.end());
-            std::vector<int> otherFaces(honeyFaces.size() - bottomFaces.size());
-            std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), otherFaces.begin());
+            std::vector<int> otherFaces;
+            std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), std::back_inserter(otherFaces));
             letterOpts.others = std::move(otherFaces);
             GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger);
             trimesh::TriMesh && mesh = cmesh.GetTriMesh();
