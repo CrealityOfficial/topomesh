@@ -944,6 +944,8 @@ namespace topomesh {
                 newmesh->faces.push_back(trimesh::TriMesh::Face(jointmesh->faces[fi][0] + vertexsize, jointmesh->faces[fi][2] + vertexsize, jointmesh->faces[fi][1] + vertexsize));
             msbase::dumplicateMesh(newmesh);
             msbase::mergeNearPoints(newmesh, nullptr, 4e-3f);
+            if (newmesh->vertices.empty() && newmesh->faces.empty())
+                return;
         }
         else {
             std::map<int, int> vmap;
@@ -1002,7 +1004,8 @@ namespace topomesh {
             //newmesh->write("step1.stl");
             msbase::dumplicateMesh(newmesh);           
             msbase::mergeNearPoints(newmesh, nullptr, 4e-3f);          
-
+            if (newmesh->vertices.empty() && newmesh->faces.empty())
+                return;
         }
        // newmesh->write("step2.ply");
       
