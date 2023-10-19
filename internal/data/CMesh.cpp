@@ -935,8 +935,9 @@ namespace topomesh {
         }
     }
 
-    void CMesh::GetSequentialPoints(std::vector<int>& edgeIndexs, std::vector<std::vector<int>>& sequentials)
+    bool CMesh::GetSequentialPoints(std::vector<int>& edgeIndexs, std::vector<std::vector<int>>& sequentials)
     {
+        bool result = true;
         const size_t nums = edgeIndexs.size();
         std::vector<bool> masks(medges.size(), false);
         // all sequential edges are counterclockwise.
@@ -1026,6 +1027,8 @@ namespace topomesh {
                         std::vector<int> current;
                         current.emplace_back(fe);
                         Queues.pop();
+                        int times = 0;
+                        int queuesize = Queues.size();
                         while (!Queues.empty()) {
                             const int back = current.back();
                             if (knotMarks[medges[back].b]) {
@@ -1035,9 +1038,15 @@ namespace topomesh {
                             if (medges[ef].a == medges[back].b) {
                                 current.emplace_back(ef);
                                 Queues.pop();
+                                ++times;
                             } else {
                                 Queues.emplace(ef);
                                 Queues.pop();
+                                ++times;
+                            }
+                            if (times >= queuesize) {
+                                result = false;
+                                break;
                             }
                         }
                         ringQueues.emplace(current);
@@ -1267,8 +1276,10 @@ namespace topomesh {
                     medges[e].a = medges[e].a - medges[e].b;
                 }
             }
+            if (pointList.size() < 3) result = false;
             sequentials.emplace_back(pointList);
         }
+        return result;
     }
 
     CMesh CMesh::SavePointsToMesh(std::vector<int>& pointIndexs, double radius, size_t nrows, size_t ncolumns)

@@ -81,7 +81,7 @@ namespace topomesh {
         PPoint FindBottomDirection(std::vector<int>* bottomfaces = nullptr, float threshold = 0.95f);
         void DeleteFaces(std::vector<int>& faceIndexs, bool bKeepPoints = false);
         void SelectIndividualEdges(std::vector<int>& edgeIndexs, bool bCounterClockWise = false);
-        void GetSequentialPoints(std::vector<int>& edgeIndexs, std::vector<std::vector<int>>& sequentials);
+        bool GetSequentialPoints(std::vector<int>& edgeIndexs, std::vector<std::vector<int>>& sequentials);
 
         CMesh SavePointsToMesh(std::vector<int>& pointIndexs, double r = 0.01, size_t nrows = 20, size_t ncolumns = 20);
         CMesh SaveEdgesToMesh(std::vector<int>& edgeIndexs, double r = 0.01, size_t nslices = 20);
