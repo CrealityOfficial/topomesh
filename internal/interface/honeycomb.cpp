@@ -3,7 +3,7 @@
 
 namespace topomesh
 {
-	std::shared_ptr<trimesh::TriMesh> honeyCombGenerate(trimesh::TriMesh* trimesh, const CombParam& honeyparams,
+	std::shared_ptr<trimesh::TriMesh> honeyCombGenerate(trimesh::TriMesh* trimesh, ErrorCode& code, const CombParam& honeyparams,
 		ccglobal::Tracer* tracer)
 	{
         HoneyCombParam params;
@@ -16,7 +16,9 @@ namespace topomesh
         params.holeConnect = honeyparams.holeConnect;
         params.mode = honeyparams.mode;
         params.faces = honeyparams.faces;
-        std::shared_ptr<trimesh::TriMesh> mesh = GenerateHoneyCombs(trimesh, params, tracer);
+        int value = 0;
+        std::shared_ptr<trimesh::TriMesh> mesh = GenerateHoneyCombs(trimesh, value, params, tracer);
+        code = ErrorCode(value);
 		return mesh;
 	}
 

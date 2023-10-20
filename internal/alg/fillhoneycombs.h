@@ -51,7 +51,7 @@ namespace topomesh {
         ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
 
 
-	std::shared_ptr<trimesh::TriMesh> GenerateHoneyCombs(trimesh::TriMesh* trimesh = nullptr, const HoneyCombParam& honeyparams = HoneyCombParam(),
+	std::shared_ptr<trimesh::TriMesh> GenerateHoneyCombs(trimesh::TriMesh* trimesh, int& error, const HoneyCombParam& honeyparams = HoneyCombParam(),
 		ccglobal::Tracer* tracer = nullptr, HoneyCombDebugger* debugger = nullptr);
 
     struct honeyLetterOpt {
@@ -67,7 +67,7 @@ namespace topomesh {
         std::vector<HexaPolygon>hexgons;
     };
 
-    void getTriMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials);
+    bool getTriMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials);
     bool GenerateBottomHexagons(const CMesh& honeyMesh, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
     void GenerateTriPolygonsHexagons(const TriPolygons& polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger = nullptr);
 

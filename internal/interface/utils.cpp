@@ -16,7 +16,8 @@ namespace topomesh
 		//edgeMesh.WriteSTLFile("edges.stl");
 		//第0步，底面轮廓边界所有边排序
 		std::vector<std::vector<int>>sequentials;
-		mesh.GetSequentialPoints(edges, sequentials);
+        if (!mesh.GetSequentialPoints(edges, sequentials))
+            return polys;
 		//第1步，构建底面边界轮廓多边形
 		polys.reserve(sequentials.size());
 		const auto& points = mesh.mpoints;
@@ -29,7 +30,6 @@ namespace topomesh
 			}
 			polys.emplace_back(border);
 		}
-
 		return polys;
 	}
 

@@ -532,6 +532,17 @@ namespace topomesh {
         return -1;
     }
 
+    int CMesh::PointOppositeEdge(int v, int f) const
+    {
+        const auto& neighbor = mfaceEdges[f];
+        for (int i = 0; i < neighbor.size(); ++i) {
+            if ((medges[neighbor[i]].a != v) && (medges[neighbor[i]].b != v)) {
+                return neighbor[i];
+            }
+        }
+        return -1;
+    }
+
     float CMesh::GetVolume()const
     {
         float volume = 0.0f;
@@ -944,16 +955,22 @@ namespace topomesh {
         if (true) {
             for (auto& e : edgeIndexs) {
                 const auto& neighbor = medgeFaces[e];
-                const auto& f = neighbor.front();
-                const auto& v0 = mfaces[f][0];
-                const auto& v1 = mfaces[f][1];
-                const auto& v2 = mfaces[f][2];
-                const auto& n = trimesh::normalized((mpoints[v2] - mpoints[v1]).cross(mpoints[v0] - mpoints[v1]));
-                const auto& a = medges[e].a;
-                const auto& b = medges[e].b;
-                const auto& c = EdgeOppositePoint(e, f);
-                const auto& d = trimesh::normalized((mpoints[c] - mpoints[a]).cross(mpoints[b] - mpoints[a]));
-                if ((n DOT d) < 0) {
+                const int f = neighbor.front();
+                std::queue<int> vertexs;
+                for (const auto& v : mfaces[f]) {
+                    vertexs.emplace(v);
+                }
+                int v = EdgeOppositePoint(e, f);
+                for (int i = 0; i < 3; ++i) {
+                    int fr = vertexs.front();
+                    if (fr == v) break;
+                    vertexs.emplace(fr);
+                    vertexs.pop();
+                }
+                vertexs.pop();
+                const int a = medges[e].a;
+                const int vt = vertexs.front();
+                if (vt == a) {
                     medges[e].a = medges[e].a + medges[e].b;
                     medges[e].b = medges[e].a - medges[e].b;
                     medges[e].a = medges[e].a - medges[e].b;
@@ -1038,7 +1055,7 @@ namespace topomesh {
                             if (medges[ef].a == medges[back].b) {
                                 current.emplace_back(ef);
                                 Queues.pop();
-                                ++times;
+                                times = 0;
                             } else {
                                 Queues.emplace(ef);
                                 Queues.pop();
