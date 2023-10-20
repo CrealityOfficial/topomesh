@@ -11,6 +11,11 @@ namespace topomesh
 		CMesh mesh(tmesh);
 		std::vector<int> edges;
 		mesh.SelectIndividualEdges(edges);
-		mesh.GetSequentialPoints(edges, holes);
+        std::vector<std::vector<int>> sequences;
+        if (mesh.GetSequentialPoints(edges, sequences)) {
+            return;
+        }
+        holes.swap(sequences);
+        return;
 	}
 }

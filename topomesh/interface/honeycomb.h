@@ -4,6 +4,13 @@
 
 namespace topomesh
 {
+    enum class ErrorCode :int {
+        GENERATE_NORMAL = 0,
+        NO_MODEL_DATA = 1,
+        BOUNDARY_CHECK_FAIL = 2,
+        MAX_ERROR = 3,
+    };
+
 	struct CombParam
 	{
 		float width = 2.0f;
@@ -18,8 +25,8 @@ namespace topomesh
         int mode = 0; ///< 0 is shell, 1 is backfill.
 	};
 
-	TOPOMESH_API std::shared_ptr<trimesh::TriMesh> honeyCombGenerate(trimesh::TriMesh* trimesh, const CombParam& honeyparams = CombParam(),
-		ccglobal::Tracer* tracer = nullptr);
+    TOPOMESH_API std::shared_ptr<trimesh::TriMesh> honeyCombGenerate(trimesh::TriMesh* trimesh, ErrorCode& code, const CombParam& honeyparams = CombParam(),
+        ccglobal::Tracer* tracer = nullptr);
 
 	/// <summary>
 	/// 0: parameters qualified.  

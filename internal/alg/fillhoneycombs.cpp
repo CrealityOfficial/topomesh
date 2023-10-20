@@ -347,11 +347,14 @@ namespace topomesh {
         return newmesh;
     }
 
-    std::shared_ptr<trimesh::TriMesh> GenerateHoneyCombs(trimesh::TriMesh* trimesh , const HoneyCombParam& honeyparams ,
+    std::shared_ptr<trimesh::TriMesh> GenerateHoneyCombs(trimesh::TriMesh* trimesh , int& code_error, const HoneyCombParam& honeyparams ,
         ccglobal::Tracer* tracer , HoneyCombDebugger* debugger )
     {
         //0.初始化Cmesh,并旋转
-        if(trimesh == nullptr) return nullptr;
+        if (!trimesh) {
+            code_error = 1;
+            return std::make_shared<trimesh::TriMesh>();
+        }
 
         CMesh cmesh(trimesh);
         //1.重新整理输入参数
@@ -402,8 +405,10 @@ namespace topomesh {
                     debugger->onGenerateBottomPolygons(polygons);
                 }
                 //第3步，生成底面六角网格
-                if (!GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger))
+                if (!GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger)) {
+                    code_error = 2;
                     return std::make_shared<trimesh::TriMesh>();
+                }
                 trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
                 trimesh = &mesh; 
                 std::shared_ptr<trimesh::TriMesh> newmesh= SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
@@ -451,8 +456,10 @@ namespace topomesh {
             std::vector<int> otherFaces;
             std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), std::back_inserter(otherFaces));
             letterOpts.others = std::move(otherFaces);
-            if (!GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger))
+            if (!GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger)) {
+                code_error = 2;
                 return std::make_shared<trimesh::TriMesh>();
+            }
             trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
             trimesh = &mesh;
             std::shared_ptr<trimesh::TriMesh> newmesh = SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
@@ -461,9 +468,10 @@ namespace topomesh {
             trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), normal));
             
             return newmesh;
-        }
-        else     
+        } else {
+            code_error = 3;
             return std::make_shared<trimesh::TriMesh>();
+        }
     }
 
     void LastFaces(trimesh::TriMesh* mesh, const std::vector<int>& in, std::vector<std::vector<int>>& out, int threshold, std::vector<int>& other_shells)
@@ -1178,12 +1186,12 @@ namespace topomesh {
         findNeignborFacesOfSameAsNormal(mesh,indicate,2.f,out);
     }
 
-    void getTriMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials)
+    bool getTriMeshBoundarys(trimesh::TriMesh& trimesh, std::vector<std::vector<int>>& sequentials)
     {
         CMesh mesh(&trimesh);
         std::vector<int> edges;
         mesh.SelectIndividualEdges(edges);             
-        mesh.GetSequentialPoints(edges, sequentials);
+        return mesh.GetSequentialPoints(edges, sequentials);
     }
 
     HexaPolygons GenerateTriPolygonsHexagons(const TriPolygons& polys, const HexagonArrayParam& hexagonparams)
