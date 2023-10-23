@@ -928,16 +928,22 @@ namespace topomesh {
         if (bCounterClockWise) {
             for (auto& e : edgeIndexs) {
                 const auto& neighbor = medgeFaces[e];
-                const auto& f = neighbor.front();
-                const auto& v0 = mfaces[f][0];
-                const auto& v1 = mfaces[f][1];
-                const auto& v2 = mfaces[f][2];
-                const auto& n = trimesh::normalized((mpoints[v2] - mpoints[v1]).cross(mpoints[v0] - mpoints[v1]));
-                const auto& a = medges[e].a;
-                const auto& b = medges[e].b;
-                const auto& c = EdgeOppositePoint(e, f);
-                const auto& d = trimesh::normalized((mpoints[c] - mpoints[a]).cross(mpoints[b] - mpoints[a]));
-                if ((n DOT d) < 0) {
+                const int f = neighbor.front();
+                std::queue<int> vertexs;
+                for (const auto& v : mfaces[f]) {
+                    vertexs.emplace(v);
+                }
+                int v = EdgeOppositePoint(e, f);
+                for (int i = 0; i < 3; ++i) {
+                    int fr = vertexs.front();
+                    if (fr == v) break;
+                    vertexs.emplace(fr);
+                    vertexs.pop();
+                }
+                vertexs.pop();
+                const int a = medges[e].a;
+                const int vt = vertexs.front();
+                if (vt == a) {
                     medges[e].a = medges[e].a + medges[e].b;
                     medges[e].b = medges[e].a - medges[e].b;
                     medges[e].a = medges[e].a - medges[e].b;
@@ -1061,7 +1067,7 @@ namespace topomesh {
                                 Queues.pop();
                                 ++times;
                             }
-                            if (times >= queuesize) {
+                            if (times > queuesize) {
                                 result = false;
                                 break;
                             }
@@ -1092,46 +1098,6 @@ namespace topomesh {
                 ++circles;
             }
             //fifth. connect with each other for unenclosed series by sequence.
-            /*auto calculateArea = [&](const std::vector<std::vector<int>> & edgeSequences) {
-                int vertexNum = 0;
-                std::vector<int> vertexSequence;
-                for (const auto& seq : edgeSequences) {
-                    vertexNum += seq.size();
-                }
-                vertexSequence.reserve(vertexNum);
-                for (const auto& seq : edgeSequences) {
-                    for (const auto& einx : seq) {
-                        vertexSequence.emplace_back(medges[einx].a);
-                    }
-                }
-                if (vertexSequence.size() < 3) return 0.0f;
-                const auto& p1 = mpoints[vertexSequence[0]];
-                const auto& p2 = mpoints[vertexSequence[1]];
-                const auto& p3 = mpoints[vertexSequence[2]];
-                const auto& pt = mpoints[vertexSequence.back()];
-                float p1x = p1.x, p1y = p1.y, p1z = p1.z;
-                float p2x = p2.x, p2y = p2.y, p2z = p2.z;
-                float p3x = p3.x, p3y = p3.y, p3z = p3.z;
-                float ptx = pt.x, pty = pt.y, ptz = pt.z;
-                float t1 = (p2y - p1y) * (p3z - p1z);
-                float t2 = (p3y - p1y) * (p2z - p1z);
-                float t3 = (p3x - p1x) * (p2z - p1z);
-                float t4 = (p2x - p1x) * (p3z - p1z);
-                float t5 = (p2x - p1x) * (p3y - p1y);
-                float t6 = (p3x - p1x) * (p2y - p1y);
-                float a = std::pow((t1 - t2), 2) + std::pow((t3 - t4), 2) + std::pow((t5 - t6), 2);
-                float cosnx = (t1 - t2) / (pow(a, 0.5f));
-                float cosny = (t3 - t4) / (pow(a, 0.5f));
-                float cosnz = (t5 - t6) / (pow(a, 0.5f));
-                float sumarea = cosnz * (ptx * p1y - p1x * pty) + cosnx * (pty * p1z - p1y * ptz) + cosny * (ptz * p1x - p1z * ptx);
-                for (size_t i = 0; i < vertexSequence.size() - 1; ++i) {
-                    const auto& pm = mpoints[vertexSequence[i]];
-                    const auto& pn = mpoints[vertexSequence[i + 1]];
-                    float ss = cosnz * (pm[0] * pn[1] - pn[0] * pm[1]) + cosnx * (pm[1] * pn[2] - pn[1] * pm[2]) + cosny * (pm[2] * pn[0] - pn[2] * pm[0]);
-                    sumarea += ss;
-                }
-                return sumarea / 2.0f;
-            };*/
             while (!ringQueues.empty()) {
                 std::vector<std::vector<int>> current;
                 const auto& ring = ringQueues.front();
