@@ -2,6 +2,19 @@
 #include "msbase/mesh/get.h"
 
 namespace topomesh {
+	float getMeshTotalVolume(trimesh::TriMesh* mesh)
+	{
+		if (!mesh)
+			return 0.0f;
+		
+		std::vector<int> indices;
+		int size = (int)mesh->faces.size();
+		for (int i = 0; i < size; ++i)
+			indices.push_back(i);
+
+		return getMeshVolume(mesh, indices);
+	}
+
 	float getMeshVolume(trimesh::TriMesh* mesh, std::vector<int>& faces)
 	{
 		float vol = 0.f;
