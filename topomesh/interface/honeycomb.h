@@ -8,7 +8,8 @@ namespace topomesh
         GENERATE_NORMAL = 0,
         NO_MODEL_DATA = 1,
         BOUNDARY_CHECK_FAIL = 2,
-        MAX_ERROR = 3,
+        NO_INTERSECT_HEXAGON = 3,
+        MAX_ERROR = 4,
     };
 
 	struct CombParam

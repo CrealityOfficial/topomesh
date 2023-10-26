@@ -413,6 +413,10 @@ namespace topomesh {
                 trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
                 trimesh = &mesh;
                 tracer->progress(0.5f);
+                if (letterOpts.hexgons.empty()) {
+                    code_error = 3;
+                    return std::make_shared<trimesh::TriMesh>();
+                }
                 std::shared_ptr<trimesh::TriMesh> newmesh= SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
                 tracer->progress(0.65f);
                 JointBotMesh(trimesh,newmesh.get(), bottomFaces, honeyparams.mode);
@@ -467,6 +471,10 @@ namespace topomesh {
             trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
             trimesh = &mesh;
             tracer->progress(0.5f);
+            if (letterOpts.hexgons.empty()) {
+                code_error = 3;
+                return std::make_shared<trimesh::TriMesh>();
+            }
             std::shared_ptr<trimesh::TriMesh> newmesh = SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
             tracer->progress(0.65f);
             JointBotMesh(trimesh, newmesh.get(), letterOpts.bottom, honeyparams.mode);
@@ -475,7 +483,7 @@ namespace topomesh {
             trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), normal));
             return newmesh;
         } else {
-            code_error = 3;
+            code_error = 4;
             return std::make_shared<trimesh::TriMesh>();
         }
     }
