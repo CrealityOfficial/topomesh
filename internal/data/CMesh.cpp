@@ -1038,7 +1038,7 @@ namespace topomesh {
                 int currentKnot = crossPoints.front();
                 while (!Queues.empty()) {
                     if (!ends.front().empty()) {
-                        while (true) {
+                        for (int i = 0; i < Queues.size(); ++i) {
                             const int ef = Queues.front();
                             if (medges[ef].a == currentKnot) {
                                 break;
