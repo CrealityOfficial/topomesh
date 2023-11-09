@@ -423,7 +423,7 @@ namespace topomesh {
                 tracer->progress(0.95f);
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
-                //trimesh->write("trimesh.ply");
+               // trimesh->write("trimesh.ply");
                 //newmesh->write("holesColumnar.stl");
                 return newmesh;
             }           
@@ -541,9 +541,11 @@ namespace topomesh {
             if (ii == mesh->faces.size())
                 pass = false;
         }
-        std::sort(out.begin(), out.end(), [&](const std::vector<int>& a, const std::vector<int>& b)->bool
+        std::sort(out.begin(), out.end(), [&](std::vector<int>& a, std::vector<int>& b)->bool
             {
-                return a.size() > b.size();
+                float va = topomesh::getMeshVolume(mesh, a);
+                float vb = topomesh::getMeshVolume(mesh, b);
+                return va > vb;
             });
     }
 
@@ -931,6 +933,13 @@ namespace topomesh {
                     std::vector<int> newinfaceIndex(joinmesh.faces.size());
                     std::iota(newinfaceIndex.begin(), newinfaceIndex.end(), 0);
                     topomesh::polygonInnerFaces(&joinmesh, polygon, newinfaceIndex, outfaceIndex);
+                    for (int& fi : newinfaceIndex)
+                    {
+                        float k1 = std::abs((joinmesh.faces[fi].V0(0)->p.y - joinmesh.faces[fi].V0(1)->p.y) / (joinmesh.faces[fi].V0(0)->p.x - joinmesh.faces[fi].V0(1)->p.x));
+                        float k2 = std::abs((joinmesh.faces[fi].V0(0)->p.y - joinmesh.faces[fi].V0(2)->p.y) / (joinmesh.faces[fi].V0(0)->p.x - joinmesh.faces[fi].V0(2)->p.x));
+                        if (std::abs(k1 - k2) < 1e-4)
+                            outfaceIndex.push_back(fi);
+                    }
                 }
 
                 if (outfaceIndex.empty())
@@ -1003,7 +1012,7 @@ namespace topomesh {
                 mt.deleteFace(outfaceIndex[i]);
             trimesh::TriMesh* resultmesh = new trimesh::TriMesh();
             mt.quickTransform(resultmesh);
-
+            
             for (int fi = 0; fi < resultmesh->faces.size(); fi++)
             {
                 trimesh::point v1 = resultmesh->vertices[resultmesh->faces[fi][1]] - resultmesh->vertices[resultmesh->faces[fi][0]];

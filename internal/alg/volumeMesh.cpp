@@ -30,9 +30,13 @@ namespace topomesh {
 		return vol;
 	}
 
+	//edge cutting born vertex to line
 	float getPointCloudVolume(trimesh::TriMesh* mesh, std::vector<int>& vexter)
 	{
+		mesh->write("ori.ply");
 		mesh->need_bbox();
+		mesh->need_neighbors();
+		mesh->need_adjacentfaces();
 		float vol = 0.f;
 		std::vector<bool> is_botm(mesh->faces.size(), false);
 		for (int fi = 0; fi < mesh->faces.size(); fi++)
@@ -44,26 +48,44 @@ namespace topomesh {
 				is_botm[fi] = true;
 			}
 		}
-
 		const int N = 100;
 		float span = (mesh->bbox.max.z - mesh->bbox.min.z) / (N * 1.f);
+
+		std::vector<int> edge;		
 		std::vector<std::vector<int>> vexter_container(N,std::vector<int>());
 
 		for (int vi = 0; vi < mesh->vertices.size(); vi++)
 		{
 			float z = mesh->vertices[vi].z;
 			int cen = (z - mesh->bbox.min.z) / span;
-			if (cen >= N) cen = N;
+			if (cen >= N) cen = N-1;
 			vexter_container[cen].push_back(vi);
 		}
+		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
 		for (int c = 0; c < vexter_container.size(); c++)
 		{
-			for (int cvi = 0; cvi < vexter_container[c].size(); cvi++)
+			if (c == 10)
 			{
-				
+				std::vector<int> faces;
+				for (int cvi = 0; cvi < vexter_container[c].size(); cvi++)
+				{
+					int v = vexter_container[c][cvi];
+					for (int vf = 0; vf < mesh->adjacentfaces[v].size(); vf++)
+					{
+						faces.push_back(mesh->adjacentfaces[v][vf]);
+					}
+				}
+
+				for (int fi = 0; fi < faces.size(); fi++)
+				{
+					newmesh->vertices.push_back(trimesh::point(mesh->vertices[mesh->faces[faces[fi]][0]].x, mesh->vertices[mesh->faces[faces[fi]][0]].y, mesh->vertices[mesh->faces[faces[fi]][0]].z));
+					newmesh->vertices.push_back(trimesh::point(mesh->vertices[mesh->faces[faces[fi]][1]].x, mesh->vertices[mesh->faces[faces[fi]][1]].y, mesh->vertices[mesh->faces[faces[fi]][1]].z));
+					newmesh->vertices.push_back(trimesh::point(mesh->vertices[mesh->faces[faces[fi]][2]].x, mesh->vertices[mesh->faces[faces[fi]][2]].y, mesh->vertices[mesh->faces[faces[fi]][2]].z));
+					newmesh->faces.push_back(trimesh::ivec3(3*fi,3*fi+1,3*fi+2));
+				}
 			}
 		}
-
+		newmesh->write("savenewmesh.ply");
 		return vol;
 	}
 }

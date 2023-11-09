@@ -15,8 +15,8 @@ namespace topomesh
 	struct CombParam
 	{
 		float width = 2.0f;
-		float diameter = 6.0f;
-		float combShell = 2.0f;
+		float diameter = 3.0f;
+		float combShell = 1.0f;
 
 		bool holeConnect = true;
 		float holeHeight = 1.0f;
