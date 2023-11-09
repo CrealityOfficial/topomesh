@@ -1236,6 +1236,7 @@ namespace topomesh {
                     break;
                 }
                 if (times > count) {
+                    result = false;
                     break;
                 }
             }
