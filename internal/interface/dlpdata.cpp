@@ -93,7 +93,7 @@ namespace topomesh
 			for (int i = 0; i < size; ++i)
 			{
 				const ClipperLib::Path& path = polygons.paths.at(i);
-				std::vector<trimesh::ivec2> poly = polys.at(i);
+				std::vector<trimesh::ivec2> &poly = polys.at(i);
 
 				poly.clear();
 				int size = (int)path.size();
