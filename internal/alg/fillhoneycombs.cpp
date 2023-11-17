@@ -20,6 +20,7 @@
 
 namespace topomesh {
     void GenerateTriPolygonsHexagons(const TriPolygons&polys, const HoneyCombParam& honeyparams, honeyLetterOpt& letterOpts, HoneyCombDebugger* debugger) {
+        if (polys.empty()) return;
         if (debugger) {
             //显示底面边界轮廓多边形
             debugger->onGenerateInfillPolygons(polys);
