@@ -544,9 +544,36 @@ namespace topomesh {
         }
         std::sort(out.begin(), out.end(), [&](std::vector<int>& a, std::vector<int>& b)->bool
             {
-                float va = topomesh::getMeshVolume(mesh, a);
-                float vb = topomesh::getMeshVolume(mesh, b);
-                return va > vb;
+               /* float va = topomesh::getMeshVolume(mesh, a);
+                float vb = topomesh::getMeshVolume(mesh, b);*/
+                
+                float a_max_z = std::numeric_limits<float>::min();
+                float a_min_z = std::numeric_limits<float>::max();
+                for(int fi:a)
+                    for (int v = 0; v < 3; v++)
+                    {
+                        float z = mesh->vertices[mesh->faces[fi][v]].z;
+                        if (z > a_max_z)
+                            a_max_z = z;
+                        if (z < a_min_z)
+                            a_min_z = z;
+                    }
+                float da = a_max_z - a_min_z;
+
+                float b_max_z = std::numeric_limits<float>::min();
+                float b_min_z = std::numeric_limits<float>::max();
+                for (int fi : b)
+                    for (int v = 0; v < 3; v++)
+                    {
+                        float z = mesh->vertices[mesh->faces[fi][v]].z;
+                        if (z > b_max_z)
+                            b_max_z = z;
+                        if (z < b_min_z)
+                            b_min_z = z;
+                    }
+                float db = b_max_z - b_min_z;
+
+                return da > db;
             });
     }
 
