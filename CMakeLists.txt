@@ -1,6 +1,7 @@
 __cc_find(TriMesh2)
 __cc_find(Eigen)
 __cc_find(Clipper)
+__cc_find(msbase)
 
 __assert_target(trimesh2)
 __assert_target(eigen)
