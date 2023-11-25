@@ -62,7 +62,7 @@ namespace topomesh
 	trimesh::TriMesh* letterFromFile(const std::string& fileName, LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{
 		LetterInput input;
-		if (ccglobal::cxndLoad(input, fileName, tracer))
+		if (!ccglobal::cxndLoad(input, fileName, tracer))
 		{
 			LOGE("letterFromFile load error [%s]", fileName.c_str());
 			return nullptr;
