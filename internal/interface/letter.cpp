@@ -1,66 +1,74 @@
 #include "topomesh/interface/letter.h"
+#include "msbase/utils/trimeshserial.h"
 #include "internal/alg/letter.h"
 #include "ccglobal/profile.h"
 
 namespace topomesh
 {
-	LetterInput::LetterInput()
+	class LetterInput : public ccglobal::Serializeable
 	{
+	public:
+		trimesh::TriMesh mesh;
+		LetterParam param;
+		SimpleCamera camera;
+		std::vector<TriPolygons> polys;
 
-	}
+		LetterInput() {
 
-	LetterInput::~LetterInput()
-	{
+		}
+		~LetterInput() {
 
-	}
+		}
 
-	int LetterInput::version()
-	{
-		return 0;
-	}
+		int version() override {
+			return 0;
+		}
+		bool save(std::fstream& out, ccglobal::Tracer* tracer) override {
+			ccglobal::cxndSaveT(out, param.concave);
+			ccglobal::cxndSaveT(out, param.deep);
+			ccglobal::cxndSaveT(out, camera);
+			msbase::saveTrimesh(out, mesh);
+			
+			int size = (int)polys.size();
+			ccglobal::cxndSaveT(out, size);
+			for (int i = 0; i < size; ++i)
+				msbase::savePolys(out, polys.at(i));
 
-	bool LetterInput::save(std::fstream& out, ccglobal::Tracer* tracer)
-	{
-		//cxnd::cxndSaveT(out, param.concave);
-		//cxnd::cxndSaveT(out, param.deep);
-		//cxnd::cxndSaveT(out, camera);
-		//cxnd::saveTrimesh(out, mesh);
-		//
-		//int size = (int)polys.size();
-		//cxnd::cxndSaveT(out, size);
-		//for (int i = 0; i < size; ++i)
-		//	cxnd::savePolys(out, polys.at(i));
-
-		return true;
-	}
-
-	bool LetterInput::load(std::fstream& in, int ver, ccglobal::Tracer* tracer)
-	{
-		if (ver == 0)
-		{
-			//cxnd::cxndLoadT(in, param.concave);
-			//cxnd::cxndLoadT(in, param.deep);
-			//cxnd::cxndLoadT(in, camera);
-			//cxnd::loadTrimesh(in, mesh);
-			//
-			//int size = 0;
-			//cxnd::cxndLoadT(in, size);
-			//if (size > 0)
-			//{
-			//	polys.resize(size);
-			//	for (int i = 0; i < size; ++i)
-			//		cxnd::loadPolys(in, polys.at(i));
-			//}
 			return true;
 		}
-		return false;
-	}
 
-	trimesh::TriMesh* LetterInput::letter(LetterDebugger* debugger, ccglobal::Tracer* tracer)
+		bool load(std::fstream& in, int ver, ccglobal::Tracer* tracer) override {
+			if (ver == 0)
+			{
+				ccglobal::cxndLoadT(in, param.concave);
+				ccglobal::cxndLoadT(in, param.deep);
+				ccglobal::cxndLoadT(in, camera);
+				msbase::loadTrimesh(in, mesh);
+				
+				int size = 0;
+				ccglobal::cxndLoadT(in, size);
+				if (size > 0)
+				{
+					polys.resize(size);
+					for (int i = 0; i < size; ++i)
+						msbase::loadPolys(in, polys.at(i));
+				}
+				return true;
+			}
+			return false;
+		}
+	};
+
+	trimesh::TriMesh* letterFromFile(const std::string& fileName, LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{
-		param.cacheInput = false;
+		LetterInput input;
+		if (ccglobal::cxndLoad(input, fileName, tracer))
+		{
+			LOGE("letterFromFile load error [%s]", fileName.c_str());
+			return nullptr;
+		}
 
-		return topomesh::letter(&mesh, camera, param, polys, debugger, tracer);
+		return topomesh::letter(&input.mesh, input.camera, input.param, input.polys, debugger, tracer);
 	}
 
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera,
@@ -75,7 +83,7 @@ namespace topomesh
 			input.param = param;
 			input.polys = polygons;
 
-			//cxnd::cxndSave(input, param.fileName);
+			ccglobal::cxndSave(input, param.fileName);
 		}
 
 		bool letterOpState = true;
