@@ -10,7 +10,6 @@ namespace topomesh
 		float deep = 2.0f;
 
 		//debug
-		bool cacheInput = false;
 		std::string fileName;
 	};
 

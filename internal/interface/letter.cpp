@@ -75,7 +75,7 @@ namespace topomesh
 		const LetterParam& param, const std::vector<TriPolygons>& polygons,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer) 
 	{
-		if (param.cacheInput && mesh)
+		if (!param.fileName.empty() && mesh)
 		{
 			LetterInput input;
 			input.mesh = *mesh;
