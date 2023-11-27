@@ -97,9 +97,9 @@ namespace topomesh
         params.mode = honeyparams.mode;
         params.faces = honeyparams.faces;
         int value = 0;
-        SYSTEM_TICK("letter");
+        SYSTEM_TICK("honeyComb");
         std::shared_ptr<trimesh::TriMesh> mesh = GenerateHoneyCombs(trimesh, value, params, tracer);
-        SYSTEM_TICK("letter");
+        SYSTEM_TICK("honeyComb");
         code = ErrorCode(value);
 		return mesh;
 	}
