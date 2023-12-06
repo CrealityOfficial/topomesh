@@ -98,4 +98,15 @@ namespace topomesh
 
 		return result;
 	}
+
+	void embedingAndCutting(trimesh::TriMesh* mesh, const std::vector<std::vector<trimesh::vec2>>& lines,
+		std::vector<int>& facesIndex, bool is_close)
+	{
+		topomesh::TrimeshEmbedingAndCutting(mesh, lines, facesIndex, is_close);
+	}
+
+	void polygonInnerFaces(trimesh::TriMesh* mesh, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex)
+	{
+		topomesh::TrimeshpolygonInnerFaces(mesh, poly, infaceIndex, outfaceIndex);
+	}
 }

@@ -783,6 +783,22 @@ namespace topomesh
 		
 	}
 
+	void TrimeshEmbedingAndCutting(trimesh::TriMesh* mesh, const std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex, bool is_close)
+	{
+		std::map<int, int> vmap;
+		std::map<int, int> fmap;
+		MMeshT mesht(mesh, facesIndex, vmap, fmap);
+		mesht.set_VFadjacent(true);
+		mesht.set_VVadjacent(true);
+		mesht.set_FFadjacent(true);
+		std::vector<int> selectfaces;
+		for (int i = 0; i < facesIndex.size(); i++)
+			selectfaces.push_back(i);
+		embedingAndCutting(&mesht, lines, selectfaces, is_close);
+		mesh->clear();
+		mesht.quickTransform(mesh);
+	}
+
 	bool intersectionTriangle(MMeshT* mt, trimesh::point p, trimesh::point normal)
 	{
 		/*if (!mt->is_FaceNormals()) mt->getFacesNormals();*/
@@ -822,6 +838,17 @@ namespace topomesh
 		float x_ratio = (float)p.x / (float)camera.ScreenSize.y - 0.5f;
 		float y_ratio = (float)p.y / (float)camera.ScreenSize.x - 0.5f;
 		return trimesh::point(screenCenter - camera.up * y_ratio * screenhw.first + left * x_ratio * screenhw.second);
+	}
+
+	void TrimeshpolygonInnerFaces(trimesh::TriMesh* mesh, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex)
+	{
+		std::map<int, int> vmap;
+		std::map<int, int> fmap;
+		MMeshT mesht(mesh, infaceIndex, vmap, fmap);
+		mesht.set_VFadjacent(true);
+		mesht.set_VVadjacent(true);
+		mesht.set_FFadjacent(true);
+		polygonInnerFaces(&mesht, poly, infaceIndex, outfaceIndex);
 	}
 
 	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex)
