@@ -748,6 +748,8 @@ namespace topomesh {
                     }               
                 if (min_z > 1.2 * honeyparams.shellThickness)
                     min_z -= 1.2 * honeyparams.shellThickness;
+                else
+                    min_z -= 0.2 * honeyparams.shellThickness;
                 newmesh->vertices[newmesh->faces[fi][vi]] = trimesh::point(newmesh->vertices[newmesh->faces[fi][vi]].x, newmesh->vertices[newmesh->faces[fi][vi]].y, min_z);              
             }
         }
