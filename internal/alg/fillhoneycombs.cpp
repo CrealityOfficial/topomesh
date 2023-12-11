@@ -963,7 +963,7 @@ namespace topomesh {
                     std::vector<int> newinfaceIndex(joinmesh.faces.size());
                     std::iota(newinfaceIndex.begin(), newinfaceIndex.end(), 0);
                     topomesh::polygonInnerFaces(&joinmesh, polygon, newinfaceIndex, outfaceIndex);
-                    for (int& fi : newinfaceIndex)
+                    for (int& fi : newinfaceIndex)if (!joinmesh.faces[fi].IsD())
                     {
                         float k1 = std::abs((joinmesh.faces[fi].V0(0)->p.y - joinmesh.faces[fi].V0(1)->p.y) / (joinmesh.faces[fi].V0(0)->p.x - joinmesh.faces[fi].V0(1)->p.x));
                         float k2 = std::abs((joinmesh.faces[fi].V0(0)->p.y - joinmesh.faces[fi].V0(2)->p.y) / (joinmesh.faces[fi].V0(0)->p.x - joinmesh.faces[fi].V0(2)->p.x));
