@@ -730,14 +730,18 @@ namespace topomesh {
         {
             for (int vi = 0; vi < 3; vi++)
             {
-                float min_x = newmesh->vertices[newmesh->faces[fi][vi]].x - honeyparams.shellThickness * 3.f / 5.f;
-                float min_y = newmesh->vertices[newmesh->faces[fi][vi]].y - honeyparams.shellThickness * 3.f / 5.f;
-                float max_x = newmesh->vertices[newmesh->faces[fi][vi]].x + honeyparams.shellThickness * 3.f / 5.f;
-                float max_y = newmesh->vertices[newmesh->faces[fi][vi]].y + honeyparams.shellThickness * 3.f / 5.f;
+                float min_x = newmesh->vertices[newmesh->faces[fi][vi]].x - honeyparams.shellThickness /** 3.f / 5.f*/;
+                float min_y = newmesh->vertices[newmesh->faces[fi][vi]].y - honeyparams.shellThickness /** 3.f / 5.f*/;
+                float max_x = newmesh->vertices[newmesh->faces[fi][vi]].x + honeyparams.shellThickness /** 3.f / 5.f*/;
+                float max_y = newmesh->vertices[newmesh->faces[fi][vi]].y + honeyparams.shellThickness /** 3.f / 5.f*/;
                 int min_xi = (min_x - min_xy.x) / lengthx;
+                min_xi = min_xi > 0 ? min_xi : 0;
                 int min_yi = (min_y - min_xy.y) / lengthy;
+                min_yi = min_yi > 0 ? min_yi : 0;
                 int max_xi = (max_x - min_xy.x) / lengthx;
+                max_xi = max_xi < col - 1 ? max_xi : col - 1;
                 int max_yi = (max_y - min_xy.y) / lengthy;
+                max_yi = max_yi < row - 1 ? max_yi : row - 1;
                 float min_z = std::numeric_limits<float>::max();
                 for (int xii = min_xi; xii <= max_xi; xii++)
                     for (int yii = min_yi; yii <= max_yi; yii++)
