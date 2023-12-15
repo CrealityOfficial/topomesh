@@ -31,6 +31,8 @@ namespace topomesh
         std::string fileName;
 	};
 
+    TOPOMESH_API std::shared_ptr<trimesh::TriMesh> honeyGenerateFromFile(const std::string& fileName, ccglobal::Tracer* tracer);
+
     TOPOMESH_API std::shared_ptr<trimesh::TriMesh> honeyCombGenerate(trimesh::TriMesh* trimesh, ErrorCode& code, const CombParam& honeyparams = CombParam(),
         ccglobal::Tracer* tracer = nullptr);
 
