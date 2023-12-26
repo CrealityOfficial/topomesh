@@ -110,7 +110,7 @@ namespace topomesh
 	}
 
 	
-	void embedingAndCutting(MMeshT* mesh,const std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex, bool is_close)
+	void embedingAndCutting(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex, bool is_close)
 	{			
 		auto crossProduct = [=](trimesh::vec2 p1, trimesh::vec2 p2) ->float {
 			return p1.x * p2.y - p1.y * p2.x;
@@ -214,8 +214,16 @@ namespace topomesh
 					trimesh::vec2 v31 = trimesh::vec2(f.V0(0)->p.x, f.V0(0)->p.y) - trimesh::vec2(f.V0(2)->p.x, f.V0(2)->p.y);//3->1
 					trimesh::point vv01 = f.V1(0)->p - f.V0(0)->p;
 					trimesh::point vv02 = f.V2(0)->p - f.V0(0)->p;
+					if ((crossProduct(v12, v10) == 0 || crossProduct(v23, v20) == 0 || crossProduct(v31, v30) == 0))
+					{
+						trimesh::vec2 dir_pre = trimesh::vec2(lines[i][(j - 1 + lines[i].size()) % lines[i].size()].x, lines[i][(j - 1 + lines[i].size() % lines[i].size())].y) -
+							trimesh::vec2(lines[i][j].x, lines[i][j].y);						
+						lines[i][j] = lines[i][j] + 0.01 * dir_pre;
+						j--;
+						break;
+					}
 					if ((crossProduct(v12, v10) >= 0 && crossProduct(v23, v20) >= 0 && crossProduct(v31, v30) >= 0) ||
-						(crossProduct(v12, v10) < 0 && crossProduct(v23, v20) < 0 && crossProduct(v31, v30) < 0))
+						(crossProduct(v12, v10) <= 0 && crossProduct(v23, v20) <= 0 && crossProduct(v31, v30) <= 0))
 					{
 						if (j == 0)
 							f.SetV(); 					
@@ -794,7 +802,8 @@ namespace topomesh
 		std::vector<int> selectfaces;
 		for (int i = 0; i < facesIndex.size(); i++)
 			selectfaces.push_back(i);
-		embedingAndCutting(&mesht, lines, selectfaces, is_close);
+		std::vector<std::vector<trimesh::vec2>> line = lines;
+		embedingAndCutting(&mesht, line, selectfaces, is_close);
 		mesh->clear();
 		mesht.quickTransform(mesh);
 	}

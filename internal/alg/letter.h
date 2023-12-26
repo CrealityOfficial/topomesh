@@ -20,7 +20,7 @@ namespace topomesh
 	void concaveOrConvexOfFaces(MMeshT* mt,std::vector<int>& faces,bool concave=false,float deep=2.0);
 	void splitPoint(MMeshT* mt, MMeshVertex* v, trimesh::point ori);	
 	void TrimeshEmbedingAndCutting(trimesh::TriMesh* mesh, const std::vector<std::vector<trimesh::vec2>>& lines, std::vector<int>& facesIndex, bool is_close = true);
-	void embedingAndCutting(MMeshT* mesh,const std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex,bool is_close=true);	
+	void embedingAndCutting(MMeshT* mesh, std::vector<std::vector<trimesh::vec2>>& lines,const std::vector<int>& facesIndex,bool is_close=true);	
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);
 	void TrimeshpolygonInnerFaces(trimesh::TriMesh* mesh, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex);
