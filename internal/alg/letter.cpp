@@ -1030,8 +1030,8 @@ namespace topomesh
 		faceindex.clear();	
 		if (tracer)
 			tracer->progress(0.45);
-
-		if (polygons.size() >= 8 && mt2.faces.size() > 800)
+		if(false)
+		//if (polygons.size() >= 8 && mt2.faces.size() > 800)
 		{
 			std::vector<std::vector<int>> faceindexs;			
 			std::vector<std::vector<trimesh::vec2>> totalpoly;
@@ -1291,7 +1291,7 @@ namespace topomesh
 				if (polygons[0][i][j].y > topleft.y)
 					topleft.y = polygons[0][i][j].y;
 			}
-		topleft.x -= 0.001f; topleft.y += 0.001f;
+		topleft.x -= 0.0001f; topleft.y += 0.0001f;
 		for(int i=0;i<polygons.back().size();i++)
 			for (int j = 0; j < polygons.back()[i].size(); j++)
 			{
@@ -1300,7 +1300,7 @@ namespace topomesh
 				if (polygons.back()[i][j].y < botright.y)
 					botright.y = polygons.back()[i][j].y;
 			}
-		botright.x += 0.001f; botright.y -= 0.001f;
+		botright.x += 0.0001f; botright.y -= 0.0001f;
 		trimesh::vec2 topright(botright.x, topleft.y);
 		trimesh::vec2 botleft(topleft.x, botright.y);
 		std::vector<trimesh::vec2> rect = { topleft ,botright ,topright ,botleft };
@@ -1409,6 +1409,17 @@ namespace topomesh
 		for (int i = 0; i < mesh->faces.size(); i++)
 		{
 			if (mesh->faces[i].IsS())
+			{
+				faces.push_back(fmap[i]);
+			}
+			//mesh->faces[i].ClearS();
+		}
+
+		float face_z_eps = 1e-3f;
+		for (int i = 0; i < mesh->faces.size(); i++)
+		{
+			float z = (mesh->faces[i].V0(0)->p.z + mesh->faces[i].V0(1)->p.z + mesh->faces[i].V0(2)->p.z) / 3.0f;
+			if (std::abs(z - minz) <= face_z_eps && !mesh->faces[i].IsS())
 			{
 				faces.push_back(fmap[i]);
 			}
