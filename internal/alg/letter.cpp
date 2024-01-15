@@ -216,7 +216,7 @@ namespace topomesh
 					trimesh::point vv02 = f.V2(0)->p - f.V0(0)->p;
 					if ((crossProduct(v12, v10) == 0 || crossProduct(v23, v20) == 0 || crossProduct(v31, v30) == 0))
 					{
-						trimesh::vec2 dir_pre = trimesh::vec2(lines[i][(j - 1 + lines[i].size()) % lines[i].size()].x, lines[i][(j - 1 + lines[i].size() % lines[i].size())].y) -
+						trimesh::vec2 dir_pre = trimesh::vec2(lines[i][(j - 1 + lines[i].size()) % lines[i].size()].x, lines[i][(j - 1 + lines[i].size()) % lines[i].size()].y) -
 							trimesh::vec2(lines[i][j].x, lines[i][j].y);						
 						lines[i][j] = lines[i][j] + 0.01 * dir_pre;
 						j--;
