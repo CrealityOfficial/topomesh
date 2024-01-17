@@ -405,7 +405,7 @@ namespace topomesh {
                     }
                     debugger->onGenerateBottomPolygons(polygons);
                 }
-                tracer->progress(0.35f);
+                if (tracer) tracer->progress(0.35f);
                 //第3步，生成底面六角网格
                 if (!GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger)) {
                     code_error = 2;
@@ -413,15 +413,15 @@ namespace topomesh {
                 }
                 trimesh::TriMesh&& mesh = cmesh.GetTriMesh();            
                 trimesh = &mesh;
-                tracer->progress(0.5f);
+                if (tracer) tracer->progress(0.5f);
                 if (letterOpts.hexgons.empty()) {
                     code_error = 3;
                     return std::make_shared<trimesh::TriMesh>();
                 }
                 std::shared_ptr<trimesh::TriMesh> newmesh= SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
-                tracer->progress(0.65f);
+                if (tracer) tracer->progress(0.65f);
                 JointBotMesh(trimesh,newmesh.get(), bottomFaces, honeyparams.mode);
-                tracer->progress(0.95f);
+                if (tracer) tracer->progress(0.95f);
                 trimesh::trans(newmesh.get(), minPt);
                 trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), dir));
                // trimesh->write("trimesh.ply");
@@ -464,22 +464,22 @@ namespace topomesh {
             std::vector<int> otherFaces;
             std::set_difference(honeyFaces.begin(), honeyFaces.end(), bottomFaces.begin(), bottomFaces.end(), std::back_inserter(otherFaces));
             letterOpts.others = std::move(otherFaces);
-            tracer->progress(0.35f);
+            if (tracer) tracer->progress(0.35f);
             if (!GenerateBottomHexagons(cmesh, honeyparams, letterOpts, debugger)) {
                 code_error = 2;
                 return std::make_shared<trimesh::TriMesh>();
             }
             trimesh::TriMesh&& mesh = cmesh.GetTriMesh();
             trimesh = &mesh;
-            tracer->progress(0.5f);
+            if (tracer) tracer->progress(0.5f);
             if (letterOpts.hexgons.empty()) {
                 code_error = 3;
                 return std::make_shared<trimesh::TriMesh>();
             }
             std::shared_ptr<trimesh::TriMesh> newmesh = SetHoneyCombHeight(trimesh, honeyparams, letterOpts);
-            tracer->progress(0.65f);
+            if (tracer) tracer->progress(0.65f);
             JointBotMesh(trimesh, newmesh.get(), letterOpts.bottom, honeyparams.mode);
-            tracer->progress(0.95f);
+            if (tracer) tracer->progress(0.95f);
             trimesh::trans(newmesh.get(), minPt);
             trimesh::apply_xform(newmesh.get(), trimesh::xform::rot_into(trimesh::vec3(0, 0, -1), normal));
             return newmesh;
