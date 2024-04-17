@@ -30,7 +30,7 @@ namespace topomesh
 	void fillTriangleForTraverse(MMeshT* mesh, std::vector<int>& vindex,bool is_rollback=false);
 	void getMeshFaces(MMeshT* mesh, const std::vector<std::vector<trimesh::vec2>>& polygons, const CameraParam& camera, std::vector<int>& faces);
 	void getMeshFaces(trimesh::TriMesh* mesh, const std::vector<std::vector<std::vector<trimesh::vec2>>>& polygons, const CameraParam& camera, std::vector<int>& faces,float threshold);
-	void getDisCoverFaces(MMeshT* mesh, std::vector<int>& faces, std::map<int, int>& fmap);
+	void getDisCoverFaces(MMeshT* mesh, std::vector<int>& faces, std::map<int, int>& fmap,std::vector<trimesh::vec3>& mesh_normal, std::vector<trimesh::vec3>& face_center);
 	void mapping(MMeshT* mesh, trimesh::TriMesh* trimesh, std::map<int, int>& vmap, std::map<int, int>& fmap,bool is_thread=false);
 	void fillholes(trimesh::TriMesh* mesh);
 	void simpleCutting(MMeshT* mesh, const std::vector<std::vector<std::vector<trimesh::vec2>>>& polygons, std::vector<std::vector<int>>& faceindexs);
