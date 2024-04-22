@@ -1,4 +1,4 @@
-#include "volumeMesh.h"
+#include "topomesh/interface/volumeMesh.h"
 #include "msbase/mesh/get.h"
 
 namespace topomesh {

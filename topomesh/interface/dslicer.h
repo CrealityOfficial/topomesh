@@ -55,7 +55,7 @@ namespace topomesh
 		std::shared_ptr<trimesh::TriMesh> mesh;
 	};
 
-	bool dlp_slice(const std::vector<DLPSliceObject>& objects, const DLPSliceParam& param,
+	TOPOMESH_API bool dlp_slice(const std::vector<DLPSliceObject>& objects, const DLPSliceParam& param,
 		/*out*/DLPData& data, ccglobal::Tracer* tracer);
 }
 

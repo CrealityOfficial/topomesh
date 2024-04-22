@@ -13,6 +13,7 @@ list(APPEND SRCS ${Inters})
 set(ILIBS trimesh2)
 set(LIBS clipper eigen)
 
+__cc_find(msbase)
 __assert_target(msbase)
 list(APPEND LIBS msbase)
 
@@ -25,7 +26,7 @@ endif()
 set(INTERFACE_DEFS USE_TOPOMESH)
 #set(DEFS DLP_USE_UM)
 
-set(TOPOMESH_STATIC 1)
+#set(TOPOMESH_STATIC 1)
 __add_common_library(topomesh OPENMP)
 
 if(CC_INSTALL_TOPOMESH)

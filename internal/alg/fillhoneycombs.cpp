@@ -3,7 +3,7 @@
 #include "topomesh/interface/utils.h"
 #include "topomesh/interface/subdivision.h"
 #include "topomesh/interface/hex.h"
-#include "volumeMesh.h"
+#include "topomesh/interface/volumeMesh.h"
 
 #include "internal/data/mmesht.h"
 #include "internal/alg/letter.h"
