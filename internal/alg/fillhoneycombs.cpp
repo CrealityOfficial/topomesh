@@ -1268,7 +1268,7 @@ namespace topomesh {
             const auto& theta = phi * (float)i + (float)M_PI_2;
             const auto& y = ydir * r * std::cos(theta);
             const auto& z = zdir * r * std::sin(theta);
-            points.emplace_back(std::move(center + y + z));
+            points.emplace_back(center + y + z);
         }
         float miny = points.front() DOT ydir;
         float minz = points.front() DOT zdir;
@@ -1316,6 +1316,7 @@ namespace topomesh {
         std::vector<trimesh::vec3> points;
         std::vector<trimesh::ivec3> faces;
         int hexagonsize = 0, columnvertexs = 0;
+        ///1.添加六棱柱的底面坐标
         for (auto& hexa : hexas.polys) {
             hexa.startIndex = columnvertexs;
             const auto& poly = hexa.poly;
@@ -1325,7 +1326,7 @@ namespace topomesh {
                 ++columnvertexs, ++hexagonsize;
             }
         }
-
+        ///2.添加六棱柱的顶面坐标
         for (const auto& hexa : hexas.polys) {
             const auto& poly = hexa.poly;
             for (int i = 0; i < poly.size(); ++i) {
@@ -1334,7 +1335,7 @@ namespace topomesh {
                 ++columnvertexs;
             }
         }
-        //每条边的最低点最高点可能被更新
+        ///3.每条边的最低点最高点可能被更新
         GenerateHexagonNeighbors(hexas, param);
         const float cradius = hexas.side * param.ratio * 0.5f;
         const float cdelta = param.delta + 2 * cradius; ///<相邻两层圆心高度差
@@ -1349,7 +1350,7 @@ namespace topomesh {
         int mutiHoleEdges = 0;
         int holesnum = 0;
         int bottomfacenums = 0;
-        ///六角网格底部
+        ///4.缝合六角网格底部
         if (hexas.bSewBottom) {
             ///底部网格中间矩形区域
             for (auto& hexa : hexas.polys) {
@@ -1534,7 +1535,7 @@ namespace topomesh {
                 }
             }
         }
-        ///添加连接孔洞的顶点坐标
+        ///5.添加连接孔洞的顶点坐标
         for (auto& hexa : hexas.polys) {
             const int size = hexa.poly.size();
             for (int i = 0; i < size; ++i) {
@@ -1695,6 +1696,7 @@ namespace topomesh {
         int allfacenums = holeFaces + rectfacenums + upperfacenums + bottomfacenums;
         faces.reserve(allfacenums);
         std::vector<int> topfaces;
+        ///6.缝合六角网格柱体的顶部
         if (hexas.bSewTop) {
             for (int i = 0; i < hexas.polys.size(); ++i) {
                 auto&& hexa = hexas.polys[i];
@@ -1767,6 +1769,7 @@ namespace topomesh {
             }
         }
         hexas.topfaces.swap(topfaces);
+        ///7.缝合六角网格柱体的侧面
         for (int i = 0; i < hexas.polys.size(); ++i) {
             const auto& hexa = hexas.polys[i];
             const auto& poly = hexa.poly;
@@ -2019,7 +2022,7 @@ namespace topomesh {
                 }
             }
         }
-        ///六角网格桥接的孔洞部
+        ///8.缝合六角网格桥接的孔洞圆柱侧面
         for (int i = 0; i < holesnum; i += 2) {
             const int& start = holeStarts[i];
             for (int j = 0; j < nslices; ++j) {
