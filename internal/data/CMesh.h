@@ -1,4 +1,4 @@
-#pragma once
+ï»¿#pragma once
 #include "trimesh2/TriMesh.h"
 #include "trimesh2/XForm.h"
 
@@ -51,7 +51,7 @@ namespace topomesh {
         void Clear();
         bool ReadFromSTL(const char* filename);
         void DuplicateSTL(double ratio = 0.3);
-        //bBinary=true,Ð´Èë¶þ½øÖÆÎÄ¼þ£¬bBinary=falseÐ´ÈëASCIIÎÄ¼þ
+        //bBinary=true,å†™å…¥äºŒè¿›åˆ¶æ–‡ä»¶ï¼ŒbBinary=falseå†™å…¥ASCIIæ–‡ä»¶
         bool WriteSTLFile(const char* filename, bool bBinary = true);
         CMesh(const trimesh::TriMesh* mesh);
         trimesh::TriMesh GetTriMesh() const;

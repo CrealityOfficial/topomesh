@@ -1,4 +1,4 @@
-#include "CMesh.h"
+﻿#include "CMesh.h"
 #include <numeric>
 #include <unordered_map>
 #include <queue>
@@ -957,6 +957,7 @@ namespace topomesh {
         bool result = true;
         const size_t nums = edgeIndexs.size();
         std::vector<bool> masks(medges.size(), false);
+        // 将所有边进行逆时针排序，参考的视角为该边所在的三角形面片，如果某个三角形面片反了，后面会检测出异常情形。
         // all sequential edges are counterclockwise.
         if (true) {
             for (auto& e : edgeIndexs) {
@@ -996,6 +997,7 @@ namespace topomesh {
             pEdgeEndMap.emplace(medges[einx].b, einx);
             Queues.emplace(einx);
         }
+        // 第一步：标记所有可能边环链的交叉节点索引
         //first. mark all possible cross knot point at next edge index.
         std::unordered_set<int> uniqueSets;
         std::unordered_set<int> crossKnots;
@@ -1010,6 +1012,7 @@ namespace topomesh {
         std::queue<int> crossPoints;
         //several sequentials about edges.
         std::vector<std::vector<int>> edgeRings;
+        //第二步，标记交叉节点的进出点索引
         //second. begin to deal with crossKnots on sequential edges.
         if (!crossKnots.empty()) {
             std::vector<bool> knotMarks(mpoints.size(), false);
@@ -1031,6 +1034,7 @@ namespace topomesh {
                     ends.emplace(end);
                 }
             }
+            //第三步，将所有边的环链按照节点进行剪切，变成无节点的单环链
             //thrid. truncate sequential edges according to crossKnots.
             std::queue<std::vector<int>> ringQueues;
             while (!Queues.empty()) {
@@ -1085,6 +1089,7 @@ namespace topomesh {
             }
             int circles = 0;
             int ringSize = ringQueues.size();
+            //第四步，优先处理封闭的单环链（a->b->a类型）
             //forth. priority deal with closed edge sequences.
             while (circles < ringSize) {
                 const auto& ring = ringQueues.front();
@@ -1097,6 +1102,7 @@ namespace topomesh {
                 }
                 ++circles;
             }
+            //第五步，拼接剩下的未封闭的单环链
             //fifth. connect with each other for unenclosed series by sequence.
             while (!ringQueues.empty()) {
                 std::vector<std::vector<int>> current;
@@ -1122,6 +1128,7 @@ namespace topomesh {
                         ringQueues.pop();
                         ++times;
                     }
+                    //遇到多交叉节点时，以周围面的加权平均法向为基准，旋转角为较小的为下一个方向。
                     int lowest = -1;
                     float minAlpha = 2.0 * M_PI;
                     const int f1 = medgeFaces[ba].front();
@@ -1207,6 +1214,7 @@ namespace topomesh {
                 edgeRings.emplace_back(sequence);
             }
         }
+        //其次，处理不含任何节点的完整环链
         // other. there are no crossKnots on sequential edges.
         while (!Queues.empty()) {
             std::vector<int> current;
@@ -1244,6 +1252,7 @@ namespace topomesh {
             edgeRings.emplace_back(current);
         }
         sequentials.reserve(edgeRings.size());
+        //最后还原先前反向边操作的顶点顺序
         //restore some edges amended before.
         for (auto& es : edgeRings) {
             std::vector<int> pointList;
