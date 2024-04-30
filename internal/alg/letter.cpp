@@ -1007,6 +1007,7 @@ namespace topomesh
 			process += 0.03f;
 			tracer->progress(process);
 		}
+		
 
 		std::vector<int> faceindex;
 		float threshold = 0.6f;
@@ -1025,7 +1026,7 @@ namespace topomesh
 		if (tracer)
 			tracer->progress(0.37);
 		faceindex.clear();
-		getDisCoverFaces(&mt, faceindex, fmap, mesh_normal, faces_center);
+		getDisCoverFaces(&mt, faceindex, fmap, mesh_normal, faces_center,cp.pos);
 		
 		
 		if (tracer)
@@ -1390,7 +1391,7 @@ namespace topomesh
 		for (std::map<int, int>::reverse_iterator it = fmap.rbegin(); it != fmap.rend(); ++it)
 			if (mesh->faces[it->first].IsD())
 				trimesh->faces.erase(trimesh->faces.begin() + it->second);
-
+		
 		if (is_thread)
 		{
 			fillholes(trimesh);
@@ -1398,22 +1399,22 @@ namespace topomesh
 	}
 
 	void getDisCoverFaces(MMeshT* mesh, std::vector<int>& faces, std::map<int, int>& fmap, std::vector<trimesh::vec3>& mesh_normal
-		,std::vector<trimesh::vec3>& face_center)
+		,std::vector<trimesh::vec3>& face_center, trimesh::vec3 camera_pos)
 	{
 		if (mesh->faces.empty()) return;
-		for (int fi = 0; fi < mesh->faces.size(); fi++)
-			faces.push_back(fmap[fi]);
-		return;
-		float minz = std::numeric_limits<float>::max();
+		
+		float mind = std::numeric_limits<float>::max();
 		int index = -1;
 		for (int i = 0; i < mesh->faces.size(); i++)
 		{
-			float z = (mesh->faces[i].V0(0)->p.z + mesh->faces[i].V0(1)->p.z + mesh->faces[i].V0(2)->p.z)/3.0f;
-			if (z < minz)
+			trimesh::vec3 fc = face_center[fmap[i]];
+			float distance = trimesh::distance(fc, camera_pos);
+			if (distance < mind)
 			{
-				minz = z; index = i;
-			}
+				mind = distance; index = i;
+			}			
 		}
+
 		std::queue<int> queue;
 		queue.push(index);
 		mesh->faces[index].SetS();
@@ -1429,26 +1430,30 @@ namespace topomesh
 			}
 			queue.pop();
 		}
-		trimesh::vec3 total_normal;
-		int n=0;
-		trimesh::vec3 begin_point;
+		
+		trimesh::vec3 bbx_min(10000.f,10000.f,0);
+		trimesh::vec3 bbx_max(-10000.f, -10000.f,0);
 		for (int i = 0; i < mesh->faces.size(); i++)
 		{
 			if (mesh->faces[i].IsS())
 			{
-				faces.push_back(fmap[i]);
-				total_normal += mesh_normal[fmap[i]];
-				n++;
-				begin_point += face_center[fmap[i]];
+				faces.push_back(fmap[i]);				
+				for (int vi = 0; vi < 3; vi++)
+				{
+					if (mesh->faces[i].V0(vi)->p.x < bbx_min.x)
+						bbx_min.x = mesh->faces[i].V0(vi)->p.x;
+					if (mesh->faces[i].V0(vi)->p.x > bbx_max.x)
+						bbx_max.x = mesh->faces[i].V0(vi)->p.x;
+
+					if (mesh->faces[i].V0(vi)->p.y < bbx_min.y)
+						bbx_min.y = mesh->faces[i].V0(vi)->p.y;
+					if (mesh->faces[i].V0(vi)->p.y > bbx_max.y)
+						bbx_max.y = mesh->faces[i].V0(vi)->p.y;
+				}
 			}
-			//mesh->faces[i].ClearS();
 		}
-		begin_point /= (n*1.f);
-		trimesh::normalize(total_normal);
-		float D = -1.0f * (begin_point.x * total_normal.x + begin_point.y * total_normal.y + begin_point.z * total_normal.z);
-
+		
 		std::vector<std::vector<int>> layer_faces;
-
 		while (1)
 		{
 			std::queue<int> other_queue;
@@ -1456,6 +1461,7 @@ namespace topomesh
 				if (!mesh->faces[i].IsS())
 				{
 					other_queue.push(i);
+					mesh->faces[i].IsS();
 					break;
 				}
 			if (other_queue.empty())
@@ -1478,67 +1484,33 @@ namespace topomesh
 		
 		for (int li = 0; li < layer_faces.size(); li++)
 		{
-			trimesh::vec3 layer_normal;
-			trimesh::vec3 layer_point;
+			bool is_inner = false;
 			for (int lli = 0; lli < layer_faces[li].size(); lli++)
 			{
-				layer_normal+= mesh_normal[fmap[layer_faces[li][lli]]];
-				layer_point += face_center[fmap[layer_faces[li][lli]]];
-			}
-			trimesh::normalize(layer_normal);
-			layer_point /= (layer_faces[li].size()*1.f);
-
-			float d = -1.0f * (layer_point.x * layer_normal.x + layer_point.y * layer_normal.y + layer_point.z * layer_normal.z);
-			float arc = layer_normal.dot(total_normal);
-			arc = arc >= 1.f ? 1.f : arc;
-			arc = arc <= -1.f ? -1.f : arc;
-			float ang = std::acos(arc) * 180 / M_PI;
-			if (ang < 2.f&& std::abs(D - d) < 0.002f)
-			{
-				//faces.insert(faces.end(),layer_faces[li].begin(),layer_faces[li].end());
-				for (int lli = 0; lli < layer_faces[li].size(); lli++)
+				for (int vi = 0; vi < 3; vi++)
 				{
-					faces.push_back(fmap[layer_faces[li][lli]]);
-				}
-			}
-		}
-		
-		for (int i = 0; i < mesh->faces.size(); i++)
-			mesh->faces[i].ClearS();
-		
-		/*for (int i = 0; i < mesh->faces.size(); i++)
-		{
-			if (!mesh->faces[i].IsS())
-			{
-				trimesh::vec3 n = mesh_normal[fmap[i]];
-				float arc =n.dot(total_normal);			
-				arc = arc >= 1.f ? 1.f : arc;
-				arc = arc <= -1.f ? -1.f : arc;
-				float ang = std::acos(arc) * 180 / M_PI;
-				if (ang < 2.f)
-				{
-					trimesh::vec3 center= face_center[fmap[i]];
-					float d = -1.0f * (n.x*center.x+ n.y * center.y+ n.z * center.z);
-					if (std::abs(D-d) < 0.0002f)
+					if (mesh->faces[layer_faces[li][lli]].V0(vi)->p.x< bbx_max.x && mesh->faces[layer_faces[li][lli]].V0(vi)->p.x>bbx_min.x &&
+						mesh->faces[layer_faces[li][lli]].V0(vi)->p.y< bbx_max.y && mesh->faces[layer_faces[li][lli]].V0(vi)->p.y>bbx_min.y)
 					{
-						faces.push_back(fmap[i]);
+						is_inner = true;
+						goto label;
 					}
 				}
 			}
-			mesh->faces[i].ClearS();
-		}*/
-
-
-		/*float face_z_eps = 1e-3f;
-		for (int i = 0; i < mesh->faces.size(); i++)
-		{
-			float z = (mesh->faces[i].V0(0)->p.z + mesh->faces[i].V0(1)->p.z + mesh->faces[i].V0(2)->p.z) / 3.0f;
-			if (std::abs(z - minz) <= face_z_eps && !mesh->faces[i].IsS())
+			label:
+			if (!is_inner)
 			{
-				faces.push_back(fmap[i]);
+				for (int fi = 0; fi < layer_faces[li].size(); fi++)
+				{
+					faces.push_back(fmap[layer_faces[li][fi]]);
+				}
 			}
+		}
+		std::sort(faces.begin(), faces.end());
+		
+		for (int i = 0; i < mesh->faces.size(); i++)
 			mesh->faces[i].ClearS();
-		}*/
+		
 	}
 
 	void simpleCutting(MMeshT* mesh, const std::vector<std::vector<std::vector<trimesh::vec2>>>& polygons, std::vector<std::vector<int>>& faceindexs)
