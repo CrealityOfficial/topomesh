@@ -26,6 +26,40 @@ namespace topomesh
 		trimesh::point right;
 		trimesh::point up;
 		trimesh::point dir;
+
+		bool operator==(const CameraParam b) const
+		{
+			if (this->n != b.n)
+				return false;
+			if (this->f != b.f)
+				return false;
+			if (this->t != b.t)
+				return false;
+			if (this->b != b.b)
+				return false;
+			if (this->l != b.l)
+				return false;
+			if (this->r != b.r)
+				return false;
+
+			if (this->fov != b.fov)
+				return false;
+			if (this->aspect != b.aspect)
+				return false;
+
+			if (this->pos != b.pos)
+				return false;
+			if (this->lookAt != b.lookAt)
+				return false;
+			if (this->right != b.right)
+				return false;
+			if (this->up != b.up)
+				return false;
+			if (this->dir != b.dir)
+				return false;
+
+			return true;
+		}
 	};
 
 	void getScreenWidthAndHeight(const CameraParam& camera, std::pair<float, float>& wh);

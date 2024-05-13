@@ -912,11 +912,22 @@ namespace topomesh
 		trimesh::normalize(camera.up);
 	}
 
+
+	bool checkCamera(const CameraParam& camera)
+	{
+		static CameraParam before_camera;
+		if (before_camera == camera)
+			return true;
+		before_camera = camera;
+		return false;
+	}
+
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{								
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
-		*newmesh = *mesh;		
+		*newmesh = *mesh;			
+
 		if (newmesh->faces.empty()|| polygons.empty())
 		{
 			letterOpState = false;
@@ -943,6 +954,12 @@ namespace topomesh
 		cp.n = camera.n; cp.f = camera.f;
 		cp.fov = camera.fov; cp.aspect = camera.aspect;
 
+		if (checkCamera(cp))
+		{
+			tracer->progress(1.0f);
+			letterOpState = false;
+			return newmesh;
+		}
 		/*cp.lookAt = trimesh::point(-1.10312, 0.172629, -0.0166779);
 		cp.pos = trimesh::point(-2.05359, -0.781168, 27.2706);
 		cp.up = trimesh::point(0.705012, 0.707481, 0.0492861);
@@ -1012,6 +1029,7 @@ namespace topomesh
 		std::vector<int> faceindex;
 		float threshold = 0.6f;
 		getMeshFaces(newmesh, poly, cp, faceindex, threshold);
+		
 		if(tracer)
 			tracer->progress(0.35);
 		if (faceindex.empty())
@@ -1021,15 +1039,12 @@ namespace topomesh
 		}
 		std::map<int, int> vmap;
 		std::map<int, int> fmap;		
-		MMeshT mt(newmesh,faceindex,vmap,fmap);
+		MMeshT mt(newmesh,faceindex,vmap,fmap);		
 
 		if (tracer)
 			tracer->progress(0.37);
 		faceindex.clear();
-		getDisCoverFaces(&mt, faceindex, fmap, mesh_normal, faces_center,cp.pos);
-		/*trimesh::TriMesh* savemesh1 = new trimesh::TriMesh();
-		mt.mmesh2trimesh(savemesh1);
-		savemesh1->write("savemesh1.ply");*/
+		getDisCoverFaces(&mt, faceindex, fmap, mesh_normal, faces_center,cp.pos);		
 		
 		if (tracer)
 			tracer->progress(0.42);
@@ -1085,6 +1100,8 @@ namespace topomesh
 			mt2.set_VVadjacent(true);
 			mt2.set_FFadjacent(true);
 			embedingAndCutting(&mt2, totalpoly, faceindex);	
+			
+
 			if (tracer)
 				tracer->progress(0.85);
 			faceindex.clear();
@@ -1092,6 +1109,7 @@ namespace topomesh
 				faceindex.push_back(i);
 			std::vector<int> outfacesIndex;
 			polygonInnerFaces(&mt2, poly, faceindex, outfacesIndex);
+			
 			if (tracer)
 				tracer->progress(0.9);
 			unTransformationMesh(&mt2, viewMatrix, projectionMatrix);
@@ -1099,6 +1117,7 @@ namespace topomesh
 			for (int i = 0; i < mt.vertices.size(); i++)
 				mt.vertices[i].ClearS();
 			concaveOrConvexOfFaces(&mt2, outfacesIndex, Letter.concave, Letter.deep);
+			
 			if (tracer)
 				tracer->progress(0.95);
 
@@ -1107,6 +1126,7 @@ namespace topomesh
 			savemesh->write("savemesh.ply");*/
 
 			mapping(&mt2, newmesh, vmap, fmap);
+			
 			if (tracer)
 				tracer->progress(1.0);
 		}								
@@ -1462,7 +1482,7 @@ namespace topomesh
 				if (!mesh->faces[i].IsS())
 				{
 					other_queue.push(i);
-					mesh->faces[i].IsS();
+					mesh->faces[i].SetS();
 					break;
 				}
 			if (other_queue.empty())
