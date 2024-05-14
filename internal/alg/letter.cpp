@@ -913,11 +913,13 @@ namespace topomesh
 	}
 
 
-	bool checkCamera(const CameraParam& camera)
+	bool checkCamera(const CameraParam& camera, trimesh::TriMesh* mesh)
 	{
 		static CameraParam before_camera;
-		if (before_camera == camera)
+		static trimesh::point3 frist_point;
+		if (before_camera == camera&&frist_point==mesh->vertices[0])
 			return true;
+		frist_point = mesh->vertices[0];
 		before_camera = camera;
 		return false;
 	}
@@ -954,7 +956,7 @@ namespace topomesh
 		cp.n = camera.n; cp.f = camera.f;
 		cp.fov = camera.fov; cp.aspect = camera.aspect;
 
-		if (checkCamera(cp))
+		if (checkCamera(cp, newmesh))
 		{
 			tracer->progress(1.0f);
 			letterOpState = false;
