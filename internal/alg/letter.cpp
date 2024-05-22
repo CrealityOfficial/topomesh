@@ -916,10 +916,10 @@ namespace topomesh
 	bool checkCamera(const CameraParam& camera, trimesh::TriMesh* mesh)
 	{
 		static CameraParam before_camera;
-		static trimesh::point3 frist_point;
-		if (before_camera == camera&&frist_point==mesh->vertices[0])
+		static float frist_point=0.f;
+		if (before_camera == camera&&frist_point-mesh->vertices[0].x<=1e-4f)
 			return true;
-		frist_point = mesh->vertices[0];
+		frist_point = mesh->vertices[0].x;
 		before_camera = camera;
 		return false;
 	}
