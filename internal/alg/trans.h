@@ -11,6 +11,26 @@ namespace topomesh
 		trimesh::ivec2 p1;
 		trimesh::ivec2 p2;
 		//
+
+		CameraParam()
+		{
+			this->n = 0.f;
+			this->f = 0.f;
+			this->t = 0.f;
+			this->b = 0.f;
+			this->l = 0.f;
+			this->r = 0.f;
+			this->fov = 0.f;
+			this->aspect = 0.f;
+			this->pos = trimesh::point(0, 0, 0);
+			this->lookAt = trimesh::point(0, 0, 0);
+			this->right = trimesh::point(0, 0, 0);
+			this->up = trimesh::point(0, 0, 0);
+			this->dir = trimesh::point(0, 0, 0);
+			this->ScreenSize = trimesh::ivec2(0, 0);
+			this->p1 = trimesh::ivec2(0, 0);
+			this->p2 = trimesh::ivec2(0, 0);
+		};
 		float n;
 		float f;
 		float t;
@@ -27,24 +47,24 @@ namespace topomesh
 		trimesh::point up;
 		trimesh::point dir;
 
-		bool operator==(const CameraParam b) const
+		bool operator==(const CameraParam& b) const
 		{
-			if (this->n != b.n)
+			if (this->n - b.n>=1e-6)
 				return false;
-			if (this->f != b.f)
+			if (this->f - b.f >= 1e-6)
 				return false;
-			if (this->t != b.t)
+			if (this->t - b.t >= 1e-6)
 				return false;
-			if (this->b != b.b)
+			if (this->b - b.b >= 1e-6)
 				return false;
-			if (this->l != b.l)
+			if (this->l - b.l >= 1e-6)
 				return false;
-			if (this->r != b.r)
+			if (this->r - b.r >= 1e-6)
 				return false;
 
-			if (this->fov != b.fov)
+			if (this->fov - b.fov >= 1e-6)
 				return false;
-			if (this->aspect != b.aspect)
+			if (this->aspect - b.aspect >= 1e-6)
 				return false;
 
 			if (this->pos != b.pos)
