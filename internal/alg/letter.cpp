@@ -10,10 +10,11 @@
 
 #define FLOATERR 1e-8f
 #define BLOCK 80000
-
+std::vector<std::vector<int>> polygons_marks;
 
 namespace topomesh
 {
+	
 	void concaveOrConvexOfFaces(MMeshT* mt, std::vector<int>& faces, bool concave,float deep)
 	{
 		mt->getMeshBoundaryFaces();
@@ -192,6 +193,8 @@ namespace topomesh
 		{
 			for (int j = 0; j < lines[i].size(); j++)
 			{			
+				if (polygons_marks[i][j])
+					continue;
 				std::vector<trimesh::ivec3> push_lines;
 				for (int fi : facesIndex)if (!mesh->faces[fi].IsD())
 				{
@@ -225,6 +228,7 @@ namespace topomesh
 					if ((crossProduct(v12, v10) >= 0 && crossProduct(v23, v20) >= 0 && crossProduct(v31, v30) >= 0) ||
 						(crossProduct(v12, v10) <= 0 && crossProduct(v23, v20) <= 0 && crossProduct(v31, v30) <= 0))
 					{
+						polygons_marks[i][j] = 1;
 						if (j == 0)
 							f.SetV(); 					
 						Eigen::Matrix2f e;
@@ -748,6 +752,15 @@ namespace topomesh
 			if (!mesh->faces[fi].IsD() && mesh->faces[fi].IsB())
 			{
 				MMeshFace& f = mesh->faces[fi];
+
+				for (int ui = 0; ui < f.uv_coord.size(); ui++)
+				{
+					int ii = f.uv_coord[ui].w;
+					int jj = f.uv_coord[ui].z;
+					polygons_marks[ii][jj] = 0;
+				}
+
+
 				mesh->deleteFace(f);
 				trimesh::point c = (f.V0(0)->p + f.V1(0)->p + f.V2(0)->p) / 3.0f;
 #ifdef _OPENMP
@@ -786,6 +799,8 @@ namespace topomesh
 				
 			}
 		}
+
+		
 		if (!nextfaceid.empty())
 			return embedingAndCutting(mesh,lines, nextfaceid);
 		
@@ -916,12 +931,41 @@ namespace topomesh
 	bool checkCamera(const CameraParam& camera, trimesh::TriMesh* mesh)
 	{
 		static CameraParam before_camera;
-		static float frist_point=0.f;
-		if (before_camera == camera&&frist_point-mesh->vertices[0].x<=1e-4f)
+		static trimesh::point3 frist_point;
+		static trimesh::point3 next_point;
+		static int frist_mesh_vertex_size=mesh->vertices.size();
+		static int frist_mesh_face_size=mesh->faces.size();
+		if (!(before_camera == camera)||( frist_mesh_vertex_size == mesh->vertices.size()&& frist_mesh_face_size == mesh->faces.size()&& 
+			frist_point == mesh->vertices[0] && next_point == mesh->vertices[1]))
+			polygons_marks.clear();
+		
+		bool a = before_camera == camera;
+		bool b = frist_mesh_vertex_size == mesh->vertices.size();
+		bool c = frist_mesh_face_size == mesh->faces.size();
+		bool d = frist_point == mesh->vertices[0];
+		bool e = next_point == mesh->vertices[1];
+
+
+		if (before_camera == camera&&frist_point==mesh->vertices[0]&& next_point ==mesh->vertices[1]
+			&&frist_mesh_face_size!=mesh->faces.size()&&frist_mesh_vertex_size!=mesh->vertices.size())
 			return true;
-		frist_point = mesh->vertices[0].x;
+		frist_point = mesh->vertices[0];
+		next_point = mesh->vertices[1];
 		before_camera = camera;
+		frist_mesh_vertex_size = mesh->vertices.size();
+		frist_mesh_face_size = mesh->faces.size();
 		return false;
+	}
+
+	void MeshGroupInterface(const std::vector<trimesh::TriMesh*>&mesh_group, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
+		LetterDebugger* debugger, ccglobal::Tracer* tracer, std::vector<trimesh::TriMesh*>&out_mesh)
+	{
+		
+		for (int i = 0; i < mesh_group.size(); i++)
+		{
+			out_mesh.push_back(letter(mesh_group[i],camera,Letter,polygons,letterOpState,debugger,tracer));
+		}
+
 	}
 
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
@@ -980,7 +1024,7 @@ namespace topomesh
 			mesh_normal[fi]=trimesh::normalized(newmesh->trinorm(fi));
 			faces_center[fi] = (newmesh->vertices[newmesh->faces[fi][0]] + newmesh->vertices[newmesh->faces[fi][1]] + newmesh->vertices[newmesh->faces[fi][2]]) / 3.0f;
 		}
-
+		
 
 		loadCameraParam(cp);
 		if (tracer)
@@ -1042,7 +1086,9 @@ namespace topomesh
 		std::map<int, int> vmap;
 		std::map<int, int> fmap;		
 		MMeshT mt(newmesh,faceindex,vmap,fmap);		
-
+		/*trimesh::TriMesh* savemesh1 = new trimesh::TriMesh();
+		mt.mmesh2trimesh(savemesh1);
+		savemesh1->write("savemesh.ply");*/
 		if (tracer)
 			tracer->progress(0.37);
 		faceindex.clear();
@@ -1054,7 +1100,6 @@ namespace topomesh
 		vmap.clear();
 		MMeshT mt2(newmesh, faceindex, vmap, fmap);	
 				
-		
 
 		mt2.set_VFadjacent(true);
 		mt2.set_VVadjacent(true);
@@ -1093,11 +1138,22 @@ namespace topomesh
 			for (int i = 0; i < mt2.faces.size(); i++)
 				faceindex.push_back(i);
 			std::vector<std::vector<trimesh::vec2>> totalpoly;
-			for(int i=0;i<poly.size();i++)
+			bool frist = polygons_marks.empty();
+			for (int i = 0; i < poly.size(); i++)
+			{				
 				for (int j = 0; j < poly[i].size(); j++)
 				{
 					totalpoly.push_back(poly[i][j]);					
 				}
+			}
+
+			if (frist)
+			{
+				for (int i = 0; i < totalpoly.size(); i++)
+				{
+					polygons_marks.push_back(std::vector<int>(totalpoly[i].size(),0));
+				}
+			}
 			mt2.set_VFadjacent(true);
 			mt2.set_VVadjacent(true);
 			mt2.set_FFadjacent(true);
@@ -1606,39 +1662,7 @@ namespace topomesh
 		for (int i = 0; i < mesh->faces.size(); i++)
 			mesh->faces[i].ClearS();
 		
-		/*for (int i = 0; i < mesh->faces.size(); i++)
-		{
-			if (!mesh->faces[i].IsS())
-			{
-				trimesh::vec3 n = mesh_normal[fmap[i]];
-				float arc =n.dot(total_normal);			
-				arc = arc >= 1.f ? 1.f : arc;
-				arc = arc <= -1.f ? -1.f : arc;
-				float ang = std::acos(arc) * 180 / M_PI;
-				if (ang < 2.f)
-				{
-					trimesh::vec3 center= face_center[fmap[i]];
-					float d = -1.0f * (n.x*center.x+ n.y * center.y+ n.z * center.z);
-					if (std::abs(D-d) < 0.0002f)
-					{
-						is_inner = true;
-						goto label;
-					}
-				}
-			}
-			label:
-			if (!is_inner)
-			{
-				for (int fi = 0; fi < layer_faces[li].size(); fi++)
-				{
-					faces.push_back(fmap[layer_faces[li][fi]]);
-				}
-			}
-		}
-		std::sort(faces.begin(), faces.end());
 		
-		for (int i = 0; i < mesh->faces.size(); i++)
-			mesh->faces[i].ClearS();*/
 		
 	}
 
