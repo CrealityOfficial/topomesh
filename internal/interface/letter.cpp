@@ -71,6 +71,19 @@ namespace topomesh
 		return topomesh::letter(&input.mesh, input.camera, input.param, input.polys, debugger, tracer);
 	}
 
+
+	void MeshGroupInterface(const std::vector<trimesh::TriMesh*>& input, const SimpleCamera& camera,
+		const LetterParam& param, const std::vector<TriPolygons>& polygons, std::vector<trimesh::TriMesh*>& output,
+		LetterDebugger* debugger, ccglobal::Tracer* tracer)
+	{
+		bool letterOpState = true;
+		SYSTEM_TICK("letter");
+		MeshGroupInterface(input, camera, param, polygons, letterOpState,output, debugger, tracer);
+		SYSTEM_TICK("letter");
+		
+	}
+
+
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera,
 		const LetterParam& param, const std::vector<TriPolygons>& polygons,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer) 

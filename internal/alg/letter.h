@@ -37,7 +37,7 @@ namespace topomesh
 	void simpleCutting(MMeshT* mesh, const std::vector<std::vector<std::vector<trimesh::vec2>>>& polygons, std::vector<std::vector<int>>& faceindexs);
 	bool checkCamera(const CameraParam& camera,trimesh::TriMesh* mesh);
 	void MeshGroupInterface(const std::vector<trimesh::TriMesh*>& mesh_group, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
-		LetterDebugger* debugger, ccglobal::Tracer* tracer, std::vector<trimesh::TriMesh*>& out_mesh);
+		std::vector<trimesh::TriMesh*>& out_mesh,LetterDebugger* debugger=nullptr, ccglobal::Tracer* tracer=nullptr);
 
 	
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,

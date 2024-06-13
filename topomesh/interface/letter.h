@@ -25,6 +25,10 @@ namespace topomesh
 		const LetterParam& param, const std::vector<TriPolygons>& polygons,
 		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 
+	TOPOMESH_API void MeshGroupInterface(const std::vector<trimesh::TriMesh*>&input, const SimpleCamera& camera,
+		const LetterParam& param, const std::vector<TriPolygons>& polygons,std::vector<trimesh::TriMesh*>&output,
+		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
+
 	TOPOMESH_API trimesh::TriMesh* letterFromFile(const std::string& fileName, LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
 
 	TOPOMESH_API void embedingAndCutting(trimesh::TriMesh* mesh, const std::vector<std::vector<trimesh::vec2>>& lines,
