@@ -7,6 +7,8 @@
 #endif
 
 #include "internal/alg/trans.h"
+//----test----
+#include "new_letter.h"
 
 #define FLOATERR 1e-8f
 #define BLOCK 80000
@@ -875,8 +877,9 @@ namespace topomesh
 		polygonInnerFaces(&mesht, poly, infaceIndex, outfaceIndex);
 	}
 
-	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex)
+	void polygonInnerFaces(MMeshT* mt,const std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex)
 	{
+#if 0
 		for (int fi : infaceIndex)if (!mt->faces[fi].IsD())
 		{
 			MMeshFace& f = mt->faces[fi];
@@ -885,7 +888,7 @@ namespace topomesh
 			{
 				outfaceIndex.push_back(fi);
 				continue;
-			}*/
+			}*/			
 			trimesh::point c = (f.V0(0)->p + f.V0(1)->p + f.V0(2)->p) / 3.0;
 			int rayCorssPoint = 0;
 			int equalPoint = 0;
@@ -917,6 +920,68 @@ namespace topomesh
 				}
 			}
 		}
+#else		
+
+		for (int fi : infaceIndex)if (!mt->faces[fi].IsD())
+		{
+			MMeshFace& f = mt->faces[fi];			
+			trimesh::point c = (f.V0(0)->p + f.V0(1)->p + f.V0(2)->p) / 3.0;
+			/*if (f.V0(0)->index == 380 && f.V1(0)->index == 384 && f.V2(0)->index == 394)
+				mt->appendVertex(c);*/
+			int right_rayCorssPoint = 0;
+			int left_rayCorssPoint = 0;
+			int right_equalPoint = 0;
+			int left_equalPoint = 0;			
+			for (int i = 0; i < poly.size(); i++)
+			{
+				for (int j = 0; j < poly[i].size(); j++)
+				{
+					for (int k = 0; k < poly[i][j].size(); k++)
+					{
+						if (std::abs(poly[i][j][(k + 1) % poly[i][j].size()].y - poly[i][j][k].y) < FLOATERR) continue;
+						if (c.y < std::min(poly[i][j][k].y, poly[i][j][(k + 1) % poly[i][j].size()].y)) continue;
+						if (c.y > std::max(poly[i][j][k].y, poly[i][j][(k + 1) % poly[i][j].size()].y)) continue;
+
+						double x = (c.y - poly[i][j][k].y) * (poly[i][j][(k + 1) % poly[i][j].size()].x - poly[i][j][k].x) / (poly[i][j][(k + 1) % poly[i][j].size()].y - poly[i][j][k].y) + poly[i][j][k].x;						
+						if (x >= c.x)
+						{							
+							if (poly[i][j][k].y == c.y || poly[i][j][(k + 1) % poly[i][j].size()].y == c.y)
+							{
+								//right_equalPoint++;
+								c.y -= FLOATERR;
+								k--;
+								continue;
+							}
+							else
+							{
+								right_rayCorssPoint++;
+							}
+						}
+						else
+						{							
+							if (poly[i][j][k].y == c.y || poly[i][j][(k + 1) % poly[i][j].size()].y == c.y)
+							{
+								//left_equalPoint++;
+								c.y -= FLOATERR;
+								k--;
+								continue;
+							}
+							else
+							{
+								left_rayCorssPoint++;
+							}
+						}
+					}
+				}
+				//right_rayCorssPoint -= (right_equalPoint / 2);
+				//left_rayCorssPoint -= (left_equalPoint/2);
+				if ((right_rayCorssPoint % 2) == 1||(left_rayCorssPoint%2==1))
+				{				
+					outfaceIndex.push_back(f.index);					
+				}
+			}
+		}
+#endif
 	}
 
 	void loadCameraParam(CameraParam& camera)
@@ -979,14 +1044,50 @@ namespace topomesh
 
 		for (int i = 0; i < distance_container.size(); i++)
 		{
-			out_mesh.push_back(letter(mesh_group[distance_container[i].first], camera, Letter, polygons, letterOpState, debugger, tracer));
+			trimesh::TriMesh* result_mesh = letter(mesh_group[distance_container[i].first], camera, Letter, polygons, letterOpState, debugger, tracer);
+			if(result_mesh)
+				out_mesh.push_back(result_mesh);
+			else
+			{
+				out_mesh.push_back(mesh_group[i]);
+			}
 		}
 
+	}
+
+
+	void setMark(std::vector<std::vector<trimesh::vec2>>& totalpoly)
+	{
+		for (int i = 0; i < totalpoly.size(); i++)
+		{
+			polygons_marks.push_back(std::vector<int>(totalpoly[i].size(), 0));
+		}
 	}
 
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{								
+		/*std::vector<std::vector<std::vector<trimesh::vec2>>> poly1;
+		poly1.resize(polygons.size());
+		for (int i = 0; i < polygons.size(); i++) {
+			for (int j = 0; j < polygons[i].size(); j++)
+			{
+				std::vector<trimesh::vec2> line;
+				for (int k = 0; k < polygons[i][j].size(); k++)
+				{
+					if (k != polygons[i][j].size() - 1 && polygons[i][j][k] != polygons[i][j][k + 1])
+					{
+						line.push_back(trimesh::vec2(polygons[i][j][k].x, polygons[i][j][k].y));
+					}
+				}
+				if (polygons[i][j][0] != polygons[i][j][polygons[i][j].size() - 1])
+					line.push_back(trimesh::vec2(polygons[i][j][polygons[i][j].size() - 1].x, polygons[i][j][polygons[i][j].size() - 1].y));
+				poly1[i].push_back(line);
+			}
+		}
+		CreateFontMesh(poly1,0.02f);*/
+
+
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
 		*newmesh = *mesh;			
 
@@ -1097,6 +1198,7 @@ namespace topomesh
 		if (faceindex.empty())
 		{
 			letterOpState = false;
+			unTransformationMesh(newmesh, viewMatrix, projectionMatrix);
 			return newmesh;
 		}
 		std::map<int, int> vmap;

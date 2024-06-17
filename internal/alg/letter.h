@@ -24,7 +24,7 @@ namespace topomesh
 	trimesh::point getWorldPoint(const CameraParam& camera, trimesh::ivec2 p);
 	bool intersectionTriangle(MMeshT* mt,trimesh::point p,trimesh::point normal);
 	void TrimeshpolygonInnerFaces(trimesh::TriMesh* mesh, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex);
-	void polygonInnerFaces(MMeshT* mt, std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex);
+	void polygonInnerFaces(MMeshT* mt,const std::vector<std::vector<std::vector<trimesh::vec2>>>& poly, std::vector<int>& infaceIndex, std::vector<int>& outfaceIndex);
 	void loadCameraParam(CameraParam& camera);
 	void fillTriangle(MMeshT* mesh, std::vector<int>& vindex);
 	void fillTriangleForTraverse(MMeshT* mesh, std::vector<int>& vindex,bool is_rollback=false);
@@ -38,7 +38,7 @@ namespace topomesh
 	bool checkCamera(const CameraParam& camera,trimesh::TriMesh* mesh);
 	void MeshGroupInterface(const std::vector<trimesh::TriMesh*>& mesh_group, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
 		std::vector<trimesh::TriMesh*>& out_mesh,LetterDebugger* debugger=nullptr, ccglobal::Tracer* tracer=nullptr);
-
+	void setMark(std::vector<std::vector<trimesh::vec2>>& totalpoly);
 	
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
 		LetterDebugger* debugger = nullptr, ccglobal::Tracer* tracer = nullptr);
