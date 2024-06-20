@@ -1026,6 +1026,7 @@ namespace topomesh
 		std::vector<trimesh::TriMesh*>& out_mesh,LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{
 		std::vector<std::pair<int, float>> distance_container;
+		out_mesh.resize(mesh_group.size());
 		for (int i = 0; i < mesh_group.size(); i++)
 		{
 			mesh_group[i]->need_bbox();
@@ -1038,18 +1039,18 @@ namespace topomesh
 			//out_mesh.push_back(letter(mesh_group[i],camera,Letter,polygons,letterOpState,debugger,tracer));
 		}
 
-		std::sort(distance_container.begin(), distance_container.end(), [](std::pair<int,float>& a,std::pair<int,float>& b) {
+		std::sort(distance_container.begin(), distance_container.end(), [](std::pair<int, float>& a, std::pair<int, float>& b) {
 			return a.second < b.second;
 			});
 
 		for (int i = 0; i < distance_container.size(); i++)
 		{
 			trimesh::TriMesh* result_mesh = letter(mesh_group[distance_container[i].first], camera, Letter, polygons, letterOpState, debugger, tracer);
-			if(result_mesh)
-				out_mesh.push_back(result_mesh);
+			if (result_mesh)
+				out_mesh[distance_container[i].first] = result_mesh;
 			else
 			{
-				out_mesh.push_back(mesh_group[i]);
+				out_mesh[distance_container[i].first] = mesh_group[i];
 			}
 		}
 
