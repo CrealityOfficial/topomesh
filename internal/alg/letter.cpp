@@ -7,8 +7,7 @@
 #endif
 
 #include "internal/alg/trans.h"
-//----test----
-#include "new_letter.h"
+#include "internal/alg/new_letter.h"
 
 #define FLOATERR 1e-8f
 #define BLOCK 80000
@@ -1046,11 +1045,11 @@ namespace topomesh
 		for (int i = 0; i < distance_container.size(); i++)
 		{
 			trimesh::TriMesh* result_mesh = letter(mesh_group[distance_container[i].first], camera, Letter, polygons, letterOpState, debugger, tracer);
-			if (result_mesh)
-				out_mesh[distance_container[i].first] = result_mesh;
+			if(result_mesh)
+				out_mesh[distance_container[i].first]=result_mesh;
 			else
 			{
-				out_mesh[distance_container[i].first] = mesh_group[i];
+				out_mesh[distance_container[i].first]=mesh_group[i];
 			}
 		}
 
@@ -1069,26 +1068,36 @@ namespace topomesh
 	trimesh::TriMesh* letter(trimesh::TriMesh* mesh, const SimpleCamera& camera, const LetterParam& Letter, const std::vector<TriPolygons>& polygons, bool& letterOpState,
 		LetterDebugger* debugger, ccglobal::Tracer* tracer)
 	{								
-		/*std::vector<std::vector<std::vector<trimesh::vec2>>> poly1;
-		poly1.resize(polygons.size());
-		for (int i = 0; i < polygons.size(); i++) {
-			for (int j = 0; j < polygons[i].size(); j++)
-			{
-				std::vector<trimesh::vec2> line;
-				for (int k = 0; k < polygons[i][j].size(); k++)
-				{
-					if (k != polygons[i][j].size() - 1 && polygons[i][j][k] != polygons[i][j][k + 1])
-					{
-						line.push_back(trimesh::vec2(polygons[i][j][k].x, polygons[i][j][k].y));
-					}
-				}
-				if (polygons[i][j][0] != polygons[i][j][polygons[i][j].size() - 1])
-					line.push_back(trimesh::vec2(polygons[i][j][polygons[i][j].size() - 1].x, polygons[i][j][polygons[i][j].size() - 1].y));
-				poly1[i].push_back(line);
-			}
-		}
-		CreateFontMesh(poly1,0.02f);*/
 
+		//std::vector<std::vector<std::vector<trimesh::vec2>>> poly1;
+		//poly1.resize(polygons.size());
+		//for (int i = 0; i < polygons.size(); i++) {
+		//	for (int j = 0; j < polygons[i].size(); j++)
+		//	{
+		//		std::vector<trimesh::vec2> line;
+		//		for (int k = 0; k < polygons[i][j].size(); k++)
+		//		{
+		//			if (k != polygons[i][j].size() - 1 && polygons[i][j][k] != polygons[i][j][k + 1])
+		//			{
+		//				line.push_back(trimesh::vec2(polygons[i][j][k].x, polygons[i][j][k].y));
+		//			}
+		//		}
+		//		if (polygons[i][j][0] != polygons[i][j][polygons[i][j].size() - 1])
+		//			line.push_back(trimesh::vec2(polygons[i][j][polygons[i][j].size() - 1].x, polygons[i][j][polygons[i][j].size() - 1].y));
+		//		poly1[i].push_back(line);
+		//	}
+		//}
+		//trimesh::TriMesh* fontmesh=CreateFontMesh(poly1,0.02f);
+		////fontmesh->write("fontmesh.ply");
+
+		//for (trimesh::vec3& v : fontmesh->vertices)
+		//	v *= 100.f;		
+		//trimesh::xform changes;
+		//trimesh::TriMesh* newmesh1 = new trimesh::TriMesh();
+		//*newmesh1 = *mesh;
+		//MeshTransform(newmesh1, changes, fontmesh,1,trimesh::vec3(100,100,10),trimesh::vec3(0,-1,0),trimesh::vec3(1,0,1),true);
+		//
+		//return fontmesh;
 
 		trimesh::TriMesh* newmesh = new trimesh::TriMesh();
 		*newmesh = *mesh;			
