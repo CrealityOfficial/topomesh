@@ -1059,6 +1059,7 @@ namespace topomesh
 
 	void setMark(std::vector<std::vector<trimesh::vec2>>& totalpoly)
 	{
+		polygons_marks.clear();
 		for (int i = 0; i < totalpoly.size(); i++)
 		{
 			polygons_marks.push_back(std::vector<int>(totalpoly[i].size(), 0));
