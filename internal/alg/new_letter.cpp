@@ -103,7 +103,6 @@ namespace topomesh {
 			}
 		}
 		
-		//_return_mesh->write("returnmesh.ply");
 		_return_mesh->need_bbox();
 		trimesh::vec3 bbx_center = _return_mesh->bbox.center();
 		trimesh::trans(_return_mesh, -bbx_center);
@@ -111,11 +110,12 @@ namespace topomesh {
 		{
 			word_location.push_back((word_mesh_center[i].x - bbx_center.x));
 		}
+		//_return_mesh->write("returnmesh.ply");
 		return _return_mesh;
 	}
 
 
-	void MeshTransform(trimesh::TriMesh* traget_meshes, trimesh::xform& font_xform, trimesh::TriMesh* font_mesh, int face_id,
+	void MeshTransform(trimesh::TriMesh* traget_meshes,  trimesh::TriMesh* font_mesh, int face_id,
 		trimesh::vec3 location, trimesh::vec3 dir, std::vector<float>& word_location, std::vector<int>& mesh_vertex_sizes, std::vector<trimesh::vec3>& word_mesh_center,
 		trimesh::vec3 up,bool is_surround)
 	{		
