@@ -12,6 +12,7 @@ namespace topomesh {
 		for (int li = 0; li < letter.size(); li++)
 		{
 			MMeshT mt(5000, 10000);
+			mt.set_VFadjacent(true);
 			std::vector<std::vector<trimesh::vec2>> totalpoly = letter[li];
 			trimesh::vec2 wordbbx_min(std::numeric_limits<float>::max(), std::numeric_limits<float>::max());
 			trimesh::vec2 wordbbx_max(std::numeric_limits<float>::min(), std::numeric_limits<float>::min());
@@ -53,20 +54,57 @@ namespace topomesh {
 			for (int fi : least)
 				mt.deleteFace(fi);
 
+			for (MMeshVertex& v : mt.vertices)
+				if (v.connected_face.empty())
+					mt.deleteVertex(v);
 			mt.shrinkMesh();
 			mt.init_halfedge();
 			mt.set_HalfEdge(false);
 			for (MMeshVertex& v : mt.vertices)
 				v.p.z += height;
 			int face_size = mt.faces.size();
+			std::vector<int> compara_table(mt.vertices.size());
 			for (int fi = 0; fi < face_size; fi++)
 			{
 				MMeshFace& f = mt.faces[fi];
 				if (f.IsD()) continue;
-				mt.appendVertex(trimesh::point(f.V0(0)->p.x, f.V0(0)->p.y, 0));
-				mt.appendVertex(trimesh::point(f.V0(1)->p.x, f.V0(1)->p.y, 0));
-				mt.appendVertex(trimesh::point(f.V0(2)->p.x, f.V0(2)->p.y, 0));
-				mt.appendFace(mt.VN() - 1, mt.VN() - 2, mt.VN() - 3);
+				int v0, v1, v2;
+				if (!f.V0(0)->IsV())
+				{
+					mt.appendVertex(trimesh::point(f.V0(0)->p.x, f.V0(0)->p.y, 0));
+					f.V0(0)->SetV();
+					compara_table[f.V0(0)->index] = mt.vertices.size() - 1;
+					v0 = mt.vertices.size() - 1;
+				}
+				else
+				{
+					v0 = compara_table[f.V0(0)->index];
+				}
+
+				if (!f.V1(0)->IsV())
+				{
+					mt.appendVertex(trimesh::point(f.V1(0)->p.x, f.V1(0)->p.y, 0));
+					f.V1(0)->SetV();
+					compara_table[f.V1(0)->index] = mt.vertices.size() - 1;
+					v1 = mt.vertices.size() - 1;
+				}
+				else
+				{
+					v1 = compara_table[f.V1(0)->index];
+				}
+
+				if (!f.V2(0)->IsV())
+				{
+					mt.appendVertex(trimesh::point(f.V2(0)->p.x, f.V2(0)->p.y, 0));
+					f.V2(0)->SetV();
+					compara_table[f.V2(0)->index] = mt.vertices.size() - 1;
+					v2 = mt.vertices.size() - 1;
+				}
+				else
+				{
+					v2 = compara_table[f.V2(0)->index];
+				}
+				mt.appendFace(v2, v1, v0);
 				MMeshHalfEdge* p = f.f_mhe;
 				int n = 3;
 				while (1)
@@ -75,10 +113,24 @@ namespace topomesh {
 					{
 						int i1 = p->edge_vertex.second->index;
 						int i2 = p->edge_vertex.first->index;
-						int i3 = mt.VN() - n;
-						int i4 = mt.VN() - (n - 1);
-						if (n == 1)
-							i4 = mt.VN() - 3;
+						int i3 = 0;
+						int i4 = 0;
+						if (n == 3)
+						{
+							i3 = v0;
+							i4 = v1;
+						}
+						else if (n == 2)
+						{
+							i3 = v1;
+							i4 = v2;
+						}
+						else if (n == 1)
+						{
+							i3 = v2;
+							i4 = v0;
+						}
+						
 						mt.appendFace(i1, i2, i3);
 						mt.appendFace(i3, i4, i1);
 					}
@@ -93,14 +145,14 @@ namespace topomesh {
 			//_word_mesh->write("_word_mesh.ply");		
 			_word_mesh->need_bbox();
 			word_mesh_center.push_back(_word_mesh->bbox.center());
-			int vsize = _return_mesh->vertices.size();
-			mesh_vertex_sizes.push_back(vsize);
+			int vsize = _return_mesh->vertices.size();	
 			for (trimesh::point v : _word_mesh->vertices)
 				_return_mesh->vertices.push_back(v);
 			for (trimesh::TriMesh::Face f : _word_mesh->faces)
 			{
 				_return_mesh->faces.push_back(trimesh::TriMesh::Face(vsize+f[0], vsize + f[1], vsize + f[2]));
 			}
+			mesh_vertex_sizes.push_back(_return_mesh->vertices.size());
 		}
 		
 		_return_mesh->need_bbox();
@@ -119,17 +171,38 @@ namespace topomesh {
 		trimesh::vec3 location, trimesh::vec3 dir, std::vector<float>& word_location, std::vector<int>& mesh_vertex_sizes, std::vector<trimesh::vec3>& word_mesh_center,
 		trimesh::vec3 up,bool is_surround)
 	{		
-		trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh();
-		_copy_mesh = traget_meshes;
 		if (!is_surround)
 		{
-			trimesh::apply_xform(font_mesh, trimesh::xform::rot_into(trimesh::vec3(0, 1, 0), up));
-			trimesh::apply_xform(font_mesh, trimesh::xform::rot_into(trimesh::vec3(0, 0, 1), dir));
-			trimesh::trans(font_mesh, location);
+			font_mesh->need_bbox();
+			float hz = font_mesh->bbox.max.z - font_mesh->bbox.min.z;
+			trimesh::vec3 dirTo(0, 1, 0);
+			float cos = trimesh::vec3(0, 0, 1).dot(dir);
+			if (cos < 0.f)
+			{
+				cos = trimesh::vec3(0, 0, -1).dot(dir);
+				trimesh::vec3 scale_dir = dir * cos;
+				dirTo = trimesh::vec3(0, 0, -1) - scale_dir;
+				if (std::abs(-cos -1.f)< 1e-3)
+					dirTo = trimesh::vec3(0, 1, 0);
+			}
+			else
+			{
+				trimesh::vec3 scale_dir = dir * cos;
+				dirTo = trimesh::vec3(0, 0, 1) - scale_dir;
+				if (std::abs(cos-1.f) < 1e-3)
+					dirTo = trimesh::vec3(0, 1, 0);
+			}
+			
+			trimesh::apply_xform(font_mesh, trimesh::xform::rot_into(up, dirTo));
+			//trimesh::apply_xform(font_mesh, trimesh::xform::rot_into(trimesh::vec3(0, 0, 1), dir));
+			trimesh::vec3 trans = location + ((2.0f * hz) / 5.0f) * dir;
+			trimesh::trans(font_mesh, trans);
 		}
 		else
 		{
-			trimesh::xform xf = trimesh::xform::rot_into(up, trimesh::vec3(0, 0, 1));
+			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh();
+			_copy_mesh = traget_meshes;			
+			trimesh::xform xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), trimesh::vec3(0, 0, 1));
 			trimesh::apply_xform(_copy_mesh, xf);
 			float height = (xf * location).z;
 			
@@ -157,6 +230,8 @@ namespace topomesh {
 					int v_n = _copy_mesh->faces[f].at((vi + 1) % 3);
 					trimesh::vec3 dir = _copy_mesh->vertices[v] - _copy_mesh->vertices[v_n];
 					float h = std::abs(_copy_mesh->vertices[v].z - _copy_mesh->vertices[v_n].z);
+					if (h < 1e-6)
+						continue;
 					float scale = (std::abs(height - _copy_mesh->vertices[v_n].z)) / h * 1.0f;
 					trimesh::vec3 new_position = _copy_mesh->vertices[v_n] + dir * scale;
 					if (nn<2)
@@ -208,7 +283,7 @@ namespace topomesh {
 				{
 					int ff = _copy_mesh->across_edge[f][fi];
 					
-					if (ff==-1||!face_marks[ff])
+					if (ff==-1||face_marks[ff])
 						continue;
 					bool pass = false;				
 					
@@ -262,14 +337,14 @@ namespace topomesh {
 					trimesh::vec3 f_n = trimesh::normalized(traget_meshes->trinorm(f));
 					trimesh::xform xf_f = trimesh::xform::rot_into(trimesh::vec3(0, 0, 1), f_n);
 					int b = mi + 1;
-					for (int vi = mesh_vertex_sizes[b]; vi < mesh_vertex_sizes[b]; vi++)
+					for (int vi = mesh_vertex_sizes[b-1]; vi < mesh_vertex_sizes[b]; vi++)
 					{
 						trimesh::vec3 new_point = xf_f * font_mesh->vertices[vi];
 						font_mesh->vertices[vi] = new_point;
 					}
 					trimesh::vec3 new_word_bbx_center = xf_f * word_mesh_center[mi];
 					trimesh::vec3 word_trans = new_wordpoint - new_word_bbx_center;
-					for (int vi = mesh_vertex_sizes[b]; vi < mesh_vertex_sizes[b]; vi++)
+					for (int vi = mesh_vertex_sizes[b-1]; vi < mesh_vertex_sizes[b]; vi++)
 					{
 						font_mesh->vertices[vi] += word_trans;
 					}

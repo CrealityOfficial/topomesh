@@ -15,5 +15,5 @@ namespace topomesh {
 	//6.7.8 上一个接口的字体mesh的三个信息 9、暂定字体上方向 10.是否环绕
 	TOPOMESH_API void MeshTransform(trimesh::TriMesh* traget_meshes, trimesh::TriMesh* font_mesh,int face_id,
 		trimesh::vec3 location,trimesh::vec3 dir,std::vector<float>& word_location,std::vector<int>& mesh_vertex_sizes, std::vector<trimesh::vec3>& word_mesh_center,
-		trimesh::vec3 up=trimesh::vec3(0,0,1), bool is_surround=false);
+		trimesh::vec3 up=trimesh::vec3(0,1,0), bool is_surround=false);
 }
