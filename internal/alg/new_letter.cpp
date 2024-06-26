@@ -9,6 +9,9 @@ namespace topomesh {
 	{
 		trimesh::TriMesh* _return_mesh = new trimesh::TriMesh();					
 		mesh_vertex_sizes.push_back(0);
+
+		//trimesh::TriMesh* bbx_center_mesh = new trimesh::TriMesh();
+
 		for (int li = 0; li < letter.size(); li++)
 		{
 			MMeshT mt(5000, 10000);
@@ -142,9 +145,10 @@ namespace topomesh {
 
 			}
 			mt.mmesh2trimesh(_word_mesh);
-			//_word_mesh->write("_word_mesh.ply");		
+			
 			_word_mesh->need_bbox();
 			word_mesh_center.push_back(_word_mesh->bbox.center());
+			//bbx_center_mesh->vertices.push_back(_word_mesh->bbox.center());
 			int vsize = _return_mesh->vertices.size();	
 			for (trimesh::point v : _word_mesh->vertices)
 				_return_mesh->vertices.push_back(v);
@@ -161,7 +165,10 @@ namespace topomesh {
 		for (int i = 0; i < word_mesh_center.size(); i++)
 		{
 			word_location.push_back((word_mesh_center[i].x - bbx_center.x));
+			word_mesh_center[i]-=bbx_center;			
+			//bbx_center_mesh->vertices.push_back(word_mesh_center[i]);
 		}
+		//bbx_center_mesh->write("bbx_center.ply");
 		//_return_mesh->write("returnmesh.ply");
 		return _return_mesh;
 	}
@@ -169,13 +176,14 @@ namespace topomesh {
 
 	void MeshTransform(trimesh::TriMesh* traget_meshes,  trimesh::TriMesh* font_mesh, int face_id,
 		trimesh::vec3 location, trimesh::vec3 dir, std::vector<float>& word_location, std::vector<int>& mesh_vertex_sizes, std::vector<trimesh::vec3>& word_mesh_center,
-		trimesh::vec3 up,bool is_surround)
+		trimesh::vec3 up,bool is_surround, float angle)
 	{		
 		if (!is_surround)
 		{
 			font_mesh->need_bbox();
 			float hz = font_mesh->bbox.max.z - font_mesh->bbox.min.z;
 			trimesh::vec3 dirTo(0, 1, 0);
+			trimesh::vec3 faceTo(0, 0, -1);
 			float cos = trimesh::vec3(0, 0, 1).dot(dir);
 			if (cos < 0.f)
 			{
@@ -193,7 +201,13 @@ namespace topomesh {
 					dirTo = trimesh::vec3(0, 1, 0);
 			}
 			
-			trimesh::apply_xform(font_mesh, trimesh::xform::rot_into(up, dirTo));
+			trimesh::xform xf = trimesh::xform::rot_into(up, dirTo);
+			faceTo = xf * faceTo;
+			trimesh::vec3 fn=trimesh::normalized(traget_meshes->trinorm(face_id));
+			trimesh::xform rot = trimesh::xform::rot_into(faceTo,fn);
+
+			trimesh::apply_xform(font_mesh, xf);
+			trimesh::apply_xform(font_mesh, rot);
 			//trimesh::apply_xform(font_mesh, trimesh::xform::rot_into(trimesh::vec3(0, 0, 1), dir));
 			trimesh::vec3 trans = location + ((2.0f * hz) / 5.0f) * dir;
 			trimesh::trans(font_mesh, trans);
@@ -202,8 +216,15 @@ namespace topomesh {
 		{
 			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh();
 			_copy_mesh = traget_meshes;			
-			trimesh::xform xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), trimesh::vec3(0, 0, 1));
-			trimesh::apply_xform(_copy_mesh, xf);
+
+			//trimesh::xform xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), trimesh::vec3(0, 0, 1));
+			trimesh::xform rot = trimesh::xform::rot_into(dir,trimesh::vec3(0,-1,0));
+
+			trimesh::apply_xform(_copy_mesh, rot);
+			//up = trimesh::normalized(rot * up);
+			dir = trimesh::normalized(rot * dir);
+			location = rot * location;
+			trimesh::xform xf = trimesh::xform::rot(angle, dir.x, dir.y, dir.z);
 			float height = (xf * location).z;
 			
 			_copy_mesh->need_across_edge();
@@ -285,7 +306,7 @@ namespace topomesh {
 					
 					if (ff==-1||face_marks[ff])
 						continue;
-					bool pass = false;				
+					//bool pass = false;				
 					
 					float z0 = _copy_mesh->vertices[_copy_mesh->faces[ff][0]].z;
 					float z1 = _copy_mesh->vertices[_copy_mesh->faces[ff][1]].z;
@@ -297,6 +318,9 @@ namespace topomesh {
 				}					
 			}
 
+			//trimesh::TriMesh* pointmesh = new trimesh::TriMesh();
+
+			//for (int mi = 0; mi < 1; mi++)
 			for (int mi = 0; mi < word_location.size(); mi++)
 			{
 				float wl=word_location[mi];
@@ -310,7 +334,7 @@ namespace topomesh {
 						if (abs_wl<left_clip_faces[li].second.second && abs_wl>left_clip_faces[li].second.first)
 						{
 							f = left_clip_faces[li].first;
-							float vv_sacle = (abs_wl - left_clip_faces[li].second.second) / (left_clip_faces[li].second.first - left_clip_faces[li].second.second);
+							float vv_sacle = (abs_wl - left_clip_faces[li].second.first) / (left_clip_faces[li].second.second - left_clip_faces[li].second.first);
 							trimesh::vec3 vv_dir = left_face_corss_point[li].second-left_face_corss_point[li].first;
 							new_wordpoint = left_face_corss_point[li].first + vv_sacle * vv_dir;
 							break;
@@ -324,34 +348,55 @@ namespace topomesh {
 						if (abs_wl<right_clip_faces[ri].second.second && abs_wl>right_clip_faces[ri].second.first)
 						{
 							f = right_clip_faces[ri].first;
-							float vv_sacle = (abs_wl - right_clip_faces[ri].second.second) / (right_clip_faces[ri].second.first - right_clip_faces[ri].second.second);
+							float vv_sacle = (abs_wl - right_clip_faces[ri].second.first) / (right_clip_faces[ri].second.second - right_clip_faces[ri].second.first);
 							trimesh::vec3 vv_dir = right_face_corss_point[ri].second - right_face_corss_point[ri].first;
 							new_wordpoint = right_face_corss_point[ri].first + vv_sacle * vv_dir;
 							break;
 						}
 					}
 				}
+				
 
 				if (f != -1)
 				{
-					trimesh::vec3 f_n = trimesh::normalized(traget_meshes->trinorm(f));
-					trimesh::xform xf_f = trimesh::xform::rot_into(trimesh::vec3(0, 0, 1), f_n);
+					//back zero vec
 					int b = mi + 1;
+					for (int vi = mesh_vertex_sizes[b - 1]; vi < mesh_vertex_sizes[b]; vi++)
+					{
+						font_mesh->vertices[vi] -= word_mesh_center[mi];
+					}
+					
+					trimesh::vec3 f_n = trimesh::normalized(traget_meshes->trinorm(f));
+					trimesh::xform xf_f = trimesh::xform::rot_into(up,trimesh::vec3(0, 0, 1));
+					trimesh::vec3 new_dir = xf_f*trimesh::vec3(0, 0, -1);
+					trimesh::xform face_new_dir = trimesh::xform::rot_into(new_dir, f_n);
+
+					
 					for (int vi = mesh_vertex_sizes[b-1]; vi < mesh_vertex_sizes[b]; vi++)
 					{
-						trimesh::vec3 new_point = xf_f * font_mesh->vertices[vi];
+						trimesh::vec3 new_point = face_new_dir*xf_f * font_mesh->vertices[vi];
 						font_mesh->vertices[vi] = new_point;
 					}
-					trimesh::vec3 new_word_bbx_center = xf_f * word_mesh_center[mi];
-					trimesh::vec3 word_trans = new_wordpoint - new_word_bbx_center;
+					//trimesh::vec3 new_word_bbx_center = xf_f * word_mesh_center[mi];
+					//trimesh::vec3 word_trans = new_wordpoint - word_mesh_center[mi];
+
+					//pointmesh->vertices.push_back(new_wordpoint);
 					for (int vi = mesh_vertex_sizes[b-1]; vi < mesh_vertex_sizes[b]; vi++)
 					{
-						font_mesh->vertices[vi] += word_trans;
+						font_mesh->vertices[vi] += new_wordpoint;
 					}
 				}
 			}
 
+			trimesh::xform rott=trimesh::inv(rot);
+			trimesh::apply_xform(font_mesh, rott);
+
+			//pointmesh->write("pointmesh.ply");
+			//_copy_mesh->write("copymesh.ply");
 		}
-		//trimesh::trans(font_mesh, location);
+
+
+		//font_mesh->write("fontmesh.ply");
+		//traget_meshes->write("targetmesh.ply");
 	}
 }
