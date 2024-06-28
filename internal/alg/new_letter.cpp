@@ -407,10 +407,355 @@ namespace topomesh {
 
 
 
-	FontMesh::FontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
-		trimesh::vec3 face_to, trimesh::vec3 up) :Height(height)
+	FontMesh::FontMesh()
 	{
-		_return_mesh = new trimesh::TriMesh();
+		_return_mesh = new trimesh::TriMesh();		
+	}
+
+	FontMesh::FontMesh(const FontMesh& other)
+	{
+		//font_meshs = other.font_meshs;
+		init_font_meshs =other.init_font_meshs;
+		word_init_location =other.word_init_location;
+		word_absolute_location = other.word_absolute_location;
+		FaceTo=other.FaceTo;
+		Up=other.Up;
+		_return_mesh = other._return_mesh;
+	}
+
+
+	FontMesh::~FontMesh()
+	{
+		/*for (auto m : font_meshs)
+		{
+			m->clear(); m = nullptr;
+		}
+		font_meshs.clear();*/
+		for (auto im : init_font_meshs)
+		{
+			im->clear(); im = nullptr;
+		}
+		init_font_meshs.clear();
+		word_init_location.clear();
+		FaceTo.clear();
+		Up.clear();
+		_return_mesh->clear();
+		_return_mesh = nullptr;
+	}
+
+
+	void FontMesh::setText(const std::string& text)
+	{
+		m_text = text;
+	}
+
+	std::string FontMesh::text() const
+	{
+		return m_text;
+	}
+
+
+	trimesh::TriMesh* FontMesh::getFontMesh()
+	{
+		if (is_change)
+		{
+			_return_mesh->clear();
+			int v_size = 0;
+			for (int mi = 0; mi < init_font_meshs.size(); mi++)
+			{
+				trimesh::vec3 transTo = word_absolute_location[mi];
+				for (int vi = 0; vi < init_font_meshs[mi]->vertices.size(); vi++)
+				{
+					_return_mesh->vertices.push_back(init_font_meshs[mi]->vertices[vi] + transTo);
+				}
+				for (int fi = 0; fi < init_font_meshs[mi]->faces.size(); fi++)
+				{
+					_return_mesh->faces.push_back(trimesh::ivec3(init_font_meshs[mi]->faces[fi][0] + v_size, init_font_meshs[mi]->faces[fi][1] + v_size,
+						init_font_meshs[mi]->faces[fi][2] + v_size));
+				}
+				v_size += init_font_meshs[mi]->vertices.size();				
+			}
+		}
+		trimesh::TriMesh* result = new trimesh::TriMesh;
+		*result = *_return_mesh;
+		return result;
+	}
+
+
+	void FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
+	{
+		state = is_surround;
+		sel_faceid = face_id;
+		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(face_id));
+		is_change = true;
+		if (!is_surround)
+		{
+			InitFontMesh();				
+			trimesh::trans(_return_mesh, -bbx.center());
+			//---rot---	
+			trimesh::xform rot=trimesh::xform::rot_into(trimesh::vec3(0,0,-1),fn);
+			trimesh::apply_xform(_return_mesh, rot);		
+			trimesh::vec3 new_up = rot * trimesh::vec3(0, -1, 0);
+			trimesh::normalize(new_up);
+			float zcos = new_up.dot(trimesh::vec3(0,0,1));
+			if (std::abs(zcos) < 1e-2)
+			{
+				float y_angle = std::acos(new_up.dot(trimesh::vec3(0, 1, 0)));
+				trimesh::rot(_return_mesh,y_angle,fn);
+			}
+			else
+			{
+				float z_angle = std::acos(zcos);
+				trimesh::rot(_return_mesh, z_angle, fn);
+			}
+
+			trimesh::trans(_return_mesh, location);
+			is_change = false;		
+
+			for (int i = 0; i < init_font_meshs.size(); i++)
+			{
+				FaceTo[i] = fn;
+				Up[i] = new_up;
+				word_absolute_location[i] = word_absolute_location[i] + location - bbx.center();
+			}
+			/*trimesh::TriMesh* locationmesh = new trimesh::TriMesh();
+			locationmesh->vertices.push_back(location);
+			locationmesh->write("locationmesh.ply");
+			traget_meshes->write("traget_meshs.ply");
+			_return_mesh->write("_returnmesh.ply");*/
+		}
+		else {
+			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh();
+			_copy_mesh = traget_meshes;
+			_copy_mesh->need_bbox();
+			trimesh::trans(_copy_mesh, -_copy_mesh->bbox.center());
+			trimesh::xform xf = trimesh::xform::rot_into(fn,trimesh::vec3(0,-1,0));
+			trimesh::apply_xform(_copy_mesh, xf);
+			trimesh::vec3 _copy_location = xf * location;
+			float height = (xf * location).z;
+
+
+			//std::vector<int> inputfaces;
+			_copy_mesh->need_across_edge();
+			std::vector<int> face_marks(_copy_mesh->faces.size(), false);
+			std::vector<std::pair<int, std::pair<float, float>>> face_line_len;
+			std::vector<std::pair<trimesh::vec3, trimesh::vec3>> face_corss_point;
+			std::queue<int> que;
+			trimesh::vec3 front_cross= _copy_location;
+			float len = 0;
+			bool is_frist=true;
+			bool is_frist2 = true;
+			trimesh::ivec2 frist_mark_v;
+			que.push(face_id);
+			//inputfaces.push_back(face_id);
+			while (!que.empty())
+			{
+				int f = que.front();
+				que.pop();
+				face_marks[f] = true;
+
+				std::vector<trimesh::vec3> double_cross;
+				
+				for (int vi = 0; vi < 3; vi++)
+				{
+					int v = _copy_mesh->faces[f].at(vi);
+					int v_n = _copy_mesh->faces[f].at((vi + 1) % 3);
+					trimesh::vec3 dir = _copy_mesh->vertices[v] - _copy_mesh->vertices[v_n];
+					float h = std::abs(_copy_mesh->vertices[v].z - _copy_mesh->vertices[v_n].z);
+					if (h < 1e-4)
+						continue;
+					float scale = (std::abs(height - _copy_mesh->vertices[v_n].z)) / h * 1.0f;
+					trimesh::vec3 new_position = _copy_mesh->vertices[v_n] + dir * scale;
+					if (is_frist)
+					{
+						if (new_position.x > _copy_location.x)
+						{
+							face_corss_point.push_back(std::make_pair(front_cross,new_position));
+							float d = trimesh::distance(front_cross, new_position);
+							len += d;
+							face_line_len.push_back(std::make_pair(f,std::make_pair(0,d)));
+							front_cross = new_position;
+							is_frist = false;		
+							frist_mark_v = trimesh::ivec2(v,v_n);
+						}
+						/*else
+						{
+							back_cross = new_position;
+						}*/
+					}
+					else
+					{
+						double_cross.push_back(new_position);
+					}
+				}
+				if (double_cross.size()==2)
+				{
+					float d1 = trimesh::distance(double_cross[0], front_cross);
+					float d2 = trimesh::distance(double_cross[1], front_cross);
+					if (d1 > d2)
+					{
+						face_corss_point.push_back(std::make_pair(double_cross[1], double_cross[0]));
+						front_cross = double_cross[0];
+						face_line_len.push_back(std::make_pair(f, std::make_pair(len,len + d1)));
+						len += d1;
+					}
+					else
+					{
+						face_corss_point.push_back(std::make_pair(double_cross[0], double_cross[1]));
+						front_cross = double_cross[1];
+						face_line_len.push_back(std::make_pair(f, std::make_pair(len, len + d2)));
+						len += d2;
+					}
+				}
+
+				for (int fi = 0; fi < 3; fi++)
+				{
+					int ff = _copy_mesh->across_edge[f][fi];
+					if (ff == -1 || face_marks[ff])
+						continue;
+					if (is_frist2)
+					{
+						int pass_n = 0;
+						for (int fvi = 0; fvi < 3; fvi++)
+						{
+							int fv = _copy_mesh->faces[ff][fvi];
+							if (fv == frist_mark_v[0] || fv == frist_mark_v[1])
+								pass_n++;
+						}
+						if (pass_n!=2)
+							continue;
+						else
+						{
+							is_frist2 = false;
+						}
+					}
+					float z0 = _copy_mesh->vertices[_copy_mesh->faces[ff][0]].z;
+					float z1 = _copy_mesh->vertices[_copy_mesh->faces[ff][1]].z;
+					float z2 = _copy_mesh->vertices[_copy_mesh->faces[ff][2]].z;
+					float max_z = std::max({ z0,z1,z2 });
+					float min_z = std::min({ z0,z1,z2 });
+					if (height >= min_z && height <= max_z)
+					{
+						que.push(ff);
+						//inputfaces.push_back(ff);
+						break;
+					}
+				}
+
+			}
+			float last_d = trimesh::distance(front_cross, _copy_location);
+			face_corss_point.push_back(std::make_pair(front_cross, _copy_location));
+			face_line_len.push_back(std::make_pair(face_id,std::make_pair(len, len+last_d)));
+			len += last_d;
+
+			/*trimesh::TriMesh* flines = new trimesh::TriMesh();
+			for (int fci = 0; fci < face_corss_point.size(); fci++)
+			{
+				flines->vertices.push_back(face_corss_point[fci].first);
+				flines->vertices.push_back(face_corss_point[fci].second);
+				flines->write("flines.ply");
+			}			
+			_copy_mesh->write("rotatemesh.ply");*/
+								
+			//font_meshs.clear();
+			//trimesh::TriMesh* points = new trimesh::TriMesh();
+			//trimesh::TriMesh* locationpoint = new trimesh::TriMesh();
+			//locationpoint->vertices.push_back(location);
+			for (int wi = 0; wi < init_font_meshs.size(); wi++)
+			{
+				float loc = word_init_location[wi].x-bbx.center().x;
+				int sel_f = -1;
+				trimesh::vec3 word_new_location(0,0,0);
+				if (loc < 0)
+				{
+					loc = loc + len;
+				}				
+				for (int fl_i = 0; fl_i < face_line_len.size(); fl_i++)
+				{
+					if (loc<face_line_len[fl_i].second.second && loc>face_line_len[fl_i].second.first)
+					{
+						sel_f = face_line_len[fl_i].first;
+						float vv_scale = (loc - face_line_len[fl_i].second.first) / (face_line_len[fl_i].second.second - face_line_len[fl_i].second.first);
+						trimesh::vec3 dirTo = face_corss_point[fl_i].second - face_corss_point[fl_i].first;
+						word_new_location = face_corss_point[fl_i].first + vv_scale * dirTo;
+						break;
+					}
+				}
+				
+				//trimesh::vec3 sel_fn= trimesh::normalized(traget_meshes->trinorm(sel_f));
+				trimesh::xform xxf = trimesh::inv(xf);
+				word_new_location = xxf * word_new_location;
+				word_absolute_location[wi] = word_new_location;
+				//points->vertices.push_back(word_new_location);
+				/*trimesh::TriMesh* new_font_mesh=init_font_meshs[wi];
+				new_font_mesh->need_bbox();
+				word_new_location-=new_font_mesh->bbox.center();				
+				trimesh::trans(new_font_mesh, word_new_location);*/
+				
+				//trimesh::apply_xform(new_font_mesh, xxf);
+				//font_meshs.push_back(new_font_mesh);
+				//new_font_mesh->write("new_font_mesh.ply");
+			}
+			//locationpoint->write("locationpoint.ply");
+			//points->write("points.ply");
+			//_copy_mesh->write("copymesh.ply");
+		}
+	}
+
+
+
+	void FontMesh::rotateFontMesh(trimesh::TriMesh* traget_mesh, float angle)
+	{
+		is_change = true;
+		if (!state)
+		{
+			trimesh::vec3 fn = trimesh::normalized(traget_mesh->trinorm(sel_faceid));
+			trimesh::rot(_return_mesh, angle, fn);
+			is_change = false;
+		}
+		else
+		{
+
+		}
+	}
+
+
+
+	void FontMesh::updateFontPoly(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter)
+	{
+		for (auto& mesh : init_font_meshs)
+		{
+			mesh->clear(); mesh = nullptr;
+		}
+		init_font_meshs.clear();
+		CreateFontMesh(letter,Height,trimesh::vec3(0,0,-1),trimesh::vec3(0,-1,0));
+
+
+	}
+
+	void FontMesh::updateFontHeight(float height)
+	{
+		for (int mi = 0; mi < init_font_meshs.size(); mi++)
+		{
+			int half_v = init_font_meshs[mi]->vertices.size() / 2;
+			for (int vi = 0; vi < half_v; vi++)
+			{
+				init_font_meshs[mi]->vertices[vi].z = height;
+			}
+		}
+		Height = height;
+	}
+
+
+	void FontMesh::CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
+		trimesh::vec3 face_to , trimesh::vec3 up )
+	{
+		FaceTo.clear();
+		Up.clear();
+		word_init_location.clear();
+		word_absolute_location.clear();
+		bbx.clear();
+		Height = height;
 		for (int li = 0; li < letter.size(); li++)
 		{
 			MMeshT mt(5000, 10000);
@@ -544,266 +889,37 @@ namespace topomesh {
 			trimesh::TriMesh* _word_mesh = new trimesh::TriMesh();
 			mt.mmesh2trimesh(_word_mesh);
 			_word_mesh->need_bbox();
-			font_meshs.push_back(_word_mesh);
+			//font_meshs.push_back(_word_mesh);
 			FaceTo.push_back(face_to);
-			Up.push_back(up);			
+			Up.push_back(up);
 
-			word_absolute_location.push_back(_word_mesh->bbox.center());
-			trimesh::TriMesh* _word_mesh_t=new trimesh::TriMesh();
-			mt.mmesh2trimesh(_word_mesh_t);
-			init_font_meshs.push_back(_word_mesh_t);
+			word_init_location.push_back(_word_mesh->bbox.center());
 			bbx += _word_mesh->bbox;
-			
-		}
-		for (int li = 0; li < letter.size(); li++)
-		{			
-			word_relative_location.push_back(word_absolute_location[li]- bbx.center());
-		}
+			trimesh::trans(_word_mesh,-_word_mesh->bbox.center());
+			word_absolute_location.push_back(trimesh::vec3(0, 0, 0));
+			init_font_meshs.push_back(_word_mesh);	
+		}		
 	}
 
-	FontMesh::FontMesh(const FontMesh& other)
+	void FontMesh::InitFontMesh()
 	{
-		font_meshs = other.font_meshs;
-		init_font_meshs =other.init_font_meshs;
-		word_relative_location =other.word_relative_location;
-		word_absolute_location = other.word_absolute_location;
-		FaceTo=other.FaceTo;
-		Up=other.Up;
-		_return_mesh = other._return_mesh;
-	}
-
-
-	FontMesh::~FontMesh()
-	{
-		for (auto m : font_meshs)
-		{
-			m->clear(); m = nullptr;
-		}
-		font_meshs.clear();
-		for (auto im : init_font_meshs)
-		{
-			im->clear(); im = nullptr;
-		}
-		init_font_meshs.clear();
-		word_relative_location.clear();
-		FaceTo.clear();
-		Up.clear();
+		is_change = false;
 		_return_mesh->clear();
-		_return_mesh = nullptr;
-	}
-
-
-	trimesh::TriMesh* FontMesh::getFontMesh()
-	{
-		if (is_change)
+		for (int wi = 0; wi < init_font_meshs.size(); wi++)
 		{
-			_return_mesh->clear();
-			for (int wi = 0; wi < font_meshs.size(); wi++)
+			int vsize = _return_mesh->vertices.size();
+			trimesh::vec3 transTo = word_init_location[wi];
+			for (trimesh::point v : init_font_meshs[wi]->vertices)
+				_return_mesh->vertices.push_back(v + transTo);
+			for (trimesh::TriMesh::Face f : init_font_meshs[wi]->faces)
 			{
-				int vsize = _return_mesh->vertices.size();
-				for (trimesh::point v : font_meshs[wi]->vertices)
-					_return_mesh->vertices.push_back(v);
-				for (trimesh::TriMesh::Face f : font_meshs[wi]->faces)
-				{
-					_return_mesh->faces.push_back(trimesh::TriMesh::Face(vsize + f[0], vsize + f[1], vsize + f[2]));
-				}
+				_return_mesh->faces.push_back(trimesh::TriMesh::Face(vsize + f[0], vsize + f[1], vsize + f[2]));
 			}
+			word_absolute_location[wi] = word_init_location[wi];
+			FaceTo[wi] = trimesh::vec3(0, 0, -1);
+			Up[wi] = trimesh::vec3(0, -1, 0);
 		}
-		return _return_mesh;			
-	}
-
-
-	void FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
-	{
-		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(face_id));
-		is_change = true;
-		if (!is_surround)
-		{
-			_return_mesh->clear();			
-			for (int wi = 0; wi < init_font_meshs.size(); wi++)
-			{
-				int vsize = _return_mesh->vertices.size();
-				for (trimesh::point v : init_font_meshs[wi]->vertices)
-					_return_mesh->vertices.push_back(v);
-				for (trimesh::TriMesh::Face f : init_font_meshs[wi]->faces)
-				{
-					_return_mesh->faces.push_back(trimesh::TriMesh::Face(vsize + f[0], vsize + f[1], vsize + f[2]));
-				}
-			}
-					
-			trimesh::trans(_return_mesh, -bbx.center());
-			//---rot---	
-			trimesh::xform rot=trimesh::xform::rot_into(trimesh::vec3(0,0,-1),fn);
-			trimesh::apply_xform(_return_mesh, rot);		
-			trimesh::vec3 new_up = rot * trimesh::vec3(0, -1, 0);
-			trimesh::normalize(new_up);
-			float zcos = new_up.dot(trimesh::vec3(0,0,1));
-			if (std::abs(zcos) < 1e-2)
-			{
-				float y_angle = std::acos(new_up.dot(trimesh::vec3(0, 1, 0)));
-				trimesh::rot(_return_mesh,y_angle,fn);
-			}
-			else
-			{
-				float z_angle = std::acos(zcos);
-				trimesh::rot(_return_mesh, z_angle, fn);
-			}
-
-			trimesh::trans(_return_mesh, location);
-			is_change = false;						
-		}
-		else {
-			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh();
-			_copy_mesh = traget_meshes;
-			_copy_mesh->need_bbox();
-			trimesh::trans(_copy_mesh, -_copy_mesh->bbox.center());
-			trimesh::xform xf = trimesh::xform::rot_into(fn,trimesh::vec3(0,-1,0));
-			trimesh::apply_xform(_copy_mesh, xf);
-			float height = (xf * location).z;
-
-
-			_copy_mesh->need_across_edge();
-			std::vector<int> face_marks(_copy_mesh->faces.size(), false);
-			std::vector<std::pair<int, std::pair<float, float>>> face_line_len;
-			std::vector<std::pair<trimesh::vec3, trimesh::vec3>> face_corss_point;
-			std::queue<int> que;
-			trimesh::vec3 front_cross=location;			
-			float len = 0;
-			bool is_frist=true;
-			bool is_frist2 = true;
-			trimesh::ivec2 frist_mark_v;
-			que.push(face_id);
-			while (!que.empty())
-			{
-				int f = que.front();
-				que.pop();
-				face_marks[f] = true;
-
-				std::vector<trimesh::vec3> double_cross;
-				
-				for (int vi = 0; vi < 3; vi++)
-				{
-					int v = _copy_mesh->faces[f].at(vi);
-					int v_n = _copy_mesh->faces[f].at((vi + 1) % 3);
-					trimesh::vec3 dir = _copy_mesh->vertices[v] - _copy_mesh->vertices[v_n];
-					float h = std::abs(_copy_mesh->vertices[v].z - _copy_mesh->vertices[v_n].z);
-					if (h < 1e-4)
-						continue;
-					float scale = (std::abs(height - _copy_mesh->vertices[v_n].z)) / h * 1.0f;
-					trimesh::vec3 new_position = _copy_mesh->vertices[v_n] + dir * scale;
-					if (is_frist)
-					{
-						if (new_position.x > location.x)
-						{
-							face_corss_point.push_back(std::make_pair(front_cross,new_position));
-							float d = trimesh::distance(front_cross, new_position);
-							len += d;
-							face_line_len.push_back(std::make_pair(f,std::make_pair(0,d)));
-							front_cross = new_position;
-							is_frist = false;		
-							frist_mark_v = trimesh::ivec2(v,v_n);
-						}
-						/*else
-						{
-							back_cross = new_position;
-						}*/
-					}
-					else
-					{
-						double_cross.push_back(new_position);
-					}
-				}
-				if (double_cross.size()==2)
-				{
-					float d1 = trimesh::distance(double_cross[0], front_cross);
-					float d2 = trimesh::distance(double_cross[1], front_cross);
-					if (d1 > d2)
-					{
-						face_corss_point.push_back(std::make_pair(double_cross[1], double_cross[0]));
-						front_cross = double_cross[0];
-						face_line_len.push_back(std::make_pair(f, std::make_pair(len,len + d1)));
-						len += d1;
-					}
-					else
-					{
-						face_corss_point.push_back(std::make_pair(double_cross[0], double_cross[1]));
-						front_cross = double_cross[1];
-						face_line_len.push_back(std::make_pair(f, std::make_pair(len, len + d2)));
-						len += d2;
-					}
-				}
-
-				for (int fi = 0; fi < 3; fi++)
-				{
-					int ff = _copy_mesh->across_edge[f][fi];
-					if (ff == -1 || face_marks[ff])
-						continue;
-					if (is_frist2)
-					{
-						int pass_n = 0;
-						for (int fvi = 0; fvi < 3; fvi++)
-						{
-							int fv = _copy_mesh->faces[ff][fvi];
-							if (fv == frist_mark_v[0] || fv == frist_mark_v[1])
-								pass_n++;
-						}
-						if (pass_n!=2)
-							continue;
-						else
-						{
-							is_frist2 = false;
-						}
-					}
-					float z0 = _copy_mesh->vertices[_copy_mesh->faces[ff][0]].z;
-					float z1 = _copy_mesh->vertices[_copy_mesh->faces[ff][1]].z;
-					float z2 = _copy_mesh->vertices[_copy_mesh->faces[ff][2]].z;
-					float max_z = std::max({ z0,z1,z2 });
-					float min_z = std::min({ z0,z1,z2 });
-					if (height >= min_z && height <= max_z)
-						que.push(ff);
-				}
-
-			}
-			float last_d = trimesh::distance(front_cross, location);
-			face_corss_point.push_back(std::make_pair(front_cross, location));
-			face_line_len.push_back(std::make_pair(face_id,std::make_pair(len, len+last_d)));
-			len += last_d;
-								
-			font_meshs.clear();
-			//trimesh::TriMesh* points = new trimesh::TriMesh();
-			for (int wi = 0; wi < init_font_meshs.size(); wi++)
-			{
-				float loc = word_relative_location[wi].x;
-				int sel_f = -1;
-				trimesh::vec3 word_new_location(0,0,0);
-				if (loc < 0)
-				{
-					loc = loc + len;
-				}				
-				for (int fl_i = 0; fl_i < face_line_len.size(); fl_i++)
-				{
-					if (loc<face_line_len[fl_i].second.second && loc>face_line_len[fl_i].second.first)
-					{
-						sel_f = face_line_len[fl_i].first;
-						float vv_scale = (loc - face_line_len[fl_i].second.first) / (face_line_len[fl_i].second.second - face_line_len[fl_i].second.first);
-						trimesh::vec3 dirTo = face_corss_point[fl_i].second - face_corss_point[fl_i].first;
-						word_new_location = face_corss_point[fl_i].first + vv_scale * dirTo;
-						break;
-					}
-				}
-				//points->vertices.push_back(word_new_location);
-				//trimesh::vec3 sel_fn= trimesh::normalized(traget_meshes->trinorm(sel_f));
-				trimesh::TriMesh* new_font_mesh=init_font_meshs[wi];
-				new_font_mesh->need_bbox();
-				word_new_location-=new_font_mesh->bbox.center();
-				trimesh::trans(new_font_mesh, word_new_location);
-				//trimesh::xform xxf = trimesh::inv(xf);
-				//trimesh::apply_xform(new_font_mesh, xxf);
-				font_meshs.push_back(new_font_mesh);
-			}
-			//points->write("points.ply");
-			//_copy_mesh->write("copymesh.ply");
-		}
+		sel_faceid = -1;
 	}
 
 }
