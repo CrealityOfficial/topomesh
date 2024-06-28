@@ -7,13 +7,13 @@
 
 namespace topomesh {
 
-	//Éú³É×ÖÌåmesh½Ó¿Ú ²ÎÊı1.Îª×ÖÌåÂÖÀª¡¢2.×ÖÌå¸ß¶È¡¢3.·µ»ØÃ¿¸ö×ÖµÄ×ø±ê¡¢4.·µ»ØÃ¿¸ö×ÖµÄµãÇø¼ä¡¢5.·µ»ØÃ¿¸ö×ÖµÄBBX
+	//ç”Ÿæˆå­—ä½“meshæ¥å£ å‚æ•°1.ä¸ºå­—ä½“è½®å»“ã€2.å­—ä½“é«˜åº¦ã€3.è¿”å›æ¯ä¸ªå­—çš„åæ ‡ã€4.è¿”å›æ¯ä¸ªå­—çš„ç‚¹åŒºé—´ã€5.è¿”å›æ¯ä¸ªå­—çš„BBX
 	TOPOMESH_API trimesh::TriMesh* CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
 		std::vector<float>& word_location = std::vector<float>(), std::vector<int>& mesh_vertex_sizes = std::vector<int>(),
 		std::vector<trimesh::vec3>& word_mesh_center=std::vector<trimesh::vec3>());
 
-	//¸ù¾İ½»»¥ÊµÏÖ×ÖÌåmeshµÄ±ä»» ²ÎÊı1.Ä¿±êmesh¡¢2.×ÖÌåmesh¡¢3.Êó±êµã»÷faceid¡¢4.Êó±êµã»÷µÄ×ø±ê¡¢5.ÃæµÄ·¨Ïß¡¢
-	//6.7.8 ÉÏÒ»¸ö½Ó¿ÚµÄ×ÖÌåmeshµÄÈı¸öĞÅÏ¢ 9¡¢Ôİ¶¨×ÖÌåÉÏ·½Ïò 10.ÊÇ·ñ»·ÈÆ
+	//æ ¹æ®äº¤äº’å®ç°å­—ä½“meshçš„å˜æ¢ å‚æ•°1.ç›®æ ‡meshã€2.å­—ä½“meshã€3.é¼ æ ‡ç‚¹å‡»faceidã€4.é¼ æ ‡ç‚¹å‡»çš„åæ ‡ã€5.é¢çš„æ³•çº¿ã€
+	//6.7.8 ä¸Šä¸€ä¸ªæ¥å£çš„å­—ä½“meshçš„ä¸‰ä¸ªä¿¡æ¯ 9ã€æš‚å®šå­—ä½“ä¸Šæ–¹å‘ 10.æ˜¯å¦ç¯ç»•
 	TOPOMESH_API void MeshTransform(trimesh::TriMesh* traget_meshes, trimesh::TriMesh* font_mesh,int face_id,
 		trimesh::vec3 location,trimesh::vec3 dir,std::vector<float>& word_location,std::vector<int>& mesh_vertex_sizes, std::vector<trimesh::vec3>& word_mesh_center,
 		trimesh::vec3 up=trimesh::vec3(0,1,0), bool is_surround=false,float angle=0.f);
@@ -39,6 +39,8 @@ namespace topomesh {
 		void setText(const std::string& text);
 		std::string text() const;
 
+		float height();
+
 
 	private:
 		//std::vector<trimesh::TriMesh*> font_meshs;
@@ -48,7 +50,7 @@ namespace topomesh {
 		std::vector<trimesh::vec3> FaceTo;
 		std::vector<trimesh::vec3> Up;
 
-		int state = 0;//0:Ë®Æ½  1:»·ÈÆ
+		int state = 0;//0:æ°´å¹³  1:ç¯ç»•
 
 		float Height;
 		bool is_change=true;

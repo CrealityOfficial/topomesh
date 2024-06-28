@@ -454,6 +454,10 @@ namespace topomesh {
 		return m_text;
 	}
 
+	float FontMesh::height()
+	{
+		return Height;
+	}
 
 	trimesh::TriMesh* FontMesh::getFontMesh()
 	{
