@@ -49,10 +49,12 @@ namespace topomesh {
 		std::vector<trimesh::vec3> word_absolute_location;
 		std::vector<trimesh::vec3> FaceTo;
 		std::vector<trimesh::vec3> Up;
+		trimesh::vec3 click_location;
 
 		int state = 0;//0:水平  1:环绕
 
 		float Height;
+		float angle=0.f;
 		bool is_change=true;
 		int sel_faceid=-1;
 		trimesh::box3 bbx;
