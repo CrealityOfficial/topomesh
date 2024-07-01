@@ -28,14 +28,15 @@ namespace topomesh {
 
 
 		void CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
-			trimesh::vec3 face_to = trimesh::vec3(0, 0, -1), trimesh::vec3 up = trimesh::vec3(0, -1, 0));
+			trimesh::vec3 face_to = trimesh::vec3(0, 0, -1), trimesh::vec3 up = trimesh::vec3(0, -1, 0),bool is_init=true);
 		void InitFontMesh();
 		trimesh::TriMesh* getFontMesh();
-		void FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround = false);
+		void FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround = false,float angle=0.f);
 		void rotateFontMesh(trimesh::TriMesh* traget_mesh,float angle);
 		void updateFontPoly(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter);
 		void updateFontHeight(float height);
 
+		void setState(int state);
 		void setText(const std::string& text);
 		std::string text() const;
 
@@ -46,19 +47,23 @@ namespace topomesh {
 		//std::vector<trimesh::TriMesh*> font_meshs;
 		std::vector<trimesh::TriMesh*> init_font_meshs;
 		std::vector<trimesh::vec3> word_init_location;
-		std::vector<trimesh::vec3> word_absolute_location;
-		std::vector<trimesh::vec3> FaceTo;
-		std::vector<trimesh::vec3> Up;
+		std::vector<trimesh::vec3> word_absolute_location;	
+		std::pair<trimesh::vec3, trimesh::vec3> FaceTo;
+		std::pair<trimesh::vec3, trimesh::vec3> Up;		
+
+		std::vector<trimesh::vec3> word_FaceTo;
+		std::vector<trimesh::vec3> word_Up;
 		trimesh::vec3 click_location;
 
-		int state = 0;//0:水平  1:环绕
+		int _m_state = 0;//0:水平  1:环绕
 
 		float Height;
-		float angle=0.f;
-		bool is_change=true;
+		float _m_angle=0.f;	
 		int sel_faceid=-1;
+		bool is_init_location = false;
 		trimesh::box3 bbx;
 		trimesh::TriMesh* _return_mesh;
+		trimesh::TriMesh* _return_surround_mesh;
 
 		std::string m_text;
 
