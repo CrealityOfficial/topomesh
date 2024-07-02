@@ -457,9 +457,19 @@ namespace topomesh {
 		return m_text;
 	}
 
+	float FontMesh::angle()
+	{
+		return _m_angle;
+	}
+
 	float FontMesh::height()
 	{
 		return Height;
+	}
+
+	trimesh::vec3 FontMesh::currentFaceTo()
+	{
+		return FaceTo.second;
 	}
 
 	void FontMesh::setState(int state)
@@ -472,7 +482,7 @@ namespace topomesh {
 		if (!_m_state)
 		{								
 			trimesh::xform xf = trimesh::xform::rot_into(FaceTo.first, FaceTo.second);	
-			float angle = trimesh::angle(Up.first, Up.second);//upµÄ±ä»»ÒªÔÚ¹¤×÷º¯ÊýÀï´¦Àí£¬¶ø²»ÊÇÔÚ·µ»Øº¯ÊýÀï			
+			float angle = trimesh::angle(Up.first, Up.second);//upï¿½Ä±ä»»Òªï¿½Ú¹ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï´¦ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ú·ï¿½ï¿½Øºï¿½ï¿½ï¿½ï¿½ï¿½			
 			trimesh::xform xxf = trimesh::xform::rot(-angle, FaceTo.second);
 			trimesh::apply_xform(_return_mesh, xxf*xf);
 			_return_mesh->need_bbox();						

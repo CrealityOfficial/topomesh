@@ -40,7 +40,10 @@ namespace topomesh {
 		void setText(const std::string& text);
 		std::string text() const;
 
+		float angle();
 		float height();
+
+		trimesh::vec3 currentFaceTo();
 
 
 	private:
