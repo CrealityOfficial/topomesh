@@ -556,7 +556,7 @@ namespace topomesh {
 			//trimesh::TriMesh* locationmesh = new trimesh::TriMesh();
 			//locationmesh->vertices.push_back(_copy_location);
 			//locationmesh->write("locationmesh.ply");
-			//_copy_mesh->write("_copymesh.ply");
+			_copy_mesh->write("_copymesh.ply");
 		
 			_copy_mesh->need_across_edge();
 			std::vector<int> face_marks(_copy_mesh->faces.size(), false);
@@ -571,24 +571,26 @@ namespace topomesh {
 			bool is_frist=true;
 			bool is_frist2 = true;
 			trimesh::ivec2 frist_mark_v;
+			trimesh::ivec2 next_mark_v;
 			que.push(face_id);			
 			while (!que.empty())
 			{
 				int f = que.front();
 				que.pop();
-				face_marks[f] = true;
-
+				face_marks[f] = true;				
 				std::vector<trimesh::vec3> double_cross;
-				
+				std::vector<trimesh::ivec2> v_mark;
 				for (int vi = 0; vi < 3; vi++)
 				{
 					int v = _copy_mesh->faces[f].at(vi);
 					int v_n = _copy_mesh->faces[f].at((vi + 1) % 3);
 					trimesh::vec3 dir = _copy_mesh->vertices[v] - _copy_mesh->vertices[v_n];
-					float h = std::abs(_copy_mesh->vertices[v].z - _copy_mesh->vertices[v_n].z);
-					if (h < 1e-4)
+					float h = _copy_mesh->vertices[v].z - _copy_mesh->vertices[v_n].z;
+					if (std::abs(h) < 1e-4)
 						continue;
-					float scale = (std::abs(height - _copy_mesh->vertices[v_n].z)) / h * 1.0f;
+					float scale = (height - _copy_mesh->vertices[v_n].z) / h * 1.0f;
+					if (scale > 1||scale<0)
+						continue;
 					trimesh::vec3 new_position = _copy_mesh->vertices[v_n] + dir * scale;
 					if (is_frist)
 					{
@@ -605,7 +607,8 @@ namespace topomesh {
 					}
 					else
 					{
-						double_cross.push_back(new_position);
+						double_cross.push_back(new_position);	
+						v_mark.push_back(trimesh::ivec2(v, v_n));
 					}
 				}
 				if (double_cross.size()==2)
@@ -618,6 +621,7 @@ namespace topomesh {
 						front_cross = double_cross[0];
 						face_line_len.push_back(std::make_pair(f, std::make_pair(len,len + d1)));
 						len += d1;
+						next_mark_v = v_mark[0];
 					}
 					else
 					{
@@ -625,17 +629,10 @@ namespace topomesh {
 						front_cross = double_cross[1];
 						face_line_len.push_back(std::make_pair(f, std::make_pair(len, len + d2)));
 						len += d2;
-					}
-					/*if (double_cross.size() == 3)
-					{
-						trimesh::TriMesh* double_crossmesh = new trimesh::TriMesh();
-						double_crossmesh->vertices.push_back(double_cross[0]);
-						double_crossmesh->vertices.push_back(double_cross[1]);
-						double_crossmesh->vertices.push_back(double_cross[2]);
-						double_crossmesh->write("doublemesh.ply");
-					}*/
+						next_mark_v = v_mark[1];
+					}					
 				}
-
+				
 				for (int fi = 0; fi < 3; fi++)
 				{
 					int ff = _copy_mesh->across_edge[f][fi];
@@ -657,6 +654,19 @@ namespace topomesh {
 							is_frist2 = false;
 						}
 					}
+					else
+					{
+						int pass_c = 0;
+						for (int fvi = 0; fvi < 3; fvi++)
+						{
+							int fv = _copy_mesh->faces[ff][fvi];
+							if (fv == next_mark_v[0] || fv == next_mark_v[1])
+								pass_c++;
+						}
+						if (pass_c != 2)
+							continue;
+					}
+					
 					float z0 = _copy_mesh->vertices[_copy_mesh->faces[ff][0]].z;
 					float z1 = _copy_mesh->vertices[_copy_mesh->faces[ff][1]].z;
 					float z2 = _copy_mesh->vertices[_copy_mesh->faces[ff][2]].z;
@@ -669,20 +679,20 @@ namespace topomesh {
 						break;
 					}
 				}
-
+				v_mark.clear();
 			}
 			float last_d = trimesh::distance(front_cross, _copy_location);
 			face_corss_point.push_back(std::make_pair(front_cross, _copy_location));
 			face_line_len.push_back(std::make_pair(face_id,std::make_pair(len, len+last_d)));
 			len += last_d;
 
-			/*trimesh::TriMesh* flines = new trimesh::TriMesh();
-			for (int fci = 0; fci < face_corss_point.size(); fci++)
-			{
-				flines->vertices.push_back(face_corss_point[fci].first);
-				flines->vertices.push_back(face_corss_point[fci].second);	
-				flines->write("flines.ply");
-			}	*/		
+			//trimesh::TriMesh* flines = new trimesh::TriMesh();
+			//for (int fci = 0; fci < face_corss_point.size(); fci++)
+			//{
+			//	flines->vertices.push_back(face_corss_point[fci].first);
+			//	flines->vertices.push_back(face_corss_point[fci].second);	
+			//	flines->write("flines.ply");
+			//}			
 			
 								
 			//font_meshs.clear();
