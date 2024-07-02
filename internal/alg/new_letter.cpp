@@ -483,7 +483,8 @@ namespace topomesh {
 		{								
 			trimesh::xform xf = trimesh::xform::rot_into(FaceTo.first, FaceTo.second);	
 			float angle = trimesh::angle(Up.first, Up.second);//up�ı任Ҫ�ڹ��������ﴦ�����������ڷ��غ�����			
-			trimesh::xform xxf = trimesh::xform::rot(-angle, FaceTo.second);
+			angle = (angle * 1.f / 3.14f) * 180;
+			trimesh::xform xxf = trimesh::xform::rot(-_m_angle, FaceTo.second);
 			trimesh::apply_xform(_return_mesh, xxf*xf);
 			_return_mesh->need_bbox();						
 			trimesh::trans(_return_mesh, click_location - _return_mesh->bbox.center());
@@ -784,12 +785,12 @@ namespace topomesh {
 
 	void FontMesh::rotateFontMesh(trimesh::TriMesh* traget_mesh, float angle)
 	{		
-		float seat_angle = angle - _m_angle;
+		//float seat_angle = angle - _m_angle;
 		_m_angle = angle;
 		if (!_m_state)
 		{		
 			Up.first = Up.second;
-			trimesh::xform rot = trimesh::xform::rot(seat_angle,FaceTo.second);
+			trimesh::xform rot = trimesh::xform::rot(angle,FaceTo.second);
 			Up.second = rot * Up.second;
 		}
 		else
