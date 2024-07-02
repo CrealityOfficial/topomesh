@@ -556,7 +556,7 @@ namespace topomesh {
 			//trimesh::TriMesh* locationmesh = new trimesh::TriMesh();
 			//locationmesh->vertices.push_back(_copy_location);
 			//locationmesh->write("locationmesh.ply");
-			_copy_mesh->write("_copymesh.ply");
+			//_copy_mesh->write("_copymesh.ply");
 		
 			_copy_mesh->need_across_edge();
 			std::vector<int> face_marks(_copy_mesh->faces.size(), false);
