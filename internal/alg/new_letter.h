@@ -28,7 +28,7 @@ namespace topomesh {
 
 
 		void CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
-			trimesh::vec3 face_to = trimesh::vec3(0, 0, -1), trimesh::vec3 up = trimesh::vec3(0, -1, 0),bool is_init=true);
+			trimesh::vec3 face_to = trimesh::vec3(0, 0, -1), trimesh::vec3 up = trimesh::vec3(0, -1, 0),bool is_adjust=true ,bool is_init=true);
 		void InitFontMesh();
 		trimesh::TriMesh* getFontMesh();
 		void FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround = false,float angle=0.f);
