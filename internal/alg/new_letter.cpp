@@ -427,6 +427,8 @@ namespace topomesh {
 		_return_surround_mesh = other._return_surround_mesh;
 		_return_mesh = new trimesh::TriMesh;
 		_return_mesh = other._return_mesh;
+
+		m_text = other.m_text;
 	}
 
 
