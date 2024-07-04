@@ -429,6 +429,7 @@ namespace topomesh {
 		_return_mesh = other._return_mesh;
 
 		m_text = other.m_text;
+		_m_angle = other._m_angle;
 	}
 
 
