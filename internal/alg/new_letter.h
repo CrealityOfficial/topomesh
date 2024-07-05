@@ -20,14 +20,15 @@ namespace topomesh {
 
 	class TOPOMESH_API FontMesh {
 	public:
-		FontMesh();
+		FontMesh() {};
+		FontMesh(float height,float depth,float angle);
 		FontMesh(const FontMesh& other);
 		/*FontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
 			trimesh::vec3 face_to=trimesh::vec3(0,0,-1),trimesh::vec3 up=trimesh::vec3(0,-1,0));*/
 		~FontMesh();
 
 
-		void CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
+		void CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter,
 			trimesh::vec3 face_to = trimesh::vec3(0, 0, -1), trimesh::vec3 up = trimesh::vec3(0, -1, 0),bool is_adjust=true ,bool is_init=true);
 		void InitFontMesh();
 		trimesh::TriMesh* getFontMesh();
@@ -35,6 +36,7 @@ namespace topomesh {
 		void rotateFontMesh(trimesh::TriMesh* traget_mesh,float angle);
 		void updateFontPoly(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter);
 		void updateFontHeight(float height);
+		void updateFontDepth(float depth);
 
 		void setState(int state);
 		void setText(const std::string& text);
@@ -42,6 +44,7 @@ namespace topomesh {
 
 		float angle();
 		float height();
+		float depth();
 
 		trimesh::vec3 currentFaceTo();
 
@@ -61,14 +64,18 @@ namespace topomesh {
 		int _m_state = 0;//0:水平  1:环绕
 
 		float Height;
-		float _m_angle=0.f;	
+		float m_depth;
+		float _m_angle=0.f;
+		float before_rad=0.f;
 		int sel_faceid=-1;
 		bool is_init_location = false;
+		bool is_init_adjust = true;
 		trimesh::box3 bbx;
 		trimesh::TriMesh* _return_mesh;
 		trimesh::TriMesh* _return_surround_mesh;
 
 		std::string m_text;
+
 
 	};
 

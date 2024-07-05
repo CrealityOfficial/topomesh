@@ -404,10 +404,9 @@ namespace topomesh {
 		//traget_meshes->write("targetmesh.ply");
 	}
 
+	
 
-
-
-	FontMesh::FontMesh()
+	FontMesh::FontMesh(float height, float depth, float angle) :Height(height), m_depth(depth), _m_angle(angle)
 	{
 		_return_mesh = new trimesh::TriMesh();
 		_return_surround_mesh = new trimesh::TriMesh();
@@ -430,6 +429,7 @@ namespace topomesh {
 
 		m_text = other.m_text;
 		_m_angle = other._m_angle;
+		m_depth = other.m_depth;
 	}
 
 
@@ -480,17 +480,25 @@ namespace topomesh {
 		_m_state = state;
 	}
 
+	float FontMesh::depth()
+	{
+		return m_depth;
+	}
+
 	trimesh::TriMesh* FontMesh::getFontMesh()
 	{
 		if (!_m_state)
-		{								
-			trimesh::xform xf = trimesh::xform::rot_into(FaceTo.first, FaceTo.second);	
-			float angle = trimesh::angle(Up.first, Up.second);//up�ı任Ҫ�ڹ��������ﴦ�����������ڷ��غ�����			
-			angle = (angle * 1.f / 3.14f) * 180;
-			trimesh::xform xxf = trimesh::xform::rot(-_m_angle, FaceTo.second);
+		{				
+			_return_mesh->need_bbox();
+			trimesh::trans(_return_mesh, -_return_mesh->bbox.center());		
+			trimesh::xform xf = trimesh::xform::rot_into(FaceTo.first,FaceTo.second);
+			float angle = trimesh::angle(Up.first,Up.second);
+			float rad = (angle / 180.f) * M_PI;
+			trimesh::xform xxf = trimesh::xform::rot(-rad, FaceTo.second);
 			trimesh::apply_xform(_return_mesh, xxf*xf);
-			_return_mesh->need_bbox();						
-			trimesh::trans(_return_mesh, click_location - _return_mesh->bbox.center());
+			float half = Height / 2.0f;
+			trimesh::vec3 dirto = (m_depth + half) * FaceTo.second;
+			trimesh::trans(_return_mesh, click_location+ dirto);
 
 			trimesh::TriMesh* result = new trimesh::TriMesh;
 			*result = *_return_mesh;
@@ -501,7 +509,9 @@ namespace topomesh {
 			int v_size = 0;
 			for (int mi = 0; mi < init_font_meshs.size(); mi++)
 			{
-				trimesh::vec3 transTo = word_absolute_location[mi];
+				float half = Height / 2.0f;
+				trimesh::vec3 dirto = (m_depth + half) * word_FaceTo[mi];
+				trimesh::vec3 transTo = word_absolute_location[mi]+ dirto;
 				trimesh::xform face_xf = trimesh::xform::rot_into(trimesh::vec3(0,0,-1), word_FaceTo[mi]);
 				trimesh::vec3 new_up = face_xf * trimesh::vec3(0, -1, 0);				
 				trimesh::xform angle_xf = trimesh::xform::rot_into(new_up,word_Up[mi]);
@@ -529,16 +539,25 @@ namespace topomesh {
 	void FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround, float angle)
 	{
 		click_location = location;
-		_m_state = is_surround;
-		sel_faceid = face_id;
+		_m_state = is_surround;		
 		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(face_id));
 		if (!_m_state)
 		{		
+			if (face_id == sel_faceid)
+				return;
+			std::cout << "before_FaceTo.first :" << FaceTo.first << std::endl;
+			std::cout << "before_FaceTo.second :" << FaceTo.second << std::endl;
+			std::cout << "before_Up.first :" << Up.first << std::endl;
+			std::cout << "before_Up.second :" << Up.second << std::endl;
+			std::cout << "-----------------------------------------" << std::endl;
 			trimesh::vec3 ori_faceTo = FaceTo.second;
 			trimesh::xform faceto_xf = trimesh::xform::rot_into(ori_faceTo,fn);
 			FaceTo.first = FaceTo.second;
 			FaceTo.second = fn;
+			std::cout << faceto_xf << std::endl;
 
+			trimesh::vec3 before_up_first = Up.first;
+			trimesh::vec3 before_up_second = Up.second;
 			trimesh::vec3 new_up = faceto_xf * Up.second;
 			trimesh::normalize(new_up);
 			Up.first = new_up;
@@ -553,7 +572,14 @@ namespace topomesh {
 			{	
 				up_dirto = trimesh::vec3(0, 0, 1) + zcos * -fn;
 			}			
-			Up.second = up_dirto;									
+			Up.second = trimesh::normalized(up_dirto);		
+			if (trimesh::distance(Up.second , before_up_second)<1e-4)
+				Up.first = before_up_first;
+			std::cout << "-----------------------------------------" << std::endl;
+			std::cout << "FaceTo.first :" << FaceTo.first << std::endl;
+			std::cout << "FaceTo.second :" << FaceTo.second << std::endl;
+			std::cout << "Up.first :" << Up.first << std::endl;
+			std::cout << "Up.second :" << Up.second << std::endl;
 		}
 		else {
 			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
@@ -782,6 +808,7 @@ namespace topomesh {
 			//locationpoint->write("locationpoint.ply");
 			//points->write("points.ply");			
 		}
+		sel_faceid = face_id;
 	}
 
 
@@ -811,7 +838,7 @@ namespace topomesh {
 			mesh->clear(); mesh = nullptr;
 		}
 		init_font_meshs.clear();		
-		CreateFontMesh(letter, Height, trimesh::vec3(0, 0, -1), trimesh::vec3(0, -1, 0), true,false);
+		CreateFontMesh(letter, trimesh::vec3(0, 0, -1), trimesh::vec3(0, -1, 0), true,false);
 	}
 
 	void FontMesh::updateFontHeight(float height)
@@ -831,15 +858,21 @@ namespace topomesh {
 	}
 
 
-	void FontMesh::CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
+	void FontMesh::updateFontDepth(float depth)
+	{
+		m_depth = depth;
+	}
+
+
+	void FontMesh::CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter,
 		trimesh::vec3 face_to , trimesh::vec3 up, bool is_adjust, bool is_init)
 	{
 		word_FaceTo.clear();
 		word_Up.clear();
 		word_init_location.clear();
 		word_absolute_location.clear();		
-		bbx.clear();
-		Height = height;	
+		init_font_meshs.clear();
+		bbx.clear();		
 		for (int li = 0; li < letter.size(); li++)
 		{
 			MMeshT mt(5000, 10000);
@@ -998,6 +1031,7 @@ namespace topomesh {
 			init_font_meshs.push_back(_word_mesh);			
 		}		
 		is_init_location = is_init;
+		is_init_adjust = is_adjust;
 		InitFontMesh();
 	}
 
@@ -1021,10 +1055,20 @@ namespace topomesh {
 		{
 			sel_faceid = -1;
 			click_location = trimesh::vec3(0, 0, 0);
-			FaceTo.first = trimesh::vec3(0, 0, -1);
-			FaceTo.second = trimesh::vec3(0, 0, -1);
-			Up.first = trimesh::vec3(0, -1, 0);
-			Up.second = trimesh::vec3(0, -1, 0);
+			if (is_init_adjust)
+			{
+				FaceTo.first = trimesh::vec3(0, 0, 1);
+				FaceTo.second = trimesh::vec3(0, 0, 1);
+				Up.first = trimesh::vec3(0, 1, 0);
+				Up.second = trimesh::vec3(0, 1, 0);
+			}
+			else
+			{
+				FaceTo.first = trimesh::vec3(0, 0, -1);
+				FaceTo.second = trimesh::vec3(0, 0, -1);
+				Up.first = trimesh::vec3(0, -1, 0);
+				Up.second = trimesh::vec3(0,-1, 0);
+			}
 		}
 	}
 
