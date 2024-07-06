@@ -66,10 +66,12 @@ namespace topomesh {
 		float Height;
 		float m_depth;
 		float _m_angle=0.f;
+		float _seat_angle = 0.f;
 		float before_rad=0.f;
 		int sel_faceid=-1;
 		bool is_init_location = false;
 		bool is_init_adjust = true;
+		bool is_change_state = false;
 		trimesh::box3 bbx;
 		trimesh::TriMesh* _return_mesh;
 		trimesh::TriMesh* _return_surround_mesh;

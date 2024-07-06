@@ -478,6 +478,7 @@ namespace topomesh {
 	void FontMesh::setState(int state)
 	{
 		_m_state = state;
+		is_change_state = true;
 	}
 
 	float FontMesh::depth()
@@ -492,10 +493,11 @@ namespace topomesh {
 			_return_mesh->need_bbox();
 			trimesh::trans(_return_mesh, -_return_mesh->bbox.center());		
 			trimesh::xform xf = trimesh::xform::rot_into(FaceTo.first,FaceTo.second);
-			float angle = trimesh::angle(Up.first,Up.second);
-			float rad = (angle / 180.f) * M_PI;
-			trimesh::xform xxf = trimesh::xform::rot(-rad, FaceTo.second);
+			trimesh::xform xxf = trimesh::xform::rot_into(Up.first, Up.second);		
 			trimesh::apply_xform(_return_mesh, xxf*xf);
+
+			trimesh::xform rot_xf = trimesh::xform::rot((_m_angle *M_PI)/180.0f, FaceTo.second);
+			trimesh::apply_xform(_return_mesh, rot_xf);
 			float half = Height / 2.0f;
 			trimesh::vec3 dirto = (m_depth + half) * FaceTo.second;
 			trimesh::trans(_return_mesh, click_location+ dirto);
@@ -538,26 +540,20 @@ namespace topomesh {
 
 	void FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround, float angle)
 	{
-		click_location = location;
-		_m_state = is_surround;		
+		if (!is_change_state)
+		{
+			click_location = location;
+			sel_faceid = face_id;
+		}	
+		_m_state = is_surround;
+		is_change_state = false;
 		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(face_id));
 		if (!_m_state)
-		{		
-			if (face_id == sel_faceid)
-				return;
-			std::cout << "before_FaceTo.first :" << FaceTo.first << std::endl;
-			std::cout << "before_FaceTo.second :" << FaceTo.second << std::endl;
-			std::cout << "before_Up.first :" << Up.first << std::endl;
-			std::cout << "before_Up.second :" << Up.second << std::endl;
-			std::cout << "-----------------------------------------" << std::endl;
+		{								
 			trimesh::vec3 ori_faceTo = FaceTo.second;
 			trimesh::xform faceto_xf = trimesh::xform::rot_into(ori_faceTo,fn);
 			FaceTo.first = FaceTo.second;
-			FaceTo.second = fn;
-			std::cout << faceto_xf << std::endl;
-
-			trimesh::vec3 before_up_first = Up.first;
-			trimesh::vec3 before_up_second = Up.second;
+			FaceTo.second = fn;					
 			trimesh::vec3 new_up = faceto_xf * Up.second;
 			trimesh::normalize(new_up);
 			Up.first = new_up;
@@ -573,13 +569,7 @@ namespace topomesh {
 				up_dirto = trimesh::vec3(0, 0, 1) + zcos * -fn;
 			}			
 			Up.second = trimesh::normalized(up_dirto);		
-			if (trimesh::distance(Up.second , before_up_second)<1e-4)
-				Up.first = before_up_first;
-			std::cout << "-----------------------------------------" << std::endl;
-			std::cout << "FaceTo.first :" << FaceTo.first << std::endl;
-			std::cout << "FaceTo.second :" << FaceTo.second << std::endl;
-			std::cout << "Up.first :" << Up.first << std::endl;
-			std::cout << "Up.second :" << Up.second << std::endl;
+		
 		}
 		else {
 			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
@@ -807,21 +797,18 @@ namespace topomesh {
 			}
 			//locationpoint->write("locationpoint.ply");
 			//points->write("points.ply");			
-		}
-		sel_faceid = face_id;
+		}		
 	}
 
 
 
 	void FontMesh::rotateFontMesh(trimesh::TriMesh* traget_mesh, float angle)
 	{		
-		//float seat_angle = angle - _m_angle;
+		_seat_angle = angle - _m_angle;
 		_m_angle = angle;
 		if (!_m_state)
 		{		
-			Up.first = Up.second;
-			trimesh::xform rot = trimesh::xform::rot(angle,FaceTo.second);
-			Up.second = rot * Up.second;
+			
 		}
 		else
 		{
