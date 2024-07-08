@@ -857,7 +857,7 @@ namespace topomesh {
 		init_font_meshs.clear();
 		bbx.clear();		
 		for (int li = 0; li < letter.size(); li++)
-		{
+		{			
 			MMeshT mt(5000, 10000);
 			mt.set_VFadjacent(true);
 			std::vector<std::vector<trimesh::vec2>> totalpoly = letter[li];
@@ -873,7 +873,7 @@ namespace topomesh {
 
 					if (totalpoly[pi][ppi].y < wordbbx_min.y)
 						wordbbx_min.y = totalpoly[pi][ppi].y;
-					if (totalpoly[pi][ppi].x > wordbbx_max.x)
+					if (totalpoly[pi][ppi].y > wordbbx_max.y)
 						wordbbx_max.y = totalpoly[pi][ppi].y;
 				}
 			mt.appendVertex(trimesh::point(wordbbx_min.x - 0.2f, wordbbx_max.y + 0.2f, 0));
@@ -1011,11 +1011,11 @@ namespace topomesh {
 			}
 
 			word_absolute_location.push_back(trimesh::vec3(0, 0, 0));
-			init_font_meshs.push_back(_word_mesh);			
+			init_font_meshs.push_back(_word_mesh);				
 		}		
 		is_init_location = is_init;
 		is_init_adjust = is_adjust;
-		InitFontMesh();
+		InitFontMesh();		
 	}
 
 	void FontMesh::InitFontMesh()
