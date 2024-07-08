@@ -28,7 +28,7 @@ namespace topomesh {
 		int fontSize { 20 };
 		int wordSpace { 0 };
 		int lineSpace { 0 };
-		int height { 10 };
+		int height { 1 };
 		float distance { 1 }; // 0-2
 		int embossType { 0 };
 		bool bold { false };
