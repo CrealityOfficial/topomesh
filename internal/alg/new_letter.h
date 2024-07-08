@@ -18,6 +18,25 @@ namespace topomesh {
 		trimesh::vec3 location,trimesh::vec3 dir,std::vector<float>& word_location,std::vector<int>& mesh_vertex_sizes, std::vector<trimesh::vec3>& word_mesh_center,
 		trimesh::vec3 up=trimesh::vec3(0,1,0), bool is_surround=false,float angle=0.f);
 
+
+	struct TOPOMESH_API FontConfig 
+	{
+		std::string text { "TEXT" };
+		std::string font { "Arial" };
+		int fontSize { 20 };
+		int wordSpace { 0 };
+		int lineSpace { 0 };
+		int height { 10 };
+		float distance { 1 }; // 0-2
+		int embossType { 0 };
+		bool bold { false };
+		bool italic { false };
+		float angle { 0.0 };
+		int state { 0 }; //0:水平  1:环绕
+
+		bool valid { false };
+	};
+
 	class TOPOMESH_API FontMesh {
 	public:
 		FontMesh() {};
@@ -48,6 +67,11 @@ namespace topomesh {
 
 		trimesh::vec3 currentFaceTo();
 
+		FontConfig *config()
+		{
+			return &m_config;
+		}
+
 
 	private:
 		//std::vector<trimesh::TriMesh*> font_meshs;
@@ -76,6 +100,7 @@ namespace topomesh {
 
 		std::string m_text;
 
+		FontConfig m_config;
 
 	};
 
