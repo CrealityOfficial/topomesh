@@ -427,7 +427,7 @@ namespace topomesh {
 		_return_mesh = new trimesh::TriMesh;
 		_return_mesh = other._return_mesh;
 
-		m_text = other.m_text;
+		m_config = other.m_config;
 		_m_angle = other._m_angle;
 		m_depth = other.m_depth;
 	}
@@ -452,12 +452,12 @@ namespace topomesh {
 
 	void FontMesh::setText(const std::string& text)
 	{
-		m_text = text;
+		m_config.text = text;
 	}
 
 	std::string FontMesh::text() const
 	{
-		return m_text;
+		return m_config.text;
 	}
 
 	float FontMesh::angle()

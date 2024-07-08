@@ -100,8 +100,6 @@ namespace topomesh {
 		trimesh::TriMesh* _return_mesh;
 		trimesh::TriMesh* _return_surround_mesh;
 
-		std::string m_text;
-
 		FontConfig m_config;
 
 	};
