@@ -32,7 +32,7 @@ namespace topomesh {
 			trimesh::vec3 face_to = trimesh::vec3(0, 0, -1), trimesh::vec3 up = trimesh::vec3(0, -1, 0),bool is_adjust=true ,bool is_init=true);
 		void InitFontMesh();
 		trimesh::TriMesh* getFontMesh();
-		void FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround = false,float angle=0.f);
+		void FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround = false);
 		void rotateFontMesh(trimesh::TriMesh* traget_mesh,float angle);
 		void updateFontPoly(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter);
 		void updateFontHeight(float height);
@@ -66,8 +66,6 @@ namespace topomesh {
 		float Height;
 		float m_depth;
 		float _m_angle=0.f;
-		float _seat_angle = 0.f;
-		float before_rad=0.f;
 		int sel_faceid=-1;
 		bool is_init_location = false;
 		bool is_init_adjust = true;

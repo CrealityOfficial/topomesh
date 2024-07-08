@@ -490,20 +490,17 @@ namespace topomesh {
 	{
 		if (!_m_state)
 		{				
-			_return_mesh->need_bbox();
-			trimesh::trans(_return_mesh, -_return_mesh->bbox.center());		
 			trimesh::xform xf = trimesh::xform::rot_into(FaceTo.first,FaceTo.second);
 			trimesh::xform xxf = trimesh::xform::rot_into(Up.first, Up.second);		
-			trimesh::apply_xform(_return_mesh, xxf*xf);
-
-			trimesh::xform rot_xf = trimesh::xform::rot((_m_angle *M_PI)/180.0f, FaceTo.second);
-			trimesh::apply_xform(_return_mesh, rot_xf);
-			float half = Height / 2.0f;
-			trimesh::vec3 dirto = (m_depth + half) * FaceTo.second;
-			trimesh::trans(_return_mesh, click_location+ dirto);
-
+			trimesh::apply_xform(_return_mesh, xxf*xf);					
+			
 			trimesh::TriMesh* result = new trimesh::TriMesh;
 			*result = *_return_mesh;
+			trimesh::xform rot_xf = trimesh::xform::rot(_m_angle *M_PI*1.0f, FaceTo.second);
+			trimesh::apply_xform(result, rot_xf);
+			float half = Height / 2.0f;
+			trimesh::vec3 dirto = (m_depth + half) * FaceTo.second;
+			trimesh::trans(result, click_location + dirto);
 			return result;
 		}
 		else {
@@ -538,7 +535,7 @@ namespace topomesh {
 	}
 
 
-	void FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround, float angle)
+	void FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
 	{
 		if (!is_change_state)
 		{
@@ -577,7 +574,7 @@ namespace topomesh {
 			_copy_mesh->need_bbox();
 			trimesh::trans(_copy_mesh, -_copy_mesh->bbox.center());
 			trimesh::xform xf = trimesh::xform::rot_into(fn,trimesh::vec3(0,-1,0));
-			float radian = M_PI * (angle * 1.f / 180.f);
+			float radian = M_PI * (_m_angle * 1.f / 180.f);
 			trimesh::xform rot_xf = trimesh::xform::rot(radian, trimesh::vec3(0, -1, 0));
 			trimesh::xform r_xxf= rot_xf * xf;
 			trimesh::apply_xform(_copy_mesh, r_xxf);
@@ -803,8 +800,7 @@ namespace topomesh {
 
 
 	void FontMesh::rotateFontMesh(trimesh::TriMesh* traget_mesh, float angle)
-	{		
-		_seat_angle = angle - _m_angle;
+	{				
 		_m_angle = angle;
 		if (!_m_state)
 		{		
@@ -812,7 +808,7 @@ namespace topomesh {
 		}
 		else
 		{
-			FontTransform(traget_mesh, sel_faceid, click_location, _m_state, _m_angle);
+			FontTransform(traget_mesh, sel_faceid, click_location, _m_state);
 		}
 	}
 
@@ -1057,6 +1053,8 @@ namespace topomesh {
 				Up.second = trimesh::vec3(0,-1, 0);
 			}
 		}
+		_return_mesh->need_bbox();
+		trimesh::trans(_return_mesh, -_return_mesh->bbox.center());
 	}
 
 }
