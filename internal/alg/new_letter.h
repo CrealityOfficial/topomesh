@@ -21,6 +21,8 @@ namespace topomesh {
 
 	struct TOPOMESH_API FontConfig 
 	{
+		int reliefTargetID { -1 };
+
 		std::string text { "TEXT" };
 		std::string font { "Arial" };
 		int fontSize { 20 };
