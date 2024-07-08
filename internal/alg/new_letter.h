@@ -79,7 +79,7 @@ namespace topomesh {
 		std::vector<trimesh::vec3> word_init_location;
 		std::vector<trimesh::vec3> word_absolute_location;	
 		std::pair<trimesh::vec3, trimesh::vec3> FaceTo;
-		std::pair<trimesh::vec3, trimesh::vec3> Up;		
+		std::pair<trimesh::vec3, trimesh::vec3> Up;				
 
 		std::vector<trimesh::vec3> word_FaceTo;
 		std::vector<trimesh::vec3> word_Up;

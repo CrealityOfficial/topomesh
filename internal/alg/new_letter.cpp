@@ -490,12 +490,14 @@ namespace topomesh {
 	{
 		if (!_m_state)
 		{				
-			trimesh::xform xf = trimesh::xform::rot_into(FaceTo.first,FaceTo.second);
-			trimesh::xform xxf = trimesh::xform::rot_into(Up.first, Up.second);		
-			trimesh::apply_xform(_return_mesh, xxf*xf);					
-			
 			trimesh::TriMesh* result = new trimesh::TriMesh;
-			*result = *_return_mesh;
+			*result = *_return_mesh;		
+			
+			trimesh::xform xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), FaceTo.second);
+			trimesh::vec3 dir_up = xf * trimesh::vec3(0, 1, 0);
+			trimesh::xform xxf = trimesh::xform::rot_into(dir_up, Up.second);
+			trimesh::apply_xform(result, xxf*xf);
+			
 			trimesh::xform rot_xf = trimesh::xform::rot(_m_angle *M_PI*1.0f, FaceTo.second);
 			trimesh::apply_xform(result, rot_xf);
 			float half = Height / 2.0f;
@@ -566,7 +568,7 @@ namespace topomesh {
 				up_dirto = trimesh::vec3(0, 0, 1) + zcos * -fn;
 			}			
 			Up.second = trimesh::normalized(up_dirto);		
-		
+			
 		}
 		else {
 			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
@@ -761,7 +763,9 @@ namespace topomesh {
 						word_new_location = face_corss_point[fl_i].first + vv_scale * dirTo;
 						break;
 					}
-				}			
+				}	
+				if (sel_f == -1)
+					continue;
 				trimesh::vec3 sel_fn= trimesh::normalized(traget_meshes->trinorm(sel_f));				
 				word_FaceTo[wi] = sel_fn;
 				
@@ -826,13 +830,21 @@ namespace topomesh {
 
 	void FontMesh::updateFontHeight(float height)
 	{
+		float cha = (height - Height)/2.0f;
 		for (int mi = 0; mi < init_font_meshs.size(); mi++)
 		{
 			int half_v = init_font_meshs[mi]->vertices.size() / 2;
-			for (int vi = 0; vi < half_v; vi++)
+			for (int vi = 0; vi < init_font_meshs[mi]->vertices.size(); vi++)
 			{
-				init_font_meshs[mi]->vertices[vi].z = height;
-			}
+				if (vi < half_v)
+				{
+					init_font_meshs[mi]->vertices[vi].z -= cha;
+				}
+				else
+				{
+					init_font_meshs[mi]->vertices[vi].z += cha;
+				}			
+			}	
 		}		
 		is_init_location = false;
 		if(!_m_state)
@@ -1032,8 +1044,9 @@ namespace topomesh {
 			{
 				_return_mesh->faces.push_back(trimesh::TriMesh::Face(vsize + f[0], vsize + f[1], vsize + f[2]));
 			}
-			word_absolute_location[wi] = word_init_location[wi];			
+			word_absolute_location[wi] = word_init_location[wi];				
 		}
+		
 		if (is_init_location)
 		{
 			sel_faceid = -1;
@@ -1052,6 +1065,7 @@ namespace topomesh {
 				Up.first = trimesh::vec3(0, -1, 0);
 				Up.second = trimesh::vec3(0,-1, 0);
 			}
+			
 		}
 		_return_mesh->need_bbox();
 		trimesh::trans(_return_mesh, -_return_mesh->bbox.center());
