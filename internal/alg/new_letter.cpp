@@ -477,8 +477,11 @@ namespace topomesh {
 
 	void FontMesh::setState(int state)
 	{
-		_m_state = state;
-		is_change_state = true;
+		if (state != _m_state)
+		{
+			_m_state = state;
+			is_change_state = true;
+		}
 	}
 
 	float FontMesh::depth()
@@ -513,8 +516,8 @@ namespace topomesh {
 				float half = Height / 2.0f;
 				trimesh::vec3 dirto = (m_depth + half) * word_FaceTo[mi];
 				trimesh::vec3 transTo = word_absolute_location[mi]+ dirto;
-				trimesh::xform face_xf = trimesh::xform::rot_into(trimesh::vec3(0,0,-1), word_FaceTo[mi]);
-				trimesh::vec3 new_up = face_xf * trimesh::vec3(0, -1, 0);				
+				trimesh::xform face_xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), word_FaceTo[mi]);
+				trimesh::vec3 new_up = face_xf * trimesh::vec3(0, 1, 0);				
 				trimesh::xform angle_xf = trimesh::xform::rot_into(new_up,word_Up[mi]);
 				for (int vi = 0; vi < init_font_meshs[mi]->vertices.size(); vi++)
 				{
@@ -546,7 +549,7 @@ namespace topomesh {
 		}	
 		_m_state = is_surround;
 		is_change_state = false;
-		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(face_id));
+		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(sel_faceid));
 		if (!_m_state)
 		{								
 			trimesh::vec3 ori_faceTo = FaceTo.second;
@@ -574,14 +577,18 @@ namespace topomesh {
 			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
 			_copy_mesh = traget_meshes;
 			_copy_mesh->need_bbox();
+			//_copy_mesh->write("before_copymesh.ply");
 			trimesh::trans(_copy_mesh, -_copy_mesh->bbox.center());
 			trimesh::xform xf = trimesh::xform::rot_into(fn,trimesh::vec3(0,-1,0));
-			float radian = M_PI * (_m_angle * 1.f / 180.f);
-			trimesh::xform rot_xf = trimesh::xform::rot(radian, trimesh::vec3(0, -1, 0));
+
+			trimesh::xform rot_xf = trimesh::xform::rot(-_m_angle * M_PI * 1.0f, FaceTo.second);
+
+			/*float radian = M_PI * (_m_angle * 1.f / 180.f);
+			trimesh::xform rot_xf = trimesh::xform::rot(radian, trimesh::vec3(0, -1, 0));*/
 			trimesh::xform r_xxf= rot_xf * xf;
 			trimesh::apply_xform(_copy_mesh, r_xxf);
-			trimesh::vec3 _copy_location = r_xxf * location;
-			float height = (r_xxf * location).z;
+			trimesh::vec3 _copy_location = r_xxf * click_location;
+			float height = (r_xxf * click_location).z;
 			//trimesh::TriMesh* locationmesh = new trimesh::TriMesh();
 			//locationmesh->vertices.push_back(_copy_location);
 			//locationmesh->write("locationmesh.ply");
@@ -594,14 +601,14 @@ namespace topomesh {
 			std::queue<int> que;
 			trimesh::vec3 front_cross= _copy_location;
 
-			std::vector<int> inputfaces;
+			//std::vector<int> inputfaces;
 
 			float len = 0;
 			bool is_frist=true;
 			bool is_frist2 = true;
 			trimesh::ivec2 frist_mark_v;
 			trimesh::ivec2 next_mark_v;
-			que.push(face_id);			
+			que.push(sel_faceid);
 			while (!que.empty())
 			{
 				int f = que.front();
@@ -704,7 +711,7 @@ namespace topomesh {
 					if (height >= min_z && height <= max_z)
 					{
 						que.push(ff);
-						inputfaces.push_back(ff);
+						//inputfaces.push_back(ff);
 						break;
 					}
 				}
@@ -712,17 +719,16 @@ namespace topomesh {
 			}
 			float last_d = trimesh::distance(front_cross, _copy_location);
 			face_corss_point.push_back(std::make_pair(front_cross, _copy_location));
-			face_line_len.push_back(std::make_pair(face_id,std::make_pair(len, len+last_d)));
+			face_line_len.push_back(std::make_pair(sel_faceid,std::make_pair(len, len+last_d)));
 			len += last_d;
 
-			//trimesh::TriMesh* flines = new trimesh::TriMesh();
-			//for (int fci = 0; fci < face_corss_point.size(); fci++)
-			//{
-			//	flines->vertices.push_back(face_corss_point[fci].first);
-			//	flines->vertices.push_back(face_corss_point[fci].second);	
-			//	flines->write("flines.ply");
-			//}			
-			
+			/*trimesh::TriMesh* flines = new trimesh::TriMesh();
+			for (int fci = 0; fci < face_corss_point.size(); fci++)
+			{
+				flines->vertices.push_back(face_corss_point[fci].first);
+				flines->vertices.push_back(face_corss_point[fci].second);					
+			}			
+			flines->write("flines.ply");*/
 								
 			//font_meshs.clear();
 			//trimesh::TriMesh* points = new trimesh::TriMesh();
@@ -779,10 +785,11 @@ namespace topomesh {
 				{
 					up_dirto = axis_to + axis_cos * -sel_fn;
 				}
-				word_Up[wi] = up_dirto;				
+				word_Up[wi] = xxf*up_dirto;
 				//points->vertices.push_back(word_new_location);
 				word_new_location = xxf * word_new_location;
 				word_absolute_location[wi] = word_new_location;
+
 				//locationpoint->vertices.push_back(word_new_location);
 
 
@@ -812,7 +819,8 @@ namespace topomesh {
 		}
 		else
 		{
-			FontTransform(traget_mesh, sel_faceid, click_location, _m_state);
+			if(traget_mesh)
+				FontTransform(traget_mesh, sel_faceid, click_location, _m_state);
 		}
 	}
 
