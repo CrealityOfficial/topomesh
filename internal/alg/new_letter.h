@@ -29,7 +29,7 @@ namespace topomesh {
 		int wordSpace { 0 };
 		int lineSpace { 0 };
 		int height { 1 };
-		float distance { 1 }; // 0-2
+		float distance { 0 }; // 0-2
 		int embossType { 0 };
 		bool bold { false };
 		bool italic { false };
@@ -58,6 +58,8 @@ namespace topomesh {
 		void updateFontPoly(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter);
 		void updateFontHeight(float height);
 		void updateFontDepth(float depth);
+		void calRelativeCoord(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location);
+		trimesh::vec3 getRelativeCoord(trimesh::TriMesh* traget_meshes);
 
 		void setState(int state);
 		void setText(const std::string& text);
@@ -86,12 +88,13 @@ namespace topomesh {
 		std::vector<trimesh::vec3> word_FaceTo;
 		std::vector<trimesh::vec3> word_Up;
 		trimesh::vec3 click_location;
+		trimesh::vec2 relative_coord;
+		trimesh::vec3 current_faceto;
+		//int _m_state = 0;//0:水平  1:环绕
 
-		int _m_state = 0;//0:水平  1:环绕
-
-		float Height;
-		float m_depth;
-		float _m_angle=0.f;
+		//float Height;
+		//float m_depth;
+		//float _m_angle=0.f;
 		int sel_faceid=-1;
 		bool is_init_location = false;
 		bool is_init_adjust = true;
