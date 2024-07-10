@@ -39,6 +39,15 @@ namespace topomesh {
 		bool valid { false };
 	};
 
+	struct TOPOMESH_API FontMoveConfig 
+	{
+		int targetId { -1 };
+		int faceId;
+		trimesh::vec3 cross;
+		trimesh::vec3 normal;
+		int embossType;
+	};
+
 	class TOPOMESH_API FontMesh {
 	public:
 		FontMesh() {};
@@ -71,12 +80,13 @@ namespace topomesh {
 
 		trimesh::vec3 currentFaceTo();
 
-		FontConfig *config()
-		{
-			return &m_config;
-		}
+		FontConfig *config() { return &m_config; }
 
+		void setMoveConfig(FontMoveConfig config) { m_moveConfig = config; }
+		FontMoveConfig moveConfig() { return m_moveConfig; }
 
+		int faceId() { return sel_faceid; }
+		
 	private:
 		//std::vector<trimesh::TriMesh*> font_meshs;
 		std::vector<trimesh::TriMesh*> init_font_meshs;
@@ -104,6 +114,7 @@ namespace topomesh {
 		trimesh::TriMesh* _return_surround_mesh;
 
 		FontConfig m_config;
+		FontMoveConfig m_moveConfig;
 
 	};
 
