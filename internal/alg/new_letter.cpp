@@ -601,10 +601,10 @@ namespace topomesh {
 
 	bool FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
 	{
-		if (checkMistakes(traget_meshes, face_id, location))
-			return true;
+		// if (checkMistakes(traget_meshes, face_id, location))
+		// 	return true;
 		//calRelativeCoord(traget_meshes, face_id, location);
-		if (!is_change_state)
+		if (!is_change_state || sel_faceid == -1)
 		{
 			click_location = location;
 			sel_faceid = face_id;
