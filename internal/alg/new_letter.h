@@ -62,11 +62,13 @@ namespace topomesh {
 			trimesh::vec3 face_to = trimesh::vec3(0, 0, -1), trimesh::vec3 up = trimesh::vec3(0, -1, 0),bool is_adjust=true ,bool is_init=true);
 		void InitFontMesh();
 		trimesh::TriMesh* getFontMesh();
-		void FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround = false);
+		bool FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround = false);
 		void rotateFontMesh(trimesh::TriMesh* traget_mesh,float angle);
 		void updateFontPoly(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter);
 		void updateFontHeight(float height);
 		void updateFontDepth(float depth);
+		
+		bool checkMistakes(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location);
 		void calRelativeCoord(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location);
 		trimesh::vec3 getRelativeCoord(trimesh::TriMesh* traget_meshes);
 
@@ -99,7 +101,7 @@ namespace topomesh {
 		std::vector<trimesh::vec3> word_Up;
 		trimesh::vec3 click_location;
 		trimesh::vec2 relative_coord;
-		trimesh::vec3 current_faceto;
+		trimesh::vec3 current_faceto=trimesh::vec3(0,0,1);
 		//int _m_state = 0;//0:水平  1:环绕
 
 		//float Height;

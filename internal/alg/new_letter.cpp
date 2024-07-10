@@ -553,6 +553,7 @@ namespace topomesh {
 
 	void FontMesh::calRelativeCoord(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location)
 	{
+		
 		int v0 = traget_meshes->faces[face_id][0];
 		int v1 = traget_meshes->faces[face_id][1];
 		int v2 = traget_meshes->faces[face_id][2];
@@ -575,14 +576,34 @@ namespace topomesh {
 		int v2 = traget_meshes->faces[sel_faceid][2];
 		trimesh::vec3 p1 = traget_meshes->vertices[v1] - traget_meshes->vertices[v0];
 		trimesh::vec3 p2 = traget_meshes->vertices[v2] - traget_meshes->vertices[v0];
-		click_location = p1 * relative_coord.x + p2 * relative_coord.y;
+		click_location = traget_meshes->vertices[v0]+p1 * relative_coord.x + p2 * relative_coord.y;
 		return click_location;
 	}
 
-
-	void FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
+	bool FontMesh::checkMistakes(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location)
 	{
-		calRelativeCoord(traget_meshes, face_id, location);
+		int v0 = traget_meshes->faces[face_id][0];
+		int v1 = traget_meshes->faces[face_id][1];
+		int v2 = traget_meshes->faces[face_id][2];
+
+		float h0 = traget_meshes->vertices[v0].z;
+		float h1 = traget_meshes->vertices[v1].z;
+		float h2 = traget_meshes->vertices[v2].z;
+
+		float max = std::max({ h0,h1,h2 });
+		float min = std::min({ h0,h1,h2 });
+
+		if (location.z > max || location.z < min)
+			return true;
+		return false;
+	}
+
+
+	bool FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
+	{
+		if (checkMistakes(traget_meshes, face_id, location))
+			return true;
+		//calRelativeCoord(traget_meshes, face_id, location);
 		if (!is_change_state)
 		{
 			click_location = location;
@@ -593,11 +614,6 @@ namespace topomesh {
 		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(sel_faceid));
 		current_faceto = fn;
 
-		std::cout << "location :" << click_location << std::endl;
-		std::cout << "face_id :" << sel_faceid << std::endl;
-
-		/*click_location = trimesh::vec3(2.02286,-1.25,-1.00962);
-		sel_faceid = 80;*/
 
 		if (!m_config.state)
 		{								
@@ -620,7 +636,7 @@ namespace topomesh {
 				up_dirto = trimesh::vec3(0, 0, 1) + zcos * -fn;
 			}			
 			Up.second = trimesh::normalized(up_dirto);		
-			
+			return false;
 		}
 		else {
 #if 1
@@ -861,25 +877,26 @@ namespace topomesh {
 
 			std::vector<int> face_marks(_copy_mesh->faces.size(), false);
 			_copy_mesh->need_across_edge();
-			std::vector<int> faces_container;			
-			std::queue<int> que;
-			que.push(sel_faceid);
-			face_marks[sel_faceid] = true;
-			while (!que.empty())
-			{
-				int f = que.front();
-				//std::cout << "f : " << f << std::endl;
-				faces_container.push_back(f);
-				que.pop();
-				for (int fi = 0; fi < 3; fi++)
-				{
-					int ff = _copy_mesh->across_edge[f][fi];
-					if (ff == -1 || face_marks[ff])
-						continue;
-					que.push(ff);
-					face_marks[ff] = true;
-				}
-			}
+			std::vector<int> faces_container(_copy_mesh->faces.size());
+			std::iota(faces_container.begin(), faces_container.end(),0);
+			//std::queue<int> que;
+			//que.push(sel_faceid);
+			//face_marks[sel_faceid] = true;
+			//while (!que.empty())
+			//{
+			//	int f = que.front();
+			//	//std::cout << "f : " << f << std::endl;
+			//	faces_container.push_back(f);
+			//	que.pop();
+			//	for (int fi = 0; fi < 3; fi++)
+			//	{
+			//		int ff = _copy_mesh->across_edge[f][fi];
+			//		if (ff == -1 || face_marks[ff])
+			//			continue;
+			//		que.push(ff);
+			//		face_marks[ff] = true;
+			//	}
+			//}
 
 			std::unordered_map<int, std::pair<trimesh::vec3, trimesh::vec3>> corss_facesAndpoints;
 			typedef typename std::unordered_map<int, std::pair<trimesh::vec3, trimesh::vec3>>::value_type unique_value;
@@ -1097,7 +1114,7 @@ namespace topomesh {
 			//flines1->write("flines1.ply");
 			
 			
-
+			return false;
 #endif
 		}		
 	}
