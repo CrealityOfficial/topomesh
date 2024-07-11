@@ -423,7 +423,8 @@ namespace topomesh {
 		word_init_location =other.word_init_location;
 		word_absolute_location = other.word_absolute_location;
 		FaceTo=other.FaceTo;
-		
+		word_FaceTo = other.word_FaceTo;
+		word_Up = other.word_Up;
 		Up = other.Up;
 		click_location = other.click_location;
 		_return_surround_mesh = new trimesh::TriMesh;
