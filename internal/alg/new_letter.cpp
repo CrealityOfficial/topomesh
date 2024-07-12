@@ -642,22 +642,25 @@ namespace topomesh {
 		else {
 #if 1
 			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
-			_copy_mesh = traget_meshes;
+			*_copy_mesh = *traget_meshes;
 			_copy_mesh->need_bbox();
 			//_copy_mesh->write("before_copymesh.ply");
-			trimesh::trans(_copy_mesh, -_copy_mesh->bbox.center());
+
+			trimesh::vec3 trans_bbx_center = _copy_mesh->bbox.center();
+			trimesh::trans(_copy_mesh, -trans_bbx_center);
 			trimesh::xform xf = trimesh::xform::rot_into(fn,trimesh::vec3(0,-1,0));
 
 			trimesh::vec3 new_face_to = xf * FaceTo.second;
 			trimesh::xform rot_xf = trimesh::xform::rot(-m_config.angle * M_PI * 1.0f, new_face_to);
 			trimesh::xform r_xxf= rot_xf * xf;
 			trimesh::apply_xform(_copy_mesh, r_xxf);
-			trimesh::vec3 _copy_location = r_xxf * click_location;
+			trimesh::vec3 _copy_location = r_xxf * (click_location- trans_bbx_center);
 			float height = (r_xxf * click_location).z;
-			//trimesh::TriMesh* locationmesh = new trimesh::TriMesh();
-			//locationmesh->vertices.push_back(_copy_location);
-			//locationmesh->write("locationmesh.ply");
-			//_copy_mesh->write("_copymesh.ply");
+
+			/*trimesh::TriMesh* locationmesh = new trimesh::TriMesh();
+			locationmesh->vertices.push_back(_copy_location);
+			locationmesh->write("locationmesh.ply");
+			_copy_mesh->write("_copymesh.ply");*/
 		
 			_copy_mesh->need_across_edge();
 			std::vector<int> face_marks(_copy_mesh->faces.size(), false);
@@ -795,7 +798,7 @@ namespace topomesh {
 			}			
 			flines->write("flines.ply");*/
 														
-			trimesh::TriMesh* locationpoint = new trimesh::TriMesh();
+			//trimesh::TriMesh* locationpoint = new trimesh::TriMesh();
 			//locationpoint->vertices.push_back(location);
 			trimesh::xform xxf = trimesh::inv(r_xxf);
 			trimesh::apply_xform(_copy_mesh, xxf);
@@ -851,8 +854,8 @@ namespace topomesh {
 				word_Up[wi] = /*xxf**/up_dirto;
 				//locationpoint->vertices.push_back(word_new_location);
 				word_new_location = xxf * word_new_location;
-				word_absolute_location[wi] = word_new_location;
-				locationpoint->vertices.push_back(word_new_location);
+				word_absolute_location[wi] = word_new_location+trans_bbx_center;
+				//locationpoint->vertices.push_back(word_new_location);
 												
 			}
 			//locationpoint->write("locationpoint.ply");
