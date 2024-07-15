@@ -70,6 +70,7 @@ namespace topomesh {
 		void updateFontDepth(float depth);
 		
 		void updateXform(trimesh::xform xform);
+		
 
 		void setState(int state);
 		void setText(const std::string& text);

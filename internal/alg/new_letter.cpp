@@ -594,7 +594,16 @@ namespace topomesh {
 
 	bool FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
 	{
-			
+		bool is_mistake = false;
+		if (calRelativeCoord(traget_meshes, face_id, location))
+		{
+			/*traget_meshes->write("targetmesh.ply");
+			trimesh::TriMesh* lines = new trimesh::TriMesh();
+			lines->vertices.push_back(location);
+			lines->write("lines.ply");*/
+			is_mistake = true;
+		}
+		//if(1)
 		if (!is_change_state || sel_faceid == -1)
 		{
 			click_location = location;
@@ -605,8 +614,7 @@ namespace topomesh {
 		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(sel_faceid));
 		current_faceto = fn;
 
-
-		/*sel_faceid = 98756;
+		/*sel_faceid = face_id;
 		int va = traget_meshes->faces[sel_faceid].at(0);
 		int vb = traget_meshes->faces[sel_faceid].at(1);
 		int vc = traget_meshes->faces[sel_faceid].at(2);
@@ -1183,7 +1191,8 @@ namespace topomesh {
 			trimesh::xform r_xxf = rot_xf * xf;
 			trimesh::apply_xform(_copy_mesh, r_xxf);
 			trimesh::vec3 _copy_location = r_xxf * (click_location - trans_bbx_center);
-			float height = _copy_location.z;						
+			float height = _copy_location.z;	
+			
 			//_copy_mesh->write("copymesh.ply");
 
 			//trimesh::TriMesh* lines = new trimesh::TriMesh();			
@@ -1192,7 +1201,8 @@ namespace topomesh {
 			std::unordered_map<int, std::pair<trimesh::vec3, trimesh::vec3>> faces_CrossPoints;		
 			typedef typename std::unordered_map<int, std::pair<trimesh::vec3, trimesh::vec3>>::value_type faces_value;
 			std::vector<bool> is_height_faces(_copy_mesh->faces.size(),false);
-			float top_height = height + 0.01f;		
+			int mistake_face = -1;
+			float mistake_eps = std::numeric_limits<float>::max();
 			for (int fi = 0; fi < _copy_mesh->faces.size(); fi++)
 			{
 				int v0 = _copy_mesh->faces[fi].at(0);
@@ -1202,6 +1212,16 @@ namespace topomesh {
 				if ((_copy_mesh->vertices[v0].z < height && _copy_mesh->vertices[v1].z < height && _copy_mesh->vertices[v2].z < height) ||
 					(_copy_mesh->vertices[v0].z > height && _copy_mesh->vertices[v1].z > height && _copy_mesh->vertices[v2].z > height))
 					continue;
+				if (is_mistake)
+				{
+					trimesh::vec3 c= (_copy_mesh->vertices[v0] + _copy_mesh->vertices[v1] + _copy_mesh->vertices[v2]) / 3.0f;
+					float d=trimesh::distance(c, _copy_location);
+					if (d < mistake_eps)
+					{
+						mistake_eps = d;
+						mistake_face = fi;
+					}
+				}
 				is_height_faces[fi] = true;
 				std::vector<trimesh::vec3> both_vertex;
 				for (int vi = 0; vi < 3; vi++)
@@ -1226,11 +1246,15 @@ namespace topomesh {
 				}
 				
 			}
+			if (is_mistake)
+			{
+				sel_faceid = mistake_face;
+			}
 			//lines->write("lines.ply");
 			
 			//---find orient and frist length
 			float right_x=-std::numeric_limits<float>::max();
-			int right_face;
+			int right_face=-1;
 			for (int ff = 0; ff < _copy_mesh->across_edge[sel_faceid].size(); ff++)
 			{
 				int ffi = _copy_mesh->across_edge[sel_faceid][ff];
@@ -1247,6 +1271,8 @@ namespace topomesh {
 					}
 				}
 			}
+			if (right_face < 0)
+				return true;
 		
 
 			std::vector<std::pair<float,int>> faces_length;			
