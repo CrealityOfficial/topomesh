@@ -48,6 +48,7 @@ namespace topomesh {
 		int embossType;
 	};
 
+
 	class TOPOMESH_API FontMesh {
 	public:
 		FontMesh() {};
@@ -68,9 +69,7 @@ namespace topomesh {
 		void updateFontHeight(float height);
 		void updateFontDepth(float depth);
 		
-		bool checkMistakes(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location);
-		void calRelativeCoord(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location);
-		trimesh::vec3 getRelativeCoord(trimesh::TriMesh* traget_meshes);
+		void updateXform(trimesh::xform xform);
 
 		void setState(int state);
 		void setText(const std::string& text);
@@ -79,6 +78,7 @@ namespace topomesh {
 		float angle();
 		float height();
 		float depth();
+		trimesh::xform xform();
 
 		trimesh::vec3 currentFaceTo();
 
@@ -88,7 +88,13 @@ namespace topomesh {
 		FontMoveConfig moveConfig() { return m_moveConfig; }
 
 		int faceId() { return sel_faceid; }
-		
+	private:
+
+		bool checkMistakes(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location);
+		bool calRelativeCoord(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location);
+		trimesh::vec3 getRelativeCoord(trimesh::TriMesh* traget_meshes);
+
+
 	private:
 		//std::vector<trimesh::TriMesh*> font_meshs;
 		std::vector<trimesh::TriMesh*> init_font_meshs;
@@ -104,6 +110,7 @@ namespace topomesh {
 		trimesh::vec3 current_faceto=trimesh::vec3(0,0,1);
 		//int _m_state = 0;//0:水平  1:环绕
 
+		trimesh::xform _m_xform= trimesh::xform::identity();
 		//float Height;
 		//float m_depth;
 		//float _m_angle=0.f;
