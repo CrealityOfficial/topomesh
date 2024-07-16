@@ -1351,8 +1351,7 @@ namespace topomesh {
 			}
 			float last_dist = trimesh::distance(_copy_location, end_vertex);
 			len += last_dist;
-			faces_length.push_back(std::make_pair(len, sel_faceid));
-			
+			faces_length.push_back(std::make_pair(len, sel_faceid));		
 			//lines1->write("lines1.ply");
 						
 
