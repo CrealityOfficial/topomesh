@@ -563,9 +563,10 @@ namespace topomesh {
 		trimesh::vec3 p1 = traget_meshes->vertices[v1] - traget_meshes->vertices[v0];
 		trimesh::vec3 p2 = traget_meshes->vertices[v2] - traget_meshes->vertices[v0];
 
-		Eigen::Matrix2f e;
-		e << p1.x, p2.x, p1.y, p2.y;
-		Eigen::Vector2f b = { location.x ,location.y };
+		Eigen::Matrix<float,3,2> e;
+		e << p1.x, p2.x, p1.y, p2.y,p1.z,p2.z;
+		trimesh::vec3 res = location - traget_meshes->vertices[v0];
+		Eigen::Vector3f b = { res.x ,res.y ,res.z};
 		Eigen::Vector2f x = e.fullPivLu().solve(b);
 
 		relative_coord = trimesh::vec2(x.x(),x.y());
@@ -597,10 +598,10 @@ namespace topomesh {
 		bool is_mistake = false;
 		if (calRelativeCoord(traget_meshes, face_id, location))
 		{
-			/*traget_meshes->write("targetmesh.ply");
+			traget_meshes->write("targetmesh.ply");
 			trimesh::TriMesh* lines = new trimesh::TriMesh();
 			lines->vertices.push_back(location);
-			lines->write("lines.ply");*/
+			lines->write("lines.ply");
 			is_mistake = true;
 		}
 		//if(1)
