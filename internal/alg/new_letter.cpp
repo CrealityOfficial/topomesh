@@ -1195,10 +1195,9 @@ namespace topomesh {
 			trimesh::vec3 _copy_location = r_xxf * (click_location - trans_bbx_center);
 			float height = _copy_location.z;	
 			
-			//_copy_mesh->write("copymesh.ply");
+			_copy_mesh->write("copymesh.ply");
 
-			//trimesh::TriMesh* lines = new trimesh::TriMesh();			
-			
+			trimesh::TriMesh* lines = new trimesh::TriMesh();					
 			//---find height area and cal length
 			std::unordered_map<int, std::pair<trimesh::vec3, trimesh::vec3>> faces_CrossPoints;		
 			typedef typename std::unordered_map<int, std::pair<trimesh::vec3, trimesh::vec3>>::value_type faces_value;
@@ -1243,8 +1242,8 @@ namespace topomesh {
 				if (both_vertex.size() == 2)
 				{					
 					faces_CrossPoints.insert(faces_value(fi, std::make_pair(both_vertex[0], both_vertex[1])));
-					//lines->vertices.push_back(both_vertex[0]);
-					//lines->vertices.push_back(both_vertex[1]);
+					lines->vertices.push_back(both_vertex[0]);
+					lines->vertices.push_back(both_vertex[1]);
 				}
 				
 			}
@@ -1252,7 +1251,7 @@ namespace topomesh {
 				sel_faceid = mistake_face;
 			if (sel_faceid == -1)
 				return true;
-			//lines->write("lines.ply");
+			lines->write("lines.ply");
 			
 			//---find orient and frist length
 			float right_x=-std::numeric_limits<float>::max();
@@ -1357,7 +1356,7 @@ namespace topomesh {
 			//lines1->write("lines1.ply");
 						
 
-			//trimesh::TriMesh* lines1 = new trimesh::TriMesh();
+			trimesh::TriMesh* lines1 = new trimesh::TriMesh();
 			//set words location			
 			trimesh::xform inv_xxf = trimesh::inv(r_xxf);
 			for (int wi = 0; wi < init_font_meshs.size(); wi++)
@@ -1390,12 +1389,18 @@ namespace topomesh {
 						auto pair_vertex = faces_CrossPoints[sf];
 						trimesh::vec3 dirto = pair_vertex.second - pair_vertex.first;						
 						trimesh::vec3 new_location = (pair_vertex.first + weight* dirto);												
-						//lines1->vertices.push_back(new_location);
+						lines1->vertices.push_back(new_location);
 						trimesh::vec3 world_location = (inv_xxf * new_location) + trans_bbx_center;
 						word_absolute_location[wi] = world_location;
 						trimesh::vec3 sel_fn = trimesh::normalized(traget_meshes->trinorm(sf));
 						word_FaceTo[wi] = sel_fn;
-						float axis_cos = trimesh::vec3(0,0,1).dot(sel_fn);
+
+						trimesh::vec3 rot_sel_fn = trimesh::normalized(_copy_mesh->trinorm(sf));
+						trimesh::vec3 up_dirto = trimesh::normalized(rot_sel_fn.cross(dirto));
+						trimesh::vec3 ori_up_dirto = inv_xxf * up_dirto;
+						word_Up[wi] = ori_up_dirto;
+
+						/*float axis_cos = trimesh::vec3(0,0,1).dot(sel_fn);
 						trimesh::vec3 up_dirto;
 						if (std::abs(axis_cos - 1.0f) < 1e-2)
 						{
@@ -1405,13 +1410,13 @@ namespace topomesh {
 						{
 							up_dirto = trimesh::vec3(0, 0, 1) + axis_cos * -sel_fn;
 						}
-						word_Up[wi] = up_dirto;					
+						word_Up[wi] = up_dirto;	*/				
 						break;
 					}
 				}
 			}
 			
-			//lines1->write("lines1.ply");
+			lines1->write("lines1.ply");
 			return false;
 #endif
 		}		
