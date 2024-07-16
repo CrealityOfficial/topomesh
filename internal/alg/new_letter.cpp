@@ -649,9 +649,11 @@ namespace topomesh {
 #if 0
 			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
 			*_copy_mesh = *traget_meshes;
+			_copy_mesh->clear_bbox();
 			_copy_mesh->need_bbox();
 			//_copy_mesh->write("before_copymesh.ply");
-			msbase::mergeNearPoints(_copy_mesh, nullptr, 1e-4f);
+			trimesh::vec3 trans_bbx_center = _copy_mesh->bbox.center();
+			//msbase::mergeNearPoints(_copy_mesh, nullptr, 1e-4f);
 			trimesh::trans(_copy_mesh, -_copy_mesh->bbox.center());
 			trimesh::xform xf = trimesh::xform::rot_into(fn, trimesh::vec3(0, -1, 0));
 
@@ -1247,9 +1249,9 @@ namespace topomesh {
 				
 			}
 			if (is_mistake)
-			{
 				sel_faceid = mistake_face;
-			}
+			if (sel_faceid == -1)
+				return true;
 			//lines->write("lines.ply");
 			
 			//---find orient and frist length
@@ -1258,6 +1260,8 @@ namespace topomesh {
 			for (int ff = 0; ff < _copy_mesh->across_edge[sel_faceid].size(); ff++)
 			{
 				int ffi = _copy_mesh->across_edge[sel_faceid][ff];
+				if (ffi == -1)
+					continue;
 				if (is_height_faces[ffi])
 				{
 					int v0 = _copy_mesh->faces[ffi].at(0);
