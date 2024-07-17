@@ -69,7 +69,7 @@ namespace topomesh {
 		void updateFontHeight(float height);
 		void updateFontDepth(float depth);
 		
-		void updateXform(trimesh::xform xform);
+		void updateModelXform(trimesh::xform xform);
 		
 
 		void setState(int state);
@@ -112,14 +112,18 @@ namespace topomesh {
 		//int _m_state = 0;//0:水平  1:环绕
 
 		trimesh::xform _m_xform= trimesh::xform::identity();
+		trimesh::xform _m_scale= trimesh::xform::identity();
+		trimesh::xform _m_rota = trimesh::xform::identity();
 		//float Height;
 		//float m_depth;
 		//float _m_angle=0.f;
+		float virtul_angle = 0.0f;
 		int sel_faceid=-1;
 		bool is_init_location = false;
 		bool is_init_adjust = true;
 		bool is_change_state = false;
-		trimesh::box3 bbx;
+		//trimesh::box3 bbx;
+		trimesh::vec3 bbx_center;
 		trimesh::TriMesh* _return_mesh;
 		trimesh::TriMesh* _return_surround_mesh;
 

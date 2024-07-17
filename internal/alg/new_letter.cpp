@@ -499,7 +499,7 @@ namespace topomesh {
 		if (!m_config.state)
 		{				
 			trimesh::TriMesh* result = new trimesh::TriMesh;
-			*result = *_return_mesh;		
+			*result = *_return_mesh;			
 			
 			trimesh::xform xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), FaceTo.second);
 			trimesh::vec3 dir_up = xf * trimesh::vec3(0, 1, 0);
@@ -508,16 +508,22 @@ namespace topomesh {
 			
 			trimesh::xform rot_xf = trimesh::xform::rot(m_config.angle *M_PI*1.0f, FaceTo.second);
 			trimesh::apply_xform(result, rot_xf);
+
+			/*trimesh::xform vir_rot_xf = trimesh::xform::rot(-virtul_angle , FaceTo.second);
+			trimesh::apply_xform(result, vir_rot_xf);*/
+			trimesh::apply_xform(result, trimesh::inv(_m_rota));
+			trimesh::apply_xform(result, _m_scale);
 			float half = m_config.height / 2.0f;
 			trimesh::vec3 dirto = (m_config.distance + half) * FaceTo.second;
 			trimesh::trans(result, click_location + dirto);
-			//result->write("result.ply");
+			
 
 			return result;
 		}
 		else {
 			_return_surround_mesh->clear();
 			int v_size = 0;
+			trimesh::xform model_xf = trimesh::inv(_m_rota);
 			//trimesh::TriMesh* points = new trimesh::TriMesh();
 			for (int mi = 0; mi < init_font_meshs.size(); mi++)
 			{
@@ -525,7 +531,7 @@ namespace topomesh {
 				trimesh::vec3 dirto = (m_config.distance + half) * word_FaceTo[mi];
 				trimesh::vec3 transTo = word_absolute_location[mi]+ dirto;
 				//points->vertices.push_back(word_absolute_location[mi]);
-				trimesh::xform face_xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), word_FaceTo[mi]);
+				trimesh::xform face_xf = trimesh::xform::rot_into(trimesh::vec3(0,0,1), word_FaceTo[mi]);				;
 				trimesh::vec3 new_up = face_xf * trimesh::vec3(0, 1, 0);	
 
 				//trimesh::xform rot_xf = trimesh::xform::rot(m_config.angle * M_PI * 1.0f, word_FaceTo[mi]);
@@ -536,7 +542,9 @@ namespace topomesh {
 				{
 					trimesh::vec3 v = init_font_meshs[mi]->vertices[vi];
 					v = angle_xf * face_xf * v;
-					 _return_surround_mesh->vertices.push_back(v + transTo);
+					v = _m_scale * v;		
+					v = model_xf * (v+ transTo);
+					 _return_surround_mesh->vertices.push_back(v);
 				}
 				for (int fi = 0; fi < init_font_meshs[mi]->faces.size(); fi++)
 				{
@@ -547,6 +555,7 @@ namespace topomesh {
 			}
 			trimesh::TriMesh* result = new trimesh::TriMesh;
 			*result = *_return_surround_mesh;
+
 			//result->write("surround.ply");
 			//points->write("surrend_point.ply");
 			return result;
@@ -595,34 +604,36 @@ namespace topomesh {
 
 	bool FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
 	{
+		
 		bool is_mistake = false;
 		if (calRelativeCoord(traget_meshes, face_id, location))
 		{
-			traget_meshes->write("targetmesh.ply");
+			/*traget_meshes->write("targetmesh.ply");
 			trimesh::TriMesh* lines = new trimesh::TriMesh();
 			lines->vertices.push_back(location);
-			lines->write("lines.ply");
+			lines->write("lines.ply");*/
 			is_mistake = true;
-		}
-		//if(1)
-		if (!is_change_state || sel_faceid == -1)
-		{
+		}		
+		if (face_id == -1)
+			return true;
+
+		{		
 			click_location = location;
 			sel_faceid = face_id;
 		}	
+		
+
 		m_config.state = is_surround;
 		is_change_state = false;
-		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(sel_faceid));
+		trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
+		*_copy_mesh = *traget_meshes;
+		
+		trimesh::apply_xform(_copy_mesh, _m_rota);
+		trimesh::xform inv_rota = trimesh::inv(_m_rota);
+		trimesh::vec3 fn = trimesh::normalized(_copy_mesh->trinorm(sel_faceid));
 		current_faceto = fn;
 
-		/*sel_faceid = face_id;
-		int va = traget_meshes->faces[sel_faceid].at(0);
-		int vb = traget_meshes->faces[sel_faceid].at(1);
-		int vc = traget_meshes->faces[sel_faceid].at(2);
-		click_location = (traget_meshes->vertices[va] + traget_meshes->vertices[vb] + traget_meshes->vertices[vc]) / 3.0f;
-		trimesh::vec3 fn = trimesh::normalized(traget_meshes->trinorm(sel_faceid));
-		current_faceto = fn;*/
-
+		
 		if (!m_config.state)
 		{								
 			trimesh::vec3 ori_faceTo = FaceTo.second;
@@ -643,8 +654,7 @@ namespace topomesh {
 			{	
 				up_dirto = trimesh::vec3(0, 0, 1) + zcos * -fn;
 			}			
-			Up.second = trimesh::normalized(up_dirto);		
-			return false;
+			Up.second = trimesh::normalized(up_dirto);					
 		}
 		else {
 #if 0
@@ -1178,18 +1188,18 @@ namespace topomesh {
 			return false;
 #elif 1
 			
-			trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
-			*_copy_mesh = *traget_meshes;
+
 			_copy_mesh->clear_bbox();
 			_copy_mesh->need_bbox();
 			_copy_mesh->clear_across_edge();
 			_copy_mesh->need_across_edge();	
-			
+			trimesh::vec3 inner_click = _m_rota*click_location;
+
 			trimesh::vec3 trans_bbx_center = _copy_mesh->bbox.center();
-			trimesh::trans(_copy_mesh, -trans_bbx_center);	
-			//_copy_mesh->write("copymesh.ply");
+			trimesh::trans(_copy_mesh, -trans_bbx_center);							
+			
 			bool is_right = true;
-			trimesh::xform xf = trimesh::xform::rot_into(fn, trimesh::vec3(0, -1, 0));
+			trimesh::xform xf = trimesh::xform::rot_into(fn, trimesh::vec3(0, -1, 0));	
 			if (trimesh::angle(trimesh::vec3(0, 1, 0), fn) < (M_PI / 2.0f))
 			{
 				xf = trimesh::xform::rot_into(fn, trimesh::vec3(0, 1, 0));
@@ -1199,8 +1209,10 @@ namespace topomesh {
 			trimesh::vec3 new_face_to = xf * current_faceto;
 			trimesh::xform rot_xf = trimesh::xform::rot(-m_config.angle * M_PI * 1.0f, new_face_to);
 			trimesh::xform r_xxf = rot_xf * xf;
+		
+
 			trimesh::apply_xform(_copy_mesh, r_xxf);
-			trimesh::vec3 _copy_location = r_xxf * (click_location - trans_bbx_center);
+			trimesh::vec3 _copy_location = r_xxf * (inner_click - trans_bbx_center);
 			float height = _copy_location.z;	
 			
 			trimesh::xform inve_xxf = trimesh::inv(r_xxf);
@@ -1341,7 +1353,7 @@ namespace topomesh {
 				float d1 = trimesh::distance(pair_vertex.first, iter_vertex);
 				float d2 = trimesh::distance(pair_vertex.second, iter_vertex);
 
-				//lines1->vertices.push_back(pair_vertex.first);
+			//	lines1->vertices.push_back(pair_vertex.first);
 				//lines1->vertices.push_back(pair_vertex.second);
 
 				float dist = trimesh::distance(pair_vertex.first, pair_vertex.second);
@@ -1376,12 +1388,12 @@ namespace topomesh {
 			//lines1->write("lines1.ply");
 						
 
-			//trimesh::TriMesh* lines1 = new trimesh::TriMesh();
+			//trimesh::TriMesh* lines2 = new trimesh::TriMesh();
 			//set words location			
 			trimesh::xform inv_xxf = trimesh::inv(r_xxf);
 			for (int wi = 0; wi < init_font_meshs.size(); wi++)
 			{
-				float loc = word_init_location[wi].x - bbx.center().x;				
+				float loc = word_init_location[wi].x - bbx_center.x;
 				trimesh::vec3 word_new_location(0, 0, 0);
 				while(loc < 0)
 				{
@@ -1411,10 +1423,10 @@ namespace topomesh {
 						trimesh::vec3 new_location = (pair_vertex.first + weight* dirto);												
 						//lines1->vertices.push_back(new_location);
 						trimesh::vec3 world_location = (inv_xxf * new_location) + trans_bbx_center;
-					
+						//lines2->vertices.push_back(world_location);
 						word_absolute_location[wi] = world_location;
-						trimesh::vec3 sel_fn = trimesh::normalized(traget_meshes->trinorm(sf));
-						word_FaceTo[wi] = sel_fn;
+						trimesh::vec3 sel_fn = trimesh::normalized(_copy_mesh->trinorm(sf));
+						word_FaceTo[wi] = inv_xxf*sel_fn;
 
 						trimesh::vec3 rot_sel_fn = trimesh::normalized(_copy_mesh->trinorm(sf));
 						trimesh::vec3 up_dirto = trimesh::normalized(rot_sel_fn.cross(dirto));					
@@ -1442,25 +1454,40 @@ namespace topomesh {
 				}
 			}
 			
-			//lines1->write("lines1.ply");
-			return false;
+			//lines2->write("lines2.ply");		
 #endif
-		}		
+		}	
+		
+		return false;
 	}
 
 
-	void FontMesh::updateXform(trimesh::xform xform)
-	{
-		_m_xform = xform;
-		m_config.height = _m_xform[10] * m_config.height;
-		click_location = _m_xform * click_location;
-		FaceTo.second = trimesh::normalized(_m_xform * FaceTo.second);
-		Up.second = trimesh::normalized(_m_xform * Up.second);
-		for (int i = 0; i < word_FaceTo.size(); i++)
+	void FontMesh::updateModelXform(trimesh::xform xform)
+	{		
+		if (_m_xform == xform)
 		{
-			word_FaceTo[i] = trimesh::normalized(_m_xform* word_FaceTo[i]);
-			word_Up[i] = trimesh::normalized(_m_xform * word_Up[i]);
+			return;
 		}
+		_m_xform = xform;		
+		
+		_m_xform[12] = 0;
+		_m_xform[13] = 0;
+		_m_xform[14] = 0;
+		trimesh::vec3 vdir = _m_xform * trimesh::vec3(0, 0, 1);		
+		trimesh::normalize(vdir);
+		float arc = trimesh::angle(trimesh::vec3(0, 0, 1), vdir);
+		virtul_angle = arc;
+		
+		trimesh::xform rotate = trimesh::xform::rot_into(trimesh::vec3(0, 0, 1),vdir);
+		trimesh::xform rot_inv = trimesh::inv(rotate);
+		trimesh::xform scale = _m_xform * rot_inv;
+		_m_scale = scale;
+		bbx_center = _m_scale * bbx_center;
+		for (auto& p : word_init_location)
+			p = _m_scale * p;
+
+		trimesh::xform rota = _m_xform*trimesh::inv(scale);
+		_m_rota = trimesh::inv(rota);
 	}
 
 	trimesh::xform FontMesh::xform()
@@ -1533,7 +1560,7 @@ namespace topomesh {
 		word_init_location.clear();
 		word_absolute_location.clear();		
 		init_font_meshs.clear();
-		bbx.clear();		
+		trimesh::box3 bbx;
 		for (int li = 0; li < letter.size(); li++)
 		{			
 			MMeshT mt(5000, 10000);
@@ -1691,6 +1718,7 @@ namespace topomesh {
 			word_absolute_location.push_back(trimesh::vec3(0, 0, 0));
 			init_font_meshs.push_back(_word_mesh);				
 		}		
+		bbx_center = bbx.center();
 		is_init_location = is_init;
 		is_init_adjust = is_adjust;
 		InitFontMesh();		
