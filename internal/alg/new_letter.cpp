@@ -115,8 +115,8 @@ namespace topomesh {
 
 			/*trimesh::xform vir_rot_xf = trimesh::xform::rot(-virtul_angle , FaceTo.second);
 			trimesh::apply_xform(result, vir_rot_xf);*/
-			trimesh::apply_xform(result, trimesh::inv(_m_rota));
-			trimesh::apply_xform(result, _m_scale);
+			//trimesh::apply_xform(result, trimesh::inv(_m_rota));
+			//trimesh::apply_xform(result, _m_scale);
 			float half = m_config.height / 2.0f;
 			trimesh::vec3 dirto = (m_config.distance + half) * FaceTo.second;
 			trimesh::trans(result, click_location + dirto);
@@ -127,7 +127,7 @@ namespace topomesh {
 		else {
 			_return_surround_mesh->clear();
 			int v_size = 0;
-			trimesh::xform model_xf = trimesh::inv(_m_rota);
+			//trimesh::xform model_xf = trimesh::inv(_m_rota);
 			//trimesh::TriMesh* points = new trimesh::TriMesh();
 			for (int mi = 0; mi < init_font_meshs.size(); mi++)
 			{
@@ -146,9 +146,9 @@ namespace topomesh {
 				{
 					trimesh::vec3 v = init_font_meshs[mi]->vertices[vi];
 					v = angle_xf * face_xf * v;
-					v = _m_scale * v;		
-					v = model_xf * (v+ transTo);
-					 _return_surround_mesh->vertices.push_back(v);
+					//v = _m_scale * v;		
+					//v = model_xf * (v+ transTo);
+					 _return_surround_mesh->vertices.push_back(v + transTo);
 				}
 				for (int fi = 0; fi < init_font_meshs[mi]->faces.size(); fi++)
 				{
@@ -232,7 +232,7 @@ namespace topomesh {
 		trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
 		*_copy_mesh = *traget_meshes;
 		//_copy_mesh->write("before_rot_mesh.ply");
-		trimesh::apply_xform(_copy_mesh, _m_rota);
+		//trimesh::apply_xform(_copy_mesh, _m_rota);
 		trimesh::xform inv_rota = trimesh::inv(_m_rota);
 		trimesh::vec3 fn = trimesh::normalized(_copy_mesh->trinorm(sel_faceid));
 		current_faceto = fn;
@@ -797,7 +797,7 @@ namespace topomesh {
 			_copy_mesh->need_bbox();
 			_copy_mesh->clear_across_edge();
 			_copy_mesh->need_across_edge();	
-			trimesh::vec3 inner_click = _m_rota*click_location;
+			trimesh::vec3 inner_click = /*_m_rota**/click_location;
 
 			trimesh::vec3 trans_bbx_center = _copy_mesh->bbox.center();
 			trimesh::trans(_copy_mesh, -trans_bbx_center);							
@@ -1100,10 +1100,11 @@ namespace topomesh {
 		trimesh::xform rotate = trimesh::xform::rot_into(trimesh::vec3(0, 0, 1),vdir);
 		trimesh::xform rot_inv = trimesh::inv(rotate);
 		trimesh::xform scale = _m_xform * rot_inv;
-		_m_scale = scale;
+		//---scale-----
+		/*_m_scale = scale;
 		bbx_center = _m_scale * bbx_center;
 		for (auto& p : word_init_location)
-			p = _m_scale * p;
+			p = _m_scale * p;*/
 
 		trimesh::xform rota = _m_xform*trimesh::inv(scale);
 		_m_rota = trimesh::inv(rota);
