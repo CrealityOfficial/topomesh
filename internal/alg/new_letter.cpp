@@ -1177,6 +1177,7 @@ namespace topomesh {
 	void FontMesh::CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter,
 		trimesh::vec3 face_to , trimesh::vec3 up, bool is_adjust, bool is_init)
 	{
+		
 		word_FaceTo.clear();
 		word_Up.clear();
 		word_init_location.clear();
@@ -1315,19 +1316,19 @@ namespace topomesh {
 			}
 			trimesh::TriMesh* _word_mesh = new trimesh::TriMesh();
 			mt.mmesh2trimesh(_word_mesh);
-			_word_mesh->need_bbox();
-			//font_meshs.push_back(_word_mesh);
+			_word_mesh->need_bbox();			
 
 			word_init_location.push_back(_word_mesh->bbox.center());
 			bbx += _word_mesh->bbox;
-			trimesh::trans(_word_mesh,-_word_mesh->bbox.center());
-			
+		
+			trimesh::trans(_word_mesh,-_word_mesh->bbox.center());			
 			if (is_adjust)
 			{
 				trimesh::xform xf = trimesh::xform::rot_into(face_to,trimesh::vec3(0,0,1));
 				trimesh::vec3 new_up = xf * up;
 				trimesh::xform up_xf= trimesh::xform::rot_into(new_up, trimesh::vec3(0, 1, 0));
 				trimesh::apply_xform(_word_mesh, up_xf * xf);
+				word_init_location[li] = up_xf * xf*word_init_location[li];
 				word_FaceTo.push_back(trimesh::vec3(0,0,1));
 				word_Up.push_back(trimesh::vec3(0,1,0));
 			}
