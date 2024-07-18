@@ -424,6 +424,7 @@ namespace topomesh {
 		word_init_location =other.word_init_location;
 		word_absolute_location = other.word_absolute_location;
 		FaceTo=other.FaceTo;
+		current_faceto = other.current_faceto;
 		word_FaceTo = other.word_FaceTo;
 		word_Up = other.word_Up;
 		Up = other.Up;
@@ -433,8 +434,11 @@ namespace topomesh {
 		_return_mesh = new trimesh::TriMesh;
 		_return_mesh = other._return_mesh;
 		_m_xform = other._m_xform;
+		_m_scale = other._m_scale;
+		_m_rota = other._m_rota;
 		m_config = other.m_config;
-		
+		sel_faceid = other.sel_faceid;
+		bbx_center = other.bbx_center;
 	}
 
 
@@ -627,12 +631,12 @@ namespace topomesh {
 		is_change_state = false;
 		trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
 		*_copy_mesh = *traget_meshes;
-		
+		//_copy_mesh->write("before_rot_mesh.ply");
 		trimesh::apply_xform(_copy_mesh, _m_rota);
 		trimesh::xform inv_rota = trimesh::inv(_m_rota);
 		trimesh::vec3 fn = trimesh::normalized(_copy_mesh->trinorm(sel_faceid));
 		current_faceto = fn;
-
+		//_copy_mesh->write("before_mesh.ply");
 		
 		if (!m_config.state)
 		{								
@@ -1263,8 +1267,8 @@ namespace topomesh {
 				if (both_vertex.size() == 2)
 				{					
 					faces_CrossPoints.insert(faces_value(fi, std::make_pair(both_vertex[0], both_vertex[1])));
-					//lines->vertices.push_back(inve_xxf*both_vertex[0]);
-					//lines->vertices.push_back(inve_xxf*both_vertex[1]);
+					//lines->vertices.push_back(/*inve_xxf**/both_vertex[0]);
+					//lines->vertices.push_back(/*inve_xxf**/both_vertex[1]);
 				}
 				
 			}
@@ -1310,7 +1314,8 @@ namespace topomesh {
 			if (right_face < 0)
 				return true;
 		
-
+			//trimesh::TriMesh* lines3 = new trimesh::TriMesh();
+			//lines3->vertices.push_back(_copy_location);
 			std::vector<std::pair<float,int>> faces_length;			
 			auto pair_vertex = faces_CrossPoints[sel_faceid];
 			trimesh::vec3 iter_vertex;
@@ -1324,6 +1329,7 @@ namespace topomesh {
 				trimesh::vec3 temp_vertex = faces_CrossPoints[sel_faceid].first;
 				faces_CrossPoints[sel_faceid].first = faces_CrossPoints[sel_faceid].second;
 				faces_CrossPoints[sel_faceid].second = temp_vertex;
+
 			}
 			else
 			{
@@ -1335,7 +1341,9 @@ namespace topomesh {
 			len += dist;
 			faces_length.push_back(std::make_pair(len, sel_faceid));
 
-			//trimesh::TriMesh* lines1 = new trimesh::TriMesh();
+			//lines3->vertices.push_back(pair_vertex.first);
+			//lines3->vertices.push_back(pair_vertex.second);
+			
 			//---set step 
 			std::vector<int> path_face_index;
 			path_face_index.push_back(sel_faceid);
@@ -1353,8 +1361,6 @@ namespace topomesh {
 				float d1 = trimesh::distance(pair_vertex.first, iter_vertex);
 				float d2 = trimesh::distance(pair_vertex.second, iter_vertex);
 
-			//	lines1->vertices.push_back(pair_vertex.first);
-				//lines1->vertices.push_back(pair_vertex.second);
 
 				float dist = trimesh::distance(pair_vertex.first, pair_vertex.second);
 				len += dist;
@@ -1371,6 +1377,9 @@ namespace topomesh {
 					faces_CrossPoints[f].first = faces_CrossPoints[f].second;
 					faces_CrossPoints[f].second = temp_vertex;
 				}
+				//lines3->vertices.push_back(pair_vertex.first);
+				//lines3->vertices.push_back(pair_vertex.second);
+
 				que.pop();				
 				for (int fi = 0; fi < _copy_mesh->across_edge[f].size(); fi++)
 				{
@@ -1385,7 +1394,7 @@ namespace topomesh {
 			float last_dist = trimesh::distance(_copy_location, end_vertex);
 			len += last_dist;
 			faces_length.push_back(std::make_pair(len, sel_faceid));		
-			//lines1->write("lines1.ply");
+			//lines3->write("lines3.ply");
 						
 
 			//trimesh::TriMesh* lines2 = new trimesh::TriMesh();
@@ -1394,6 +1403,7 @@ namespace topomesh {
 			for (int wi = 0; wi < init_font_meshs.size(); wi++)
 			{
 				float loc = word_init_location[wi].x - bbx_center.x;
+				float ori_loc = loc;
 				trimesh::vec3 word_new_location(0, 0, 0);
 				while(loc < 0)
 				{
@@ -1419,9 +1429,20 @@ namespace topomesh {
 						float weight = (loc - before_length)/(faces_length[fl_i].first- before_length);
 						int sf = faces_length[fl_i].second;
 						auto pair_vertex = faces_CrossPoints[sf];
+						if (sf == sel_faceid)
+						{
+							if (ori_loc > 0)
+							{
+								pair_vertex.first = _copy_location;
+							}
+							else
+							{
+								pair_vertex.second = _copy_location;
+							}
+						}
 						trimesh::vec3 dirto = pair_vertex.second - pair_vertex.first;						
 						trimesh::vec3 new_location = (pair_vertex.first + weight* dirto);												
-						//lines1->vertices.push_back(new_location);
+						//lines2->vertices.push_back(/*inv_xxf* */new_location);
 						trimesh::vec3 world_location = (inv_xxf * new_location) + trans_bbx_center;
 						//lines2->vertices.push_back(world_location);
 						word_absolute_location[wi] = world_location;
@@ -1464,20 +1485,18 @@ namespace topomesh {
 
 	void FontMesh::updateModelXform(trimesh::xform xform)
 	{		
-		if (_m_xform == xform)
-		{
-			return;
-		}
-		_m_xform = xform;		
 		
-		_m_xform[12] = 0;
-		_m_xform[13] = 0;
-		_m_xform[14] = 0;
+		trimesh::xform _xform = xform;
+		_xform[12] = 0;
+		_xform[13] = 0;
+		_xform[14] = 0;
+		if (_xform == _m_xform)
+			return;
+		_m_xform = _xform;
 		trimesh::vec3 vdir = _m_xform * trimesh::vec3(0, 0, 1);		
 		trimesh::normalize(vdir);
-		float arc = trimesh::angle(trimesh::vec3(0, 0, 1), vdir);
-		virtul_angle = arc;
-		
+		//float arc = trimesh::angle(trimesh::vec3(0, 0, 1), vdir);
+			
 		trimesh::xform rotate = trimesh::xform::rot_into(trimesh::vec3(0, 0, 1),vdir);
 		trimesh::xform rot_inv = trimesh::inv(rotate);
 		trimesh::xform scale = _m_xform * rot_inv;
@@ -1511,7 +1530,7 @@ namespace topomesh {
 
 
 
-	void FontMesh::updateFontPoly(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter)
+	void FontMesh::updateFontPoly(trimesh::TriMesh* traget_mesh,const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter)
 	{		
 		for (auto& mesh : init_font_meshs)
 		{
@@ -1519,6 +1538,8 @@ namespace topomesh {
 		}
 		init_font_meshs.clear();		
 		CreateFontMesh(letter, trimesh::vec3(0, 0, -1), trimesh::vec3(0, -1, 0), true,false);
+		if (m_config.state)
+			FontTransform(traget_mesh, sel_faceid, click_location, m_config.state);
 	}
 
 	void FontMesh::updateFontHeight(float height)
