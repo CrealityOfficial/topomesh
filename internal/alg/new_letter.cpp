@@ -1164,9 +1164,9 @@ namespace topomesh {
 				}			
 			}	
 		}		
-		is_init_location = false;
+		
 		if(!m_config.state)
-			InitFontMesh();
+			InitFontMesh(false);
 		m_config.height = height;
 	}
 
@@ -1347,7 +1347,7 @@ namespace topomesh {
 		bbx_center = bbx.center();
 		is_init_location = is_init;
 		is_init_adjust = is_adjust;
-		InitFontMesh();		
+		InitFontMesh(is_init);
 	}
 
 	void FontMesh::InitFontMesh(bool is_init)
