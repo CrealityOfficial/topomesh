@@ -116,7 +116,7 @@ namespace topomesh {
 			/*trimesh::xform vir_rot_xf = trimesh::xform::rot(-virtul_angle , FaceTo.second);
 			trimesh::apply_xform(result, vir_rot_xf);*/
 			//trimesh::apply_xform(result, trimesh::inv(_m_rota));
-			//trimesh::apply_xform(result, _m_scale);
+			trimesh::apply_xform(result, _m_scale);
 			float half = m_config.height / 2.0f;
 			trimesh::vec3 dirto = (m_config.distance + half) * FaceTo.second;
 			trimesh::trans(result, click_location + dirto);
@@ -146,7 +146,7 @@ namespace topomesh {
 				{
 					trimesh::vec3 v = init_font_meshs[mi]->vertices[vi];
 					v = angle_xf * face_xf * v;
-					//v = _m_scale * v;		
+					v = _m_scale * v;		
 					//v = model_xf * (v+ transTo);
 					 _return_surround_mesh->vertices.push_back(v + transTo);
 				}
@@ -1104,10 +1104,10 @@ namespace topomesh {
 		trimesh::xform rot_inv = trimesh::inv(rotate);
 		trimesh::xform scale = _m_xform * rot_inv;
 		//---scale-----
-		/*_m_scale = scale;
+		_m_scale = scale;
 		bbx_center = _m_scale * bbx_center;
 		for (auto& p : word_init_location)
-			p = _m_scale * p;*/
+			p = _m_scale * p;
 
 		trimesh::xform rota = _m_xform*trimesh::inv(scale);
 		_m_rota = trimesh::inv(rota);
