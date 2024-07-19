@@ -207,7 +207,10 @@ namespace topomesh {
 
 
 	bool FontMesh::FontTransform(trimesh::TriMesh* traget_meshes, int face_id, trimesh::vec3 location, bool is_surround)
-	{
+	{		
+		/*traget_meshes->need_curvatures();
+		traget_meshes->curv1;
+		traget_meshes->curv2;*/
 		
 		bool is_mistake = false;
 		if (calRelativeCoord(traget_meshes, face_id, location))
@@ -1347,7 +1350,7 @@ namespace topomesh {
 		InitFontMesh();		
 	}
 
-	void FontMesh::InitFontMesh()
+	void FontMesh::InitFontMesh(bool is_init)
 	{
 		//is_change = false;
 		_return_mesh->clear();
@@ -1363,7 +1366,7 @@ namespace topomesh {
 			}
 			word_absolute_location[wi] = word_init_location[wi];				
 		}
-		
+		is_init_location = is_init;
 		if (is_init_location)
 		{
 			sel_faceid = -1;
