@@ -795,7 +795,6 @@ namespace topomesh {
 			return false;
 #elif 1
 			
-
 			_copy_mesh->clear_bbox();
 			_copy_mesh->need_bbox();
 			_copy_mesh->clear_across_edge();
@@ -803,7 +802,7 @@ namespace topomesh {
 			trimesh::vec3 inner_click = /*_m_rota**/click_location;
 
 			trimesh::vec3 trans_bbx_center = _copy_mesh->bbox.center();
-			trimesh::trans(_copy_mesh, -trans_bbx_center);							
+			trimesh::trans(_copy_mesh, -trans_bbx_center);
 			
 			bool is_right = true;
 			trimesh::xform xf = trimesh::xform::rot_into(fn, trimesh::vec3(0, -1, 0));	
@@ -1043,8 +1042,14 @@ namespace topomesh {
 								pair_vertex.second = _copy_location;
 							}
 						}
-						trimesh::vec3 dirto = pair_vertex.second - pair_vertex.first;						
-						trimesh::vec3 new_location = (pair_vertex.first + weight* dirto);												
+						trimesh::vec3 dirto = pair_vertex.second - pair_vertex.first;	
+						trimesh::vec3 rot_sel_fn = trimesh::normalized(_copy_mesh->trinorm(sf));
+						trimesh::vec3 up_dirto = trimesh::normalized(rot_sel_fn.cross(dirto));
+
+
+						trimesh::vec3 new_location = (pair_vertex.first + weight* dirto);
+						float loc_y = word_init_location[wi].y - bbx_center.y;
+						new_location += loc_y * up_dirto;
 						//lines2->vertices.push_back(/*inv_xxf* */new_location);
 						trimesh::vec3 world_location = (inv_xxf * new_location) + trans_bbx_center;
 						//lines2->vertices.push_back(world_location);
@@ -1052,8 +1057,7 @@ namespace topomesh {
 						trimesh::vec3 sel_fn = trimesh::normalized(_copy_mesh->trinorm(sf));
 						word_FaceTo[wi] = inv_xxf*sel_fn;
 
-						trimesh::vec3 rot_sel_fn = trimesh::normalized(_copy_mesh->trinorm(sf));
-						trimesh::vec3 up_dirto = trimesh::normalized(rot_sel_fn.cross(dirto));					
+										
 						trimesh::vec3 ori_up_dirto = inv_xxf * up_dirto;
 						if (ori_up_dirto.z < 0)
 						{
@@ -1136,6 +1140,7 @@ namespace topomesh {
 
 	void FontMesh::updateFontPoly(trimesh::TriMesh* traget_mesh,const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter)
 	{		
+	
 		for (auto& mesh : init_font_meshs)
 		{
 			mesh->clear(); mesh = nullptr;
@@ -1322,8 +1327,9 @@ namespace topomesh {
 			_word_mesh->need_bbox();			
 
 			word_init_location.push_back(_word_mesh->bbox.center());
-			bbx += _word_mesh->bbox;
-		
+			
+			trimesh::box3 wordmesh_bbx = _word_mesh->bbox;
+			bbx += wordmesh_bbx;
 			trimesh::trans(_word_mesh,-_word_mesh->bbox.center());			
 			if (is_adjust)
 			{
@@ -1333,18 +1339,26 @@ namespace topomesh {
 				trimesh::apply_xform(_word_mesh, up_xf * xf);
 				word_init_location[li] = up_xf * xf*word_init_location[li];
 				word_FaceTo.push_back(trimesh::vec3(0,0,1));
-				word_Up.push_back(trimesh::vec3(0,1,0));
+				word_Up.push_back(trimesh::vec3(0,1,0));				
 			}
 			else
 			{
 				word_FaceTo.push_back(face_to);
 				word_Up.push_back(up);
+				
 			}
 
 			word_absolute_location.push_back(trimesh::vec3(0, 0, 0));
 			init_font_meshs.push_back(_word_mesh);				
 		}		
 		bbx_center = bbx.center();
+		if (is_adjust)
+		{
+			trimesh::xform xf = trimesh::xform::rot_into(face_to, trimesh::vec3(0, 0, 1));
+			trimesh::vec3 new_up = xf * up;
+			trimesh::xform up_xf = trimesh::xform::rot_into(new_up, trimesh::vec3(0, 1, 0));
+			bbx_center = up_xf * xf * bbx_center;
+		}
 		is_init_location = is_init;
 		is_init_adjust = is_adjust;
 		InitFontMesh(is_init);
