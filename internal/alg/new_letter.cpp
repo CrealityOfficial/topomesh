@@ -1194,6 +1194,7 @@ namespace topomesh {
 		trimesh::box3 bbx;
 		for (int li = 0; li < letter.size(); li++)
 		{			
+			std::cout << "-----------" << li<<"----------------"<<std::endl;
 			MMeshT mt(5000, 10000);
 			mt.set_VFadjacent(true);
 			std::vector<std::vector<trimesh::vec2>> totalpoly = letter[li];
@@ -1221,16 +1222,17 @@ namespace topomesh {
 			std::vector<int> faceindex;
 			for (int i = 0; i < mt.faces.size(); i++)
 				faceindex.push_back(i);
-
+			
 			setMark(totalpoly);
 			embedingAndCutting(&mt, totalpoly, faceindex);
+			
 			faceindex.clear();
 			for (int i = 0; i < mt.faces.size(); i++)
 				faceindex.push_back(i);
 			std::vector<int> outfacesIndex;
 			std::vector<std::vector<std::vector<trimesh::vec2>>> word_letter = { totalpoly };
 			polygonInnerFaces(&mt, word_letter, faceindex, outfacesIndex);
-
+			
 			std::vector<int> least;
 			std::set_difference(faceindex.begin(), faceindex.end(), outfacesIndex.begin(), outfacesIndex.end(), std::inserter(least, least.begin()));
 			for (int fi : least)
@@ -1325,7 +1327,7 @@ namespace topomesh {
 			trimesh::TriMesh* _word_mesh = new trimesh::TriMesh();
 			mt.mmesh2trimesh(_word_mesh);
 			_word_mesh->need_bbox();			
-
+			
 			word_init_location.push_back(_word_mesh->bbox.center());
 			
 			trimesh::box3 wordmesh_bbx = _word_mesh->bbox;
