@@ -120,8 +120,6 @@ namespace topomesh {
 			float half = m_config.height / 2.0f;
 			trimesh::vec3 dirto = (m_config.distance + half) * FaceTo.second;
 			trimesh::trans(result, click_location + dirto);
-			
-
 			return result;
 		}
 		else {
@@ -233,9 +231,7 @@ namespace topomesh {
 		m_config.state = is_surround;
 		is_change_state = false;
 		trimesh::TriMesh* _copy_mesh = new trimesh::TriMesh;
-		*_copy_mesh = *traget_meshes;
-		//_copy_mesh->write("before_rot_mesh.ply");
-		//trimesh::apply_xform(_copy_mesh, _m_rota);
+		*_copy_mesh = *traget_meshes;		
 		trimesh::xform inv_rota = trimesh::inv(_m_rota);
 		trimesh::vec3 fn = trimesh::normalized(_copy_mesh->trinorm(sel_faceid));
 		current_faceto = fn;
@@ -877,7 +873,11 @@ namespace topomesh {
 			if (is_mistake)
 				sel_faceid = mistake_face;
 			if (sel_faceid == -1)
+			{
+				_copy_mesh->clear();
+				_copy_mesh = nullptr;
 				return true;
+			}
 			//lines->write("lines.ply");
 			
 			//---find orient and frist length
@@ -914,7 +914,11 @@ namespace topomesh {
 				}
 			}
 			if (right_face < 0)
+			{
+				_copy_mesh->clear();
+				_copy_mesh = nullptr;
 				return true;
+			}
 		
 			//trimesh::TriMesh* lines3 = new trimesh::TriMesh();
 			//lines3->vertices.push_back(_copy_location);
@@ -1055,15 +1059,15 @@ namespace topomesh {
 						//lines2->vertices.push_back(world_location);
 						word_absolute_location[wi] = world_location;
 						trimesh::vec3 sel_fn = trimesh::normalized(_copy_mesh->trinorm(sf));
-						word_FaceTo[wi] = inv_xxf*sel_fn;
+						word_FaceTo[wi] = trimesh::normalized(inv_xxf*sel_fn);
 
 										
-						trimesh::vec3 ori_up_dirto = inv_xxf * up_dirto;
-						if (ori_up_dirto.z < 0)
+						trimesh::vec3 ori_up_dirto = trimesh::normalized(inv_xxf * up_dirto);
+						/*if (ori_up_dirto.z < 0)
 						{
 							trimesh::xform rota = trimesh::xform::rot( M_PI * 1.0f, sel_fn);
 							ori_up_dirto = rota * ori_up_dirto;
-						}
+						}*/
 						word_Up[wi] = ori_up_dirto;
 
 						/*float axis_cos = trimesh::vec3(0,0,1).dot(sel_fn);
@@ -1085,7 +1089,8 @@ namespace topomesh {
 			//lines2->write("lines2.ply");		
 #endif
 		}	
-		
+		_copy_mesh->clear();
+		_copy_mesh = nullptr;
 		return false;
 	}
 
@@ -1194,7 +1199,6 @@ namespace topomesh {
 		trimesh::box3 bbx;
 		for (int li = 0; li < letter.size(); li++)
 		{			
-			std::cout << "-----------" << li<<"----------------"<<std::endl;
 			MMeshT mt(5000, 10000);
 			mt.set_VFadjacent(true);
 			std::vector<std::vector<trimesh::vec2>> totalpoly = letter[li];
