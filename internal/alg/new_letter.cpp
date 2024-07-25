@@ -46,6 +46,8 @@ namespace topomesh {
 
 	FontMesh::FontMesh(std::string& str)
 	{
+		_return_surround_mesh = new trimesh::TriMesh();
+		_return_mesh = new trimesh::TriMesh();
 		std::istringstream iss(str);
 		std::string property_str;
 		int n = 1;
@@ -110,6 +112,7 @@ namespace topomesh {
 					temp_letter.push_back(temp_lines);
 				}
 				_m_letter = temp_letter;
+				CreateFontMesh(_m_letter);
 			}
 			else if (n == 5)
 			{
