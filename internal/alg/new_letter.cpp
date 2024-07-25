@@ -4,7 +4,8 @@
 #include "trimesh2/TriMesh_algo.h"
 #include <Eigen/Dense>
 #include <unordered_map>
-#include "msbase/mesh/dumplicate.h"
+#include <sstream>
+#include <iomanip>
 
 namespace topomesh {
 	
@@ -39,7 +40,226 @@ namespace topomesh {
 		m_config = other.m_config;
 		sel_faceid = other.sel_faceid;
 		bbx_center = other.bbx_center;
+		_m_letter = other._m_letter;
 	}
+
+
+	FontMesh::FontMesh(std::string& str)
+	{
+		std::istringstream iss(str);
+		std::string property_str;
+		int n = 1;
+		while (std::getline(iss, property_str, ';'))
+		{
+			if (n == 1)
+			{
+				std::istringstream height(property_str);
+				float h;
+				height >> h;
+				m_config.height = h;
+				property_str.clear();
+			}
+			else if(n==2)
+			{
+				std::istringstream dep(property_str);
+				float d;
+				dep >> d;
+				m_config.distance = d;
+				property_str.clear();
+			}
+			else if (n == 3)
+			{
+				std::istringstream ang(property_str);
+				float a;
+				ang >> a;
+				m_config.angle = a;
+				property_str.clear();
+			}
+			else if (n == 4)
+			{
+				_m_letter.clear();
+				std::istringstream letter_polygons(property_str);
+				std::string letter_str;
+				std::vector<std::vector<std::vector<trimesh::vec2>>> temp_letter;
+				while (std::getline(letter_polygons, letter_str, '#'))
+				{					
+					std::istringstream line(letter_str);
+					std::string line_str;
+					std::vector<std::vector<trimesh::vec2>> temp_lines;
+					while (std::getline(line, line_str, '|'))
+					{
+						std::istringstream point(line_str);
+						std::string point_str;		
+						std::vector<trimesh::vec2> temp_points;
+						while (std::getline(point, point_str, '$'))
+						{
+							std::istringstream loc(point_str);
+							std::string loc_str;
+							std::vector<float> temp_location;
+							while (std::getline(loc, loc_str, ','))
+							{
+								std::istringstream dian(loc_str);
+								float t;
+								dian >> t;
+								temp_location.push_back(t);
+							}
+							temp_points.push_back(trimesh::vec2(temp_location[0],temp_location[1]));
+						}
+						temp_lines.push_back(temp_points);
+					}
+					temp_letter.push_back(temp_lines);
+				}
+				_m_letter = temp_letter;
+			}
+			else if (n == 5)
+			{
+				std::istringstream iss_state(property_str);
+				int s;
+				iss_state >> s;
+				m_config.state = s;
+				property_str.clear();
+			}
+			else if (n == 6)
+			{
+				std::istringstream iss_currentface(property_str);
+				std::string c;
+				std::vector<float> temp;
+				while (std::getline(iss_currentface, c, ','))
+				{
+					std::istringstream cf(c);
+					float t;
+					cf >> t;
+					temp.push_back(t);
+				}
+				current_faceto = trimesh::vec3(temp[0], temp[1], temp[2]);
+				property_str.clear();
+			}
+			else if (n == 7)
+			{
+				std::istringstream iss_faceid(property_str);
+				int f;
+				iss_faceid >> f;
+				sel_faceid = f;
+				property_str.clear();
+			}
+			else if(n==8)
+			{
+				std::istringstream iss_click(property_str);
+				std::string c;
+				std::vector<float> temp;
+				while (std::getline(iss_click, c, ','))
+				{
+					std::istringstream cf(c);
+					float t;
+					cf >> t;
+					temp.push_back(t);
+				}
+				click_location = trimesh::vec3(temp[0], temp[1], temp[2]);
+				property_str.clear();
+			}
+			else if (n == 9)
+			{
+				std::istringstream iss_faceto(property_str);
+				std::string c;
+				std::vector<float> temp;
+				while (std::getline(iss_faceto, c, ','))
+				{
+					std::istringstream cf(c);
+					float t;
+					cf >> t;
+					temp.push_back(t);
+				}
+				FaceTo.first = trimesh::vec3(0, 0, 0);
+				FaceTo.second = trimesh::vec3(temp[0], temp[1], temp[2]);
+				property_str.clear();
+			}
+			else if (n == 10)
+			{
+				std::istringstream iss_up(property_str);
+				std::string c;
+				std::vector<float> temp;
+				while (std::getline(iss_up, c, ','))
+				{
+					std::istringstream cf(c);
+					float t;
+					cf >> t;
+					temp.push_back(t);
+				}
+				Up.first = trimesh::vec3(0, 0, 0);
+				Up.second = trimesh::vec3(temp[0], temp[1], temp[2]);
+				property_str.clear();
+			}
+			else if (n == 11)
+			{
+				word_FaceTo.clear();
+				std::istringstream iss_surrent_face(property_str);
+				std::string word_face;
+				std::vector<trimesh::vec3> temp_wordface;
+				while (std::getline(iss_surrent_face, word_face, '#'))
+				{
+					std::istringstream iss_dianface(word_face);
+					std::string dian;
+					std::vector<float> temp;				
+					while (std::getline(iss_dianface, dian, ','))
+					{
+						std::istringstream iss_p(dian);
+						float t;
+						iss_p >> t;
+						temp.push_back(t);
+					}
+					temp_wordface.push_back(trimesh::vec3(temp[0],temp[1], temp[2]));
+				}
+				word_FaceTo = temp_wordface;
+			}
+			else if(n==12)
+			{
+				word_Up.clear();
+				std::istringstream iss_surrent_face(property_str);
+				std::string word_face;
+				std::vector<trimesh::vec3> temp_wordface;
+				while (std::getline(iss_surrent_face, word_face, '#'))
+				{
+					std::istringstream iss_dianface(word_face);
+					std::string dian;
+					std::vector<float> temp;
+					while (std::getline(iss_dianface, dian, ','))
+					{
+						std::istringstream iss_p(dian);
+						float t;
+						iss_p >> t;
+						temp.push_back(t);
+					}
+					temp_wordface.push_back(trimesh::vec3(temp[0], temp[1], temp[2]));
+				}
+				word_Up = temp_wordface;
+			}
+			else if (n == 13)
+			{
+				word_absolute_location.clear();
+				std::istringstream iss_surrent_face(property_str);
+				std::string word_face;
+				std::vector<trimesh::vec3> temp_wordface;
+				while (std::getline(iss_surrent_face, word_face, '#'))
+				{
+					std::istringstream iss_dianface(word_face);
+					std::string dian;
+					std::vector<float> temp;
+					while (std::getline(iss_dianface, dian, ','))
+					{
+						std::istringstream iss_p(dian);
+						float t;
+						iss_p >> t;
+						temp.push_back(t);
+					}
+					temp_wordface.push_back(trimesh::vec3(temp[0], temp[1], temp[2]));
+				}
+				word_absolute_location = temp_wordface;
+			}
+			n++;
+		}
+		
+	}
+
 
 
 	FontMesh::~FontMesh()
@@ -97,6 +317,50 @@ namespace topomesh {
 	{
 		return m_config.distance;
 	}
+
+	std::string FontMesh::getDataToString()
+	{
+		std::ostringstream oss;
+		oss << std::fixed << std::setprecision(3);
+		oss << m_config.height << ";";
+		oss << m_config.distance << ";";
+		oss << m_config.angle << ";";
+
+		for (const auto& word : _m_letter) {
+			for (const auto& poly : word) {
+				for (const auto& p : poly) {
+					oss << p.x << ",";
+					oss << p.y <<"$";
+				}
+				oss << "|";
+			}
+			oss << "#";
+		}
+		oss << ";";
+
+		oss << m_config.state << ";";
+		oss << current_faceto.x<<","<< current_faceto.y<<","<< current_faceto.z << ";";
+		oss<< sel_faceid <<";";
+		oss << click_location.x << "," << click_location.y << "," << click_location.z << ";";
+
+		oss << FaceTo.second.x << "," << FaceTo.second.y << "," << FaceTo.second.z << ";";
+		oss << Up.second.x << "," << Up.second.y << "," << Up.second.z << ";";
+
+		for (const auto& ft : word_FaceTo)
+			oss << ft.x << "," << ft.y<<","<<ft.z << "#";
+		oss << ";";
+		for (const auto& upt : word_Up)
+			oss << upt.x << "," << upt.y <<","<<upt.z << "#";
+		oss << ";";
+
+		for (const auto& wl : word_absolute_location)
+			oss << wl.x << "," << wl.y<<","<<wl.z << "#";
+		oss << ";";
+
+		std::string result_str = oss.str();
+		return result_str;
+	}
+
 
 	trimesh::TriMesh* FontMesh::getFontMesh()
 	{
@@ -1190,7 +1454,7 @@ namespace topomesh {
 	void FontMesh::CreateFontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter,
 		trimesh::vec3 face_to , trimesh::vec3 up, bool is_adjust, bool is_init)
 	{
-		
+		_m_letter = letter;
 		word_FaceTo.clear();
 		word_Up.clear();
 		word_init_location.clear();
@@ -1198,7 +1462,7 @@ namespace topomesh {
 		init_font_meshs.clear();
 		trimesh::box3 bbx;
 		for (int li = 0; li < letter.size(); li++)
-		{			
+		{						
 			MMeshT mt(5000, 10000);
 			mt.set_VFadjacent(true);
 			std::vector<std::vector<trimesh::vec2>> totalpoly = letter[li];

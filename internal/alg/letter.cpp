@@ -947,7 +947,7 @@ namespace topomesh
 							if (poly[i][j][k].y == c.y || poly[i][j][(k + 1) % poly[i][j].size()].y == c.y)
 							{
 								//right_equalPoint++;
-								c.y -= (0.0001f * c.y);
+								c.y -= (0.0001f * c.y)==0?0.001f: (0.0001f * c.y);
 								k--;
 								continue;
 							}
@@ -961,7 +961,7 @@ namespace topomesh
 							if (poly[i][j][k].y == c.y || poly[i][j][(k + 1) % poly[i][j].size()].y == c.y)
 							{
 								//left_equalPoint++;
-								c.y -= (0.0001f * c.y);
+								c.y -= (0.0001f * c.y) == 0 ? 0.001f : (0.0001f * c.y);
 								k--;
 								continue;
 							}
