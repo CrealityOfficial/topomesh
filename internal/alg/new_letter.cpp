@@ -48,8 +48,6 @@ namespace topomesh {
 	{
 		_return_surround_mesh = new trimesh::TriMesh();
 		_return_mesh = new trimesh::TriMesh();
-		_m_letter = letter;
-		CreateFontMesh(_m_letter);
 		std::istringstream iss(str);
 		std::string property_str;
 		int n = 1;
@@ -264,7 +262,8 @@ namespace topomesh {
 			}
 			n++;
 		}
-		
+		_m_letter = letter;
+		CreateFontMesh(_m_letter);
 	}
 
 
