@@ -44,10 +44,12 @@ namespace topomesh {
 	}
 
 
-	FontMesh::FontMesh(std::string& str)
+	FontMesh::FontMesh(std::string& str, const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter)
 	{
 		_return_surround_mesh = new trimesh::TriMesh();
 		_return_mesh = new trimesh::TriMesh();
+		_m_letter = letter;
+		CreateFontMesh(_m_letter);
 		std::istringstream iss(str);
 		std::string property_str;
 		int n = 1;
@@ -77,44 +79,46 @@ namespace topomesh {
 				m_config.angle = a;
 				property_str.clear();
 			}
+			//else if (n == 4)
+			//{
+			//	_m_letter.clear();
+			//	//std::istringstream letter_polygons(property_str);
+			//	//std::string letter_str;
+			//	//std::vector<std::vector<std::vector<trimesh::vec2>>> temp_letter;
+			//	//while (std::getline(letter_polygons, letter_str, '#'))
+			//	//{					
+			//	//	std::istringstream line(letter_str);
+			//	//	std::string line_str;
+			//	//	std::vector<std::vector<trimesh::vec2>> temp_lines;
+			//	//	while (std::getline(line, line_str, '|'))
+			//	//	{
+			//	//		std::istringstream point(line_str);
+			//	//		std::string point_str;		
+			//	//		std::vector<trimesh::vec2> temp_points;
+			//	//		while (std::getline(point, point_str, '$'))
+			//	//		{
+			//	//			std::istringstream loc(point_str);
+			//	//			std::string loc_str;
+			//	//			std::vector<float> temp_location;
+			//	//			while (std::getline(loc, loc_str, ','))
+			//	//			{
+			//	//				std::istringstream dian(loc_str);
+			//	//				float t;
+			//	//				dian >> t;
+			//	//				temp_location.push_back(t);
+			//	//			}
+			//	//			temp_points.push_back(trimesh::vec2(temp_location[0],temp_location[1]));
+			//	//			//std::cout << temp_location[0] << "," << temp_location[1] << "$" << std::endl;;
+			//	//		}
+			//	//		//std::cout << "|" << std::endl;
+			//	//		temp_lines.push_back(temp_points);
+			//	//	}
+			//	//	//std::cout << "#" << std::endl;
+			//	//	temp_letter.push_back(temp_lines);
+			//	//}
+			//	
+			//}
 			else if (n == 4)
-			{
-				_m_letter.clear();
-				std::istringstream letter_polygons(property_str);
-				std::string letter_str;
-				std::vector<std::vector<std::vector<trimesh::vec2>>> temp_letter;
-				while (std::getline(letter_polygons, letter_str, '#'))
-				{					
-					std::istringstream line(letter_str);
-					std::string line_str;
-					std::vector<std::vector<trimesh::vec2>> temp_lines;
-					while (std::getline(line, line_str, '|'))
-					{
-						std::istringstream point(line_str);
-						std::string point_str;		
-						std::vector<trimesh::vec2> temp_points;
-						while (std::getline(point, point_str, '$'))
-						{
-							std::istringstream loc(point_str);
-							std::string loc_str;
-							std::vector<float> temp_location;
-							while (std::getline(loc, loc_str, ','))
-							{
-								std::istringstream dian(loc_str);
-								float t;
-								dian >> t;
-								temp_location.push_back(t);
-							}
-							temp_points.push_back(trimesh::vec2(temp_location[0],temp_location[1]));
-						}
-						temp_lines.push_back(temp_points);
-					}
-					temp_letter.push_back(temp_lines);
-				}
-				_m_letter = temp_letter;
-				CreateFontMesh(_m_letter);
-			}
-			else if (n == 5)
 			{
 				std::istringstream iss_state(property_str);
 				int s;
@@ -122,7 +126,7 @@ namespace topomesh {
 				m_config.state = s;
 				property_str.clear();
 			}
-			else if (n == 6)
+			else if (n == 5)
 			{
 				std::istringstream iss_currentface(property_str);
 				std::string c;
@@ -137,7 +141,7 @@ namespace topomesh {
 				current_faceto = trimesh::vec3(temp[0], temp[1], temp[2]);
 				property_str.clear();
 			}
-			else if (n == 7)
+			else if (n == 6)
 			{
 				std::istringstream iss_faceid(property_str);
 				int f;
@@ -145,7 +149,7 @@ namespace topomesh {
 				sel_faceid = f;
 				property_str.clear();
 			}
-			else if(n==8)
+			else if(n==7)
 			{
 				std::istringstream iss_click(property_str);
 				std::string c;
@@ -160,7 +164,7 @@ namespace topomesh {
 				click_location = trimesh::vec3(temp[0], temp[1], temp[2]);
 				property_str.clear();
 			}
-			else if (n == 9)
+			else if (n == 8)
 			{
 				std::istringstream iss_faceto(property_str);
 				std::string c;
@@ -176,7 +180,7 @@ namespace topomesh {
 				FaceTo.second = trimesh::vec3(temp[0], temp[1], temp[2]);
 				property_str.clear();
 			}
-			else if (n == 10)
+			else if (n == 9)
 			{
 				std::istringstream iss_up(property_str);
 				std::string c;
@@ -192,7 +196,7 @@ namespace topomesh {
 				Up.second = trimesh::vec3(temp[0], temp[1], temp[2]);
 				property_str.clear();
 			}
-			else if (n == 11)
+			else if (n == 10)
 			{
 				word_FaceTo.clear();
 				std::istringstream iss_surrent_face(property_str);
@@ -214,7 +218,7 @@ namespace topomesh {
 				}
 				word_FaceTo = temp_wordface;
 			}
-			else if(n==12)
+			else if(n==11)
 			{
 				word_Up.clear();
 				std::istringstream iss_surrent_face(property_str);
@@ -236,7 +240,7 @@ namespace topomesh {
 				}
 				word_Up = temp_wordface;
 			}
-			else if (n == 13)
+			else if (n == 12)
 			{
 				word_absolute_location.clear();
 				std::istringstream iss_surrent_face(property_str);
@@ -329,17 +333,21 @@ namespace topomesh {
 		oss << m_config.distance << ";";
 		oss << m_config.angle << ";";
 
-		for (const auto& word : _m_letter) {
-			for (const auto& poly : word) {
-				for (const auto& p : poly) {
-					oss << p.x << ",";
-					oss << p.y <<"$";
-				}
-				oss << "|";
-			}
-			oss << "#";
-		}
-		oss << ";";
+		//-----------È¥³ýÂÖÀª-------------
+		//for (const auto& word : _m_letter) {
+		//	for (const auto& poly : word) {
+		//		for (const auto& p : poly) {
+		//			oss << p.x << ",";
+		//			oss << p.y <<"$";
+		//			//std::cout << p.x << "," << p.y << "$" << std::endl;
+		//		}
+		//		oss << "|";
+		//		//std::cout << "|" << std::endl;
+		//	}
+		//	oss << "#";
+		//	//std::cout << "#" << std::endl;
+		//}
+		//oss << ";";
 
 		oss << m_config.state << ";";
 		oss << current_faceto.x<<","<< current_faceto.y<<","<< current_faceto.z << ";";
@@ -369,6 +377,7 @@ namespace topomesh {
 	{
 		if (!m_config.state)
 		{				
+			//_return_mesh->write("returnmesh.ply");
 			trimesh::TriMesh* result = new trimesh::TriMesh;
 			*result = *_return_mesh;			
 			

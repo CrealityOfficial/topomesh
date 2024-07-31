@@ -44,7 +44,7 @@ namespace topomesh {
 	public:
 		FontMesh() {};
 		FontMesh(float height,float depth,float angle);
-		FontMesh(std::string& str);
+		FontMesh(std::string& str, const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter);
 		FontMesh(const FontMesh& other);
 		/*FontMesh(const std::vector<std::vector<std::vector<trimesh::vec2>>>& letter, float height,
 			trimesh::vec3 face_to=trimesh::vec3(0,0,-1),trimesh::vec3 up=trimesh::vec3(0,-1,0));*/
@@ -82,6 +82,7 @@ namespace topomesh {
 
 		int faceId() { return sel_faceid; }
 
+		//-----------去除轮廓-------------
 		std::string getDataToString(); //高、深、角、轮廓、状态、转盘面、faceid、click、水面朝向、up、围绕面朝向、围绕up、围绕位置
 		
 
