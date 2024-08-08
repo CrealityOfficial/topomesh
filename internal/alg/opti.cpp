@@ -1,5 +1,5 @@
 #include "opti.h"
-
+#include <cmath>
 namespace {
 	float creatObjectFun(trimesh::TriMesh* mesh,trimesh::vec3 dir)
 	{
@@ -18,7 +18,7 @@ namespace {
 			arc = arc <= -1.f ? -1.f : arc;
 			if (arc < 0.f)
 				continue;
-			float _area = std::sqrtf(c.sumsqr())/2.f;
+			float _area = sqrtf(c.sumsqr())/2.f;
 			total_area += _area * arc;
 		}
 		return total_area;
